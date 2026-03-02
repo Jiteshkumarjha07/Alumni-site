@@ -1,0 +1,47 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  --font-serif: "Cormorant Garamond", serif;
+
+  --color-brand-burgundy: #702d31;
+  --color-brand-gold: #c5a07c;
+  --color-brand-cream: #f2eae4;
+  --color-brand-parchment: #ede1d5;
+  --color-brand-ebony: #3d2b27;
+}
+
+@layer base {
+  body {
+    background-color: var(--color-brand-cream);
+    background-image:
+      radial-gradient(at 0% 0%, hsla(28, 24%, 90%, 1) 0, transparent 50%),
+      radial-gradient(at 50% 0%, hsla(25, 24%, 88%, 1) 0, transparent 50%),
+      radial-gradient(at 100% 0%, hsla(28, 24%, 90%, 1) 0, transparent 50%),
+      url("https://www.transparenttextures.com/patterns/linen.png");
+    color: var(--color-brand-ebony);
+    min-height: 100vh;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: var(--font-serif);
+    color: var(--color-brand-ebony);
+  }
+}
+
+@layer utilities {
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
