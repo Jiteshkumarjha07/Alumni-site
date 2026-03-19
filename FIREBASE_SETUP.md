@@ -88,7 +88,8 @@ service cloud.firestore {
     
     // Chats collection
     match /chats/{chatId}/messages/{messageId} {
-      allow read, write: if request.auth != null;
+      allow read, write: if request.auth != null && 
+        get(/databases/$(database)/documents/chats/$(chatId)).data.participants.hasAny([request.auth.uid]);
     }
     
     // Community chat
@@ -102,6 +103,14 @@ service cloud.firestore {
       allow read: if request.auth != null && 
         request.auth.uid in resource.data.members;
       allow create: if request.auth != null;
+    }
+
+    // Events
+    match /events/{eventId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null;
+      allow update, delete: if request.auth != null && 
+        resource.data.createdByUid == request.auth.uid;
     }
   }
 }

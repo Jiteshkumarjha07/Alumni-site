@@ -89,13 +89,4 @@ export const mockJobs: Job[] = [
     }
 ];
 
-export const mockEvents: Event[] = [
-    {
-        id: '1',
-        title: 'Alumni Networking Night',
-        date: 'Oct 15, 2026',
-        location: 'Downtown Hall',
-        description: 'Connect with fellow graduates over drinks and appetizers.',
-        attendees: 156,
-    }
-];
+export const mockEvents: Event[] = [];

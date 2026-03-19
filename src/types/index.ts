@@ -56,8 +56,12 @@ export interface Event {
   title: string;
   date: string;
   location: string;
-  attendees: number;
   description: string;
+  imageUrl?: string;
+  createdByUid: string;
+  createdByName: string;
+  createdAt: Timestamp;
+  attendeesCount: number;
 }
 
 export interface Message {

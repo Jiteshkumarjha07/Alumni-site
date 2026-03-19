@@ -10,7 +10,9 @@ import { Chat, User } from '@/types';
 import { Loader2 } from 'lucide-react';
 import { useSearchParams, useRouter } from 'next/navigation';
 
-export default function MessagesPage() {
+import { Suspense } from 'react';
+
+function MessagesClient() {
     const { userData, loading: authLoading } = useAuth();
     const router = useRouter();
     const searchParams = useSearchParams();
@@ -21,6 +23,40 @@ export default function MessagesPage() {
     // State for the currently active chat
     const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
     const [selectedUser, setSelectedUser] = useState<{ name: string; profilePic: string; uid: string } | null>(null);
+
+    // Helper to generate a consistent chat ID between two users
+    const getChatId = (uid1: string, uid2: string) => {
+        return uid1 < uid2 ? `${uid1}_${uid2}` : `${uid2}_${uid1}`;
+    };
+
+    const handleStartChat = (otherUser: User) => {
+        if (!userData?.uid) return;
+
+        const chatId = getChatId(userData.uid, otherUser.uid);
+        setSelectedChatId(chatId);
+        setSelectedUser({
+            uid: otherUser.uid,
+            name: otherUser.name,
+            profilePic: otherUser.profilePic || '',
+        });
+    };
+
+    const handleSelectChat = (chatId: string) => {
+        setSelectedChatId(chatId);
+
+        // Find the other user's info from the chat document
+        const chat = chats.find(c => c.id === chatId);
+        if (chat && userData?.uid) {
+            const otherUid = chat.participants.find(id => id !== userData.uid);
+            if (otherUid && chat.participantDetails?.[otherUid]) {
+                setSelectedUser({
+                    uid: otherUid,
+                    name: chat.participantDetails[otherUid].name,
+                    profilePic: chat.participantDetails[otherUid].profilePic,
+                });
+            }
+        }
+    };
 
     // 1. Fetch user's chats
     useEffect(() => {
@@ -75,41 +111,7 @@ export default function MessagesPage() {
             // Clean up URL so refresh doesn't trigger it again
             router.replace('/messages');
         }
-    }, [searchParams, userData?.uid, router]);
-
-    // Helper to generate a consistent chat ID between two users
-    const getChatId = (uid1: string, uid2: string) => {
-        return uid1 < uid2 ? `${uid1}_${uid2}` : `${uid2}_${uid1}`;
-    };
-
-    const handleStartChat = (otherUser: User) => {
-        if (!userData?.uid) return;
-
-        const chatId = getChatId(userData.uid, otherUser.uid);
-        setSelectedChatId(chatId);
-        setSelectedUser({
-            uid: otherUser.uid,
-            name: otherUser.name,
-            profilePic: otherUser.profilePic || '',
-        });
-    };
-
-    const handleSelectChat = (chatId: string) => {
-        setSelectedChatId(chatId);
-
-        // Find the other user's info from the chat document
-        const chat = chats.find(c => c.id === chatId);
-        if (chat && userData?.uid) {
-            const otherUid = chat.participants.find(id => id !== userData.uid);
-            if (otherUid && chat.participantDetails?.[otherUid]) {
-                setSelectedUser({
-                    uid: otherUid,
-                    name: chat.participantDetails[otherUid].name,
-                    profilePic: chat.participantDetails[otherUid].profilePic,
-                });
-            }
-        }
-    };
+    }, [searchParams, userData?.uid, router, handleStartChat]);
 
     if (authLoading) {
         return (
@@ -164,3 +166,16 @@ export default function MessagesPage() {
         </div>
     );
 }
+
+export default function MessagesPage() {
+    return (
+        <Suspense fallback={
+            <div className="flex h-[calc(100vh-4rem)] items-center justify-center">
+                <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+            </div>
+        }>
+            <MessagesClient />
+        </Suspense>
+    );
+}
+
