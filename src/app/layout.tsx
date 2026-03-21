@@ -39,7 +39,7 @@ export default function RootLayout({
           <div className="min-h-screen">
             <Sidebar />
 
-            <main className="md:pl-64 min-h-screen">
+            <main className="md:pl-64 min-h-screen pb-24 md:pb-0">
               {children}
             </main>
 
