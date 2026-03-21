@@ -8,6 +8,7 @@ import { Post } from '@/types';
 import { PostCard } from '@/components/feed/PostCard';
 import { EditProfileModal, ProfileFormData } from '@/components/modals/EditProfileModal';
 import { ConfirmDialog } from '@/components/modals/ConfirmDialog';
+import { SharePostModal } from '@/components/modals/SharePostModal';
 import { uploadMedia } from '@/lib/media';
 import { Pencil, LogOut, MapPin, Briefcase } from 'lucide-react';
 import Link from 'next/link';
@@ -20,6 +21,7 @@ export default function ProfilePage() {
     const [showEditProfile, setShowEditProfile] = useState(false);
     const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
     const [updating, setUpdating] = useState(false);
+    const [sharingPost, setSharingPost] = useState<Post | null>(null);
 
     useEffect(() => {
         if (!userData) {
@@ -209,6 +211,7 @@ export default function ProfilePage() {
                                 currentUser={userData}
                                 onLike={() => { /* no-op */ }}
                                 onComment={() => { /* no-op */ }}
+                                onShare={() => setSharingPost(post)}
                             />
                         ))
                     ) : (
@@ -266,6 +269,15 @@ export default function ProfilePage() {
                 confirmText="Log Out"
                 variant="warning"
             />
+
+            {sharingPost && (
+                <SharePostModal
+                    isOpen={!!sharingPost}
+                    onClose={() => setSharingPost(null)}
+                    post={sharingPost}
+                    currentUser={userData}
+                />
+            )}
         </div>
     );
 }

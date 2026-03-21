@@ -10,6 +10,7 @@ import { CreatePostModal } from '@/components/modals/CreatePostModal';
 import { EditPostModal } from '@/components/modals/EditPostModal';
 import { CommentModal } from '@/components/modals/CommentModal';
 import { ConfirmDialog } from '@/components/modals/ConfirmDialog';
+import { SharePostModal } from '@/components/modals/SharePostModal';
 import { PenSquare, Camera, Image as ImageIcon, Paperclip } from 'lucide-react';
 import Link from 'next/link';
 
@@ -21,6 +22,7 @@ export default function HomePage() {
   const [editingPost, setEditingPost] = useState<Post | null>(null);
   const [commentingPost, setCommentingPost] = useState<Post | null>(null);
   const [deletingPostId, setDeletingPostId] = useState<string | null>(null);
+  const [sharingPost, setSharingPost] = useState<Post | null>(null);
 
   // Fetch posts from Firebase
   useEffect(() => {
@@ -223,6 +225,7 @@ export default function HomePage() {
               onComment={() => setCommentingPost(post)}
               onEdit={() => setEditingPost(post)}
               onDelete={() => setDeletingPostId(post.id)}
+              onShare={() => setSharingPost(post)}
             />
           ))
         ) : (
@@ -268,6 +271,15 @@ export default function HomePage() {
         confirmText="Delete"
         variant="danger"
       />
+
+      {sharingPost && (
+        <SharePostModal
+          isOpen={!!sharingPost}
+          onClose={() => setSharingPost(null)}
+          post={sharingPost}
+          currentUser={userData}
+        />
+      )}
     </div>
   );
 }

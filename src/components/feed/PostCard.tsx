@@ -11,6 +11,7 @@ interface PostCardProps {
     onComment: () => void;
     onEdit?: () => void;
     onDelete?: () => void;
+    onShare?: () => void;
 }
 
 export const PostCard: React.FC<PostCardProps> = ({
@@ -20,6 +21,7 @@ export const PostCard: React.FC<PostCardProps> = ({
     onComment,
     onEdit,
     onDelete,
+    onShare,
 }) => {
     const [showMenu, setShowMenu] = useState(false);
     const isLiked = post.likes?.includes(currentUser.uid) || false;
@@ -143,7 +145,10 @@ export const PostCard: React.FC<PostCardProps> = ({
                     <span>Comment</span>
                 </button>
 
-                <button className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-brand-ebony/60 hover:bg-brand-burgundy/5 hover:text-brand-burgundy transition font-semibold text-sm">
+                <button
+                    onClick={onShare}
+                    className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-brand-ebony/60 hover:bg-brand-burgundy/5 hover:text-brand-burgundy transition font-semibold text-sm"
+                >
                     <Share2 className="w-4 h-4" />
                     <span>Share</span>
                 </button>

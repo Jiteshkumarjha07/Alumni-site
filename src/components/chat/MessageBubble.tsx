@@ -1,6 +1,7 @@
 import React from 'react';
 import { Message } from '@/types';
 import { format } from 'date-fns';
+import { Share2 } from 'lucide-react';
 
 interface MessageBubbleProps {
     message: Message;
@@ -28,6 +29,19 @@ export function MessageBubble({ message, isOwnMessage }: MessageBubbleProps) {
                             : 'bg-white border border-gray-200 text-gray-800 rounded-bl-none'
                         }`}
                 >
+                    {message.sharedPostId && (
+                        <div className={`mb-2 p-3 rounded-xl border ${isOwnMessage ? 'bg-white/10 border-white/20 text-white' : 'bg-gray-50 border-gray-100 text-gray-800'}`}>
+                            <div className="flex items-center gap-2 mb-1 opacity-70">
+                                <Share2 className="w-3 h-3" />
+                                <span className="text-[10px] uppercase tracking-wider font-bold">Shared Post</span>
+                            </div>
+                            <p className="text-xs font-bold mb-1 font-serif italic">By {message.sharedPostAuthor}</p>
+                            {message.sharedPostImage && (
+                                <img src={message.sharedPostImage} alt="Shared" className="w-full h-24 object-cover rounded-lg mb-2" />
+                            )}
+                            <p className="text-xs line-clamp-2 opacity-90">{message.sharedPostContent}</p>
+                        </div>
+                    )}
                     <p className="text-sm whitespace-pre-wrap word-break break-words">
                         {message.text}
                     </p>

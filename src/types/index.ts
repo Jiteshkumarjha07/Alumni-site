@@ -73,6 +73,10 @@ export interface Message {
   createdAt: Timestamp;
   isRead?: boolean;
   readAt?: Timestamp;
+  sharedPostId?: string;
+  sharedPostContent?: string;
+  sharedPostAuthor?: string;
+  sharedPostImage?: string;
 }
 
 export interface Group {
