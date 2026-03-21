@@ -1,8 +1,9 @@
 import Link from 'next/link';
-import { Home, Users, Briefcase, User, Calendar } from 'lucide-react';
+import { Home, Users, Briefcase, User, Calendar, MessageSquare } from 'lucide-react';
 
 const navigation = [
     { name: 'Home', href: '/', icon: Home },
+    { name: 'Messages', href: '/messages', icon: MessageSquare },
     { name: 'Network', href: '/network', icon: Users },
     { name: 'Jobs', href: '/jobs', icon: Briefcase },
     { name: 'Events', href: '/events', icon: Calendar },
