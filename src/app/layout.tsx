@@ -4,6 +4,7 @@ import "./globals.css";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { MobileNav } from "@/components/layout/MobileNav";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { LayoutClient } from "@/components/layout/LayoutClient";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -38,10 +39,10 @@ export default function RootLayout({
         <AuthProvider>
           <div className="min-h-screen">
             <Sidebar />
-
-            <main className="md:pl-64 min-h-screen pb-24 md:pb-0">
+            
+            <LayoutClient>
               {children}
-            </main>
+            </LayoutClient>
 
             <MobileNav />
           </div>
