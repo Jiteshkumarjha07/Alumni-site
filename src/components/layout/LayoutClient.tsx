@@ -30,9 +30,15 @@ const variants = {
 
 export function LayoutClient({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
+    const [isMobile, setIsMobile] = React.useState(false);
     
-    // We don't have the direction here easily from the SwipeProvider without context
-    // But we can just use path index comparison to determine direction automatically!
+    React.useEffect(() => {
+        const checkMobile = () => setIsMobile(window.innerWidth < 768);
+        checkMobile();
+        window.addEventListener('resize', checkMobile);
+        return () => window.removeEventListener('resize', checkMobile);
+    }, []);
+
     const tabs = ['/', '/messages', '/network', '/jobs', '/events', '/profile'];
     const [prevPath, setPrevPath] = React.useState(pathname);
     const direction = tabs.indexOf(pathname) > tabs.indexOf(prevPath) ? 1 : -1;
@@ -41,9 +47,19 @@ export function LayoutClient({ children }: { children: React.ReactNode }) {
         setPrevPath(pathname);
     }, [pathname]);
 
+    // Desktop view: No animations, no swipe, fixed sidebar space
+    if (!isMobile) {
+        return (
+            <main className="md:pl-64 min-h-screen">
+                {children}
+            </main>
+        );
+    }
+
+    // Mobile view: Support swipe and transitions
     return (
         <SwipeProvider>
-            <main className="md:pl-64 min-h-screen pb-24 md:pb-0 overflow-x-hidden relative">
+            <main className="min-h-screen pb-24 overflow-x-hidden relative">
                 <AnimatePresence initial={false} custom={direction} mode="wait">
                     <motion.div
                         key={pathname}
