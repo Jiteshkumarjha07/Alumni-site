@@ -4,13 +4,13 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { collection, query, where, orderBy, onSnapshot, updateDoc, doc, getDocs } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import { Post } from '@/types';
+import { Post, User } from '@/types';
 import { PostCard } from '@/components/feed/PostCard';
 import { EditProfileModal, ProfileFormData } from '@/components/modals/EditProfileModal';
 import { ConfirmDialog } from '@/components/modals/ConfirmDialog';
 import { SharePostModal } from '@/components/modals/SharePostModal';
 import { uploadMedia } from '@/lib/media';
-import { Pencil, LogOut, MapPin, Briefcase } from 'lucide-react';
+import { Pencil, LogOut, MapPin, Briefcase, MessageCircle } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 
@@ -22,6 +22,9 @@ export default function ProfilePage() {
     const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
     const [updating, setUpdating] = useState(false);
     const [sharingPost, setSharingPost] = useState<Post | null>(null);
+    const [activeTab, setActiveTab] = useState<'posts' | 'connections'>('posts');
+    const [connections, setConnections] = useState<User[]>([]);
+    const [loadingConnections, setLoadingConnections] = useState(false);
 
     useEffect(() => {
         if (!userData) {
@@ -49,6 +52,36 @@ export default function ProfilePage() {
 
         return () => unsubscribe();
     }, [userData]);
+
+    useEffect(() => {
+        if (!userData || activeTab !== 'connections') return;
+
+        const fetchConnections = async () => {
+            setLoadingConnections(true);
+            try {
+                const connectionIds = userData.connections || [];
+                if (connectionIds.length === 0) {
+                    setConnections([]);
+                    setLoadingConnections(false);
+                    return;
+                }
+
+                // Fetch full user objects for all connections
+                const usersRef = collection(db, 'users');
+                const q = query(usersRef, where('uid', 'in', connectionIds));
+                const snapshot = await getDocs(q);
+                
+                const fetchedConnections = snapshot.docs.map(doc => doc.data() as User);
+                setConnections(fetchedConnections);
+            } catch (err) {
+                console.error('Error fetching connections:', err);
+            } finally {
+                setLoadingConnections(false);
+            }
+        };
+
+        fetchConnections();
+    }, [userData, activeTab]);
 
     const handleUpdateProfile = async (formData: ProfileFormData, profilePicFile?: File | null, isRemovingPic?: boolean) => {
         if (!userData) return;
@@ -179,57 +212,129 @@ export default function ProfilePage() {
                     </button>
                 </div>
 
-                {/* Stats */}
+                    {/* Stats */}
                 <div className="grid grid-cols-3 gap-4 mt-6 pt-6 border-t border-brand-ebony/10">
-                    <div className="text-center">
+                    <button 
+                        onClick={() => setActiveTab('posts')}
+                        className={`text-center p-2 rounded-xl transition ${activeTab === 'posts' ? 'bg-brand-burgundy/5 ring-1 ring-brand-burgundy/20' : 'hover:bg-brand-ebony/5'}`}
+                    >
                         <p className="text-2xl font-bold text-brand-ebony font-serif">{posts.length}</p>
                         <p className="text-xs text-brand-ebony/60 uppercase tracking-widest font-bold mt-1">Posts</p>
-                    </div>
-                    <div className="text-center border-l w-full border-brand-ebony/10">
+                    </button>
+                    <button 
+                        onClick={() => setActiveTab('connections')}
+                        className={`text-center border-l w-full border-brand-ebony/10 p-2 rounded-xl transition ${activeTab === 'connections' ? 'bg-brand-burgundy/5 ring-1 ring-brand-burgundy/20' : 'hover:bg-brand-ebony/5'}`}
+                    >
                         <p className="text-2xl font-bold text-brand-ebony font-serif">{userData.connections?.length || 0}</p>
                         <p className="text-xs text-brand-ebony/60 uppercase tracking-widest font-bold mt-1">Connections</p>
-                    </div>
-                    <div className="text-center border-l w-full border-brand-ebony/10">
+                    </button>
+                    <div className="text-center border-l w-full border-brand-ebony/10 p-2">
                         <p className="text-2xl font-bold text-brand-ebony font-serif">{userData.groups?.length || 0}</p>
                         <p className="text-xs text-brand-ebony/60 uppercase tracking-widest font-bold mt-1">Groups</p>
                     </div>
                 </div>
             </div>
 
-            {/* User Posts */}
+            {/* Content Tabs */}
             <div className="mt-8">
-                <h2 className="text-2xl font-serif font-bold text-brand-ebony mb-6 flex items-center gap-2">
-                    <span>My Posts</span>
-                    <span className="text-base font-normal text-brand-ebony/50">({posts.length})</span>
-                </h2>
-                <div className="space-y-4">
-                    {posts.length > 0 ? (
-                        posts.map(post => (
-                            <PostCard
-                                key={post.id}
-                                post={post}
-                                currentUser={userData}
-                                onLike={() => { /* no-op */ }}
-                                onComment={() => { /* no-op */ }}
-                                onShare={() => setSharingPost(post)}
-                            />
-                        ))
-                    ) : (
-                        <div className="bg-brand-parchment/80 border border-brand-ebony/10 rounded-xl shadow-sm p-12 text-center">
-                            <div className="w-16 h-16 bg-brand-ebony/5 rounded-full flex items-center justify-center mx-auto mb-4 border border-brand-ebony/10">
-                                <Pencil className="w-8 h-8 text-brand-ebony/30" />
-                            </div>
-                            <p className="text-brand-ebony/70 text-lg mb-2 font-serif italic">No posts yet</p>
-                            <p className="text-brand-ebony/50 text-sm">Share your first post to get started!</p>
-                            <Link
-                                href="/"
-                                className="inline-block mt-4 px-6 py-2.5 bg-brand-burgundy text-white rounded-lg hover:bg-[#5a2427] transition font-semibold text-sm tracking-wide shadow-sm"
-                            >
-                                Create Post
-                            </Link>
-                        </div>
-                    )}
+                <div className="flex border-b border-brand-ebony/10 mb-6">
+                    <button
+                        onClick={() => setActiveTab('posts')}
+                        className={`pb-3 px-6 text-sm font-bold uppercase tracking-widest transition-all relative ${
+                            activeTab === 'posts' ? 'text-brand-burgundy' : 'text-brand-ebony/40 hover:text-brand-ebony/60'
+                        }`}
+                    >
+                        My Feed
+                        {activeTab === 'posts' && <div className="absolute bottom-0 left-0 right-0 h-1 bg-brand-burgundy rounded-t-full" />}
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('connections')}
+                        className={`pb-3 px-6 text-sm font-bold uppercase tracking-widest transition-all relative ${
+                            activeTab === 'connections' ? 'text-brand-burgundy' : 'text-brand-ebony/40 hover:text-brand-ebony/60'
+                        }`}
+                    >
+                        Connections
+                        {activeTab === 'connections' && <div className="absolute bottom-0 left-0 right-0 h-1 bg-brand-burgundy rounded-t-full" />}
+                    </button>
                 </div>
+
+                {activeTab === 'posts' ? (
+                    <div className="space-y-4">
+                        {posts.length > 0 ? (
+                            posts.map(post => (
+                                <PostCard
+                                    key={post.id}
+                                    post={post}
+                                    currentUser={userData}
+                                    onLike={() => { /* no-op */ }}
+                                    onComment={() => { /* no-op */ }}
+                                    onShare={() => setSharingPost(post)}
+                                />
+                            ))
+                        ) : (
+                            <div className="bg-brand-parchment/80 border border-brand-ebony/10 rounded-xl shadow-sm p-12 text-center">
+                                <div className="w-16 h-16 bg-brand-ebony/5 rounded-full flex items-center justify-center mx-auto mb-4 border border-brand-ebony/10">
+                                    <Pencil className="w-8 h-8 text-brand-ebony/30" />
+                                </div>
+                                <p className="text-brand-ebony/70 text-lg mb-2 font-serif italic">No posts yet</p>
+                                <p className="text-brand-ebony/50 text-sm">Share your first post to get started!</p>
+                                <Link
+                                    href="/"
+                                    className="inline-block mt-4 px-6 py-2.5 bg-brand-burgundy text-white rounded-lg hover:bg-[#5a2427] transition font-semibold text-sm tracking-wide shadow-sm"
+                                >
+                                    Create Post
+                                </Link>
+                            </div>
+                        )}
+                    </div>
+                ) : (
+                    <div className="space-y-4">
+                        {loadingConnections ? (
+                            <div className="space-y-4">
+                                {[1, 2, 3].map(i => (
+                                    <div key={i} className="bg-brand-parchment/40 h-24 rounded-xl border border-brand-ebony/5 animate-pulse" />
+                                ))}
+                            </div>
+                        ) : connections.length > 0 ? (
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                {connections.map(connection => (
+                                    <div key={connection.uid} className="bg-brand-parchment/60 border border-brand-ebony/10 rounded-xl p-4 flex items-center gap-4 hover:shadow-md transition group">
+                                        <img 
+                                            src={connection.profilePic || `https://placehold.co/100x100/EFEFEFF/5a2427?text=${connection.name.substring(0, 1)}`}
+                                            alt={connection.name}
+                                            className="w-14 h-14 rounded-full border-2 border-white shadow-sm"
+                                        />
+                                        <div className="flex-1 min-w-0">
+                                            <h3 className="font-serif font-bold text-brand-ebony truncate group-hover:text-brand-burgundy transition-colors">{connection.name}</h3>
+                                            <p className="text-xs text-brand-ebony/60 truncate uppercase tracking-widest font-bold">Class of {connection.batch}</p>
+                                            <p className="text-sm text-brand-ebony/70 truncate mt-1">{connection.profession || 'Alumni'}</p>
+                                        </div>
+                                        <Link 
+                                            href={`/messages?userId=${connection.uid}&name=${encodeURIComponent(connection.name)}&pic=${encodeURIComponent(connection.profilePic || '')}`}
+                                            className="p-2 text-brand-burgundy hover:bg-brand-burgundy hover:text-white rounded-full transition"
+                                        >
+                                            <MessageCircle className="w-5 h-5" />
+                                        </Link>
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="bg-brand-parchment/80 border border-brand-ebony/10 rounded-xl shadow-sm p-12 text-center">
+                                <div className="w-16 h-16 bg-brand-ebony/5 rounded-full flex items-center justify-center mx-auto mb-4 border border-brand-ebony/10">
+                                    <span className="text-2xl">👥</span>
+                                </div>
+                                <p className="text-brand-ebony/70 text-lg mb-2 font-serif italic">No connections yet</p>
+                                <p className="text-brand-ebony/50 text-sm">Grow your network by connecting with fellow alumni!</p>
+                                <Link
+                                    href="/network"
+                                    className="inline-block mt-4 px-6 py-2.5 bg-brand-burgundy text-white rounded-lg hover:bg-[#5a2427] transition font-semibold text-sm tracking-wide shadow-sm"
+                                >
+                                    Find Alumni
+                                </Link>
+                            </div>
+                        )}
+                    </div>
+                )}
             </div>
 
             {/* Logout Section */}

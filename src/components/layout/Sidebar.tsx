@@ -19,8 +19,7 @@ export function Sidebar() {
     const pathname = usePathname();
 
     return (
-        <div className="flex flex-col h-full w-64 border-r border-brand-ebony/10 px-6 py-6 fixed left-0 top-0 overflow-y-auto hidden md:flex scrollbar-hide"
-            style={{ background: 'transparent' }}>
+        <div className="flex flex-col h-full w-64 border-r border-brand-ebony/10 px-6 py-6 fixed left-0 top-0 overflow-y-auto hidden md:flex scrollbar-hide z-40 bg-brand-cream/30 backdrop-blur-sm">
 
             <BrandHeader />
 

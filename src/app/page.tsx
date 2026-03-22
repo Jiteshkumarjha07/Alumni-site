@@ -12,6 +12,7 @@ import { CommentModal } from '@/components/modals/CommentModal';
 import { ConfirmDialog } from '@/components/modals/ConfirmDialog';
 import { SharePostModal } from '@/components/modals/SharePostModal';
 import { PenSquare, Camera, Image as ImageIcon, Paperclip } from 'lucide-react';
+import { RightSidebar } from '@/components/layout/RightSidebar';
 import Link from 'next/link';
 
 export default function HomePage() {
@@ -36,14 +37,20 @@ export default function HomePage() {
       orderBy('createdAt', 'desc')
     );
 
-    const unsubscribe = onSnapshot(postsQuery, (snapshot) => {
-      const fetchedPosts = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      })) as Post[];
-      setPosts(fetchedPosts);
-      setLoading(false);
-    });
+    const unsubscribe = onSnapshot(postsQuery, 
+      (snapshot) => {
+        const fetchedPosts = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        })) as Post[];
+        setPosts(fetchedPosts);
+        setLoading(false);
+      },
+      (error) => {
+        console.error('Error fetching posts:', error);
+        setLoading(false); // Still stop loading even on error
+      }
+    );
 
     return () => unsubscribe();
   }, [userData]);
@@ -165,75 +172,79 @@ export default function HomePage() {
   }
 
   return (
-    <div className="max-w-2xl mx-auto p-4 pt-8">
-      {/* Feed Header */}
-      <div className="flex items-center justify-between mb-8">
-        <div className="flex items-center gap-3">
-          <div className="h-10 w-1 bg-brand-burgundy rounded-full" />
-          <h1 className="text-3xl font-serif font-bold text-brand-ebony tracking-tight">The Feed</h1>
-        </div>
-        <div className="text-[10px] font-bold text-brand-gold uppercase tracking-[0.3em] bg-brand-gold/5 px-4 py-1.5 rounded-full border border-brand-gold/20 shadow-inner">
-          Premium Alumni Network
-        </div>
-      </div>
-
-      {/* Create Post Button Area */}
-      <div className="bg-brand-parchment/40 rounded-2xl border border-brand-ebony/10 p-5 mb-8 shadow-sm backdrop-blur-sm group hover:border-brand-burgundy/20 transition-all duration-300">
-        <div className="flex items-start gap-4 mb-4">
-          <img
-            src={userData.profilePic || `https://placehold.co/100x100/EFEFEFF/3D2B27?text=${userData.name.substring(0, 1)}`}
-            alt={userData.name}
-            className="w-12 h-12 rounded-full border-2 border-white shadow-sm"
-          />
-          <button
-            onClick={() => setShowCreatePost(true)}
-            className="flex-1 text-left px-5 py-3 bg-white/60 hover:bg-white border border-brand-ebony/10 rounded-xl text-brand-ebony/40 transition-all font-medium group-hover:shadow-inner"
-          >
-            Share something with your fellow alumni...
-          </button>
-        </div>
-        <div className="flex items-center justify-between pt-4 border-t border-brand-ebony/5">
-          <div className="flex gap-2">
-            <button onClick={() => setShowCreatePost(true)} className="p-2.5 text-brand-ebony/30 hover:text-brand-burgundy hover:bg-brand-burgundy/5 rounded-xl transition-all">
-              <Camera className="w-5 h-5" />
-            </button>
-            <button onClick={() => setShowCreatePost(true)} className="p-2.5 text-brand-ebony/30 hover:text-brand-burgundy hover:bg-brand-burgundy/5 rounded-xl transition-all">
-              <ImageIcon className="w-5 h-5" />
-            </button>
-            <button onClick={() => setShowCreatePost(true)} className="p-2.5 text-brand-ebony/30 hover:text-brand-burgundy hover:bg-brand-burgundy/5 rounded-xl transition-all">
-              <Paperclip className="w-5 h-5" />
-            </button>
+    <div className="min-h-screen lg:pr-80">
+      <div className="max-w-2xl mx-auto p-4 pt-8">
+        {/* Feed Header */}
+        <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-1 bg-brand-burgundy rounded-full" />
+            <h1 className="text-3xl font-serif font-bold text-brand-ebony tracking-tight">The Feed</h1>
           </div>
-          <button
-            onClick={() => setShowCreatePost(true)}
-            className="px-8 py-2 bg-brand-burgundy text-white rounded-xl font-bold hover:bg-[#5a2427] transition-all shadow-md shadow-brand-burgundy/20 hover:shadow-lg active:scale-95"
-          >
-            Post
-          </button>
+          <div className="text-[10px] font-bold text-brand-gold uppercase tracking-[0.3em] bg-brand-gold/5 px-4 py-1.5 rounded-full border border-brand-gold/20 shadow-inner">
+            Premium Alumni Network
+          </div>
         </div>
-      </div>
 
-      {/* Posts Feed */}
-      <div className="space-y-4">
-        {posts.length > 0 ? (
-          posts.map(post => (
-            <PostCard
-              key={post.id}
-              post={post}
-              currentUser={userData}
-              onLike={(isLiked) => handleLikePost(post.id, isLiked)}
-              onComment={() => setCommentingPost(post)}
-              onEdit={() => setEditingPost(post)}
-              onDelete={() => setDeletingPostId(post.id)}
-              onShare={() => setSharingPost(post)}
+        {/* Create Post Button Area */}
+        <div className="bg-brand-parchment/40 rounded-2xl border border-brand-ebony/10 p-5 mb-8 shadow-sm backdrop-blur-sm group hover:border-brand-burgundy/20 transition-all duration-300">
+          <div className="flex items-start gap-4 mb-4">
+            <img
+              src={userData.profilePic || `https://placehold.co/100x100/EFEFEFF/3D2B27?text=${userData.name.substring(0, 1)}`}
+              alt={userData.name}
+              className="w-12 h-12 rounded-full border-2 border-white shadow-sm"
             />
-          ))
-        ) : (
-          <div className="bg-white rounded-xl shadow-sm p-8 text-center">
-            <p className="text-gray-500">No posts yet. Be the first to share something!</p>
+            <button
+              onClick={() => setShowCreatePost(true)}
+              className="flex-1 text-left px-5 py-3 bg-white/60 hover:bg-white border border-brand-ebony/10 rounded-xl text-brand-ebony/40 transition-all font-medium group-hover:shadow-inner"
+            >
+              Share something with your fellow alumni...
+            </button>
           </div>
-        )}
+          <div className="flex items-center justify-between pt-4 border-t border-brand-ebony/5">
+            <div className="flex gap-2">
+              <button onClick={() => setShowCreatePost(true)} className="p-2.5 text-brand-ebony/30 hover:text-brand-burgundy hover:bg-brand-burgundy/5 rounded-xl transition-all">
+                <Camera className="w-5 h-5" />
+              </button>
+              <button onClick={() => setShowCreatePost(true)} className="p-2.5 text-brand-ebony/30 hover:text-brand-burgundy hover:bg-brand-burgundy/5 rounded-xl transition-all">
+                <ImageIcon className="w-5 h-5" />
+              </button>
+              <button onClick={() => setShowCreatePost(true)} className="p-2.5 text-brand-ebony/30 hover:text-brand-burgundy hover:bg-brand-burgundy/5 rounded-xl transition-all">
+                <Paperclip className="w-5 h-5" />
+              </button>
+            </div>
+            <button
+              onClick={() => setShowCreatePost(true)}
+              className="px-8 py-2 bg-brand-burgundy text-white rounded-xl font-bold hover:bg-[#5a2427] transition-all shadow-md shadow-brand-burgundy/20 hover:shadow-lg active:scale-95"
+            >
+              Post
+            </button>
+          </div>
+        </div>
+
+        {/* Posts Feed */}
+        <div className="space-y-4">
+          {posts.length > 0 ? (
+            posts.map(post => (
+              <PostCard
+                key={post.id}
+                post={post}
+                currentUser={userData}
+                onLike={(isLiked) => handleLikePost(post.id, isLiked)}
+                onComment={() => setCommentingPost(post)}
+                onEdit={() => setEditingPost(post)}
+                onDelete={() => setDeletingPostId(post.id)}
+                onShare={() => setSharingPost(post)}
+              />
+            ))
+          ) : (
+            <div className="bg-white rounded-xl shadow-sm p-8 text-center">
+              <p className="text-gray-500">No posts yet. Be the first to share something!</p>
+            </div>
+          )}
+        </div>
       </div>
+
+      <RightSidebar />
 
       {/* Modals */}
       <CreatePostModal
