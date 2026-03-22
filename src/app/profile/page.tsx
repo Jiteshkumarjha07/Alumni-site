@@ -2,15 +2,15 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { collection, query, where, orderBy, onSnapshot, updateDoc, doc, getDocs } from 'firebase/firestore';
+import { collection, query, where, orderBy, onSnapshot, updateDoc, doc, getDocs, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import { Post, User } from '@/types';
+import { Post, User, Group } from '@/types';
 import { PostCard } from '@/components/feed/PostCard';
 import { EditProfileModal, ProfileFormData } from '@/components/modals/EditProfileModal';
 import { ConfirmDialog } from '@/components/modals/ConfirmDialog';
 import { SharePostModal } from '@/components/modals/SharePostModal';
 import { uploadMedia } from '@/lib/media';
-import { Pencil, LogOut, MapPin, Briefcase, MessageCircle } from 'lucide-react';
+import { Pencil, LogOut, MapPin, Briefcase, MessageCircle, Users } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 
@@ -22,9 +22,11 @@ export default function ProfilePage() {
     const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
     const [updating, setUpdating] = useState(false);
     const [sharingPost, setSharingPost] = useState<Post | null>(null);
-    const [activeTab, setActiveTab] = useState<'posts' | 'connections'>('posts');
+    const [activeTab, setActiveTab] = useState<'posts' | 'connections' | 'groups'>('posts');
     const [connections, setConnections] = useState<User[]>([]);
     const [loadingConnections, setLoadingConnections] = useState(false);
+    const [userGroups, setUserGroups] = useState<Group[]>([]);
+    const [loadingGroups, setLoadingGroups] = useState(false);
 
     useEffect(() => {
         if (!userData) {
@@ -81,6 +83,41 @@ export default function ProfilePage() {
         };
 
         fetchConnections();
+    }, [userData, activeTab]);
+
+    useEffect(() => {
+        if (!userData || activeTab !== 'groups') return;
+
+        const fetchGroups = async () => {
+            setLoadingGroups(true);
+            try {
+                const groupIds = userData.groups || [];
+                if (groupIds.length === 0) {
+                    setUserGroups([]);
+                    setLoadingGroups(false);
+                    return;
+                }
+
+                // Fetch group objects individually to avoid the 10-item limit of 'in' queries
+                // and to guarantee we get the correct doc IDs
+                const groupPromises = groupIds.map(async (groupId) => {
+                    const groupDoc = await getDoc(doc(db, 'groups', groupId));
+                    if (groupDoc.exists()) {
+                        return { id: groupDoc.id, ...groupDoc.data() } as Group;
+                    }
+                    return null;
+                });
+                
+                const fetchedGroups = (await Promise.all(groupPromises)).filter((g): g is Group => g !== null);
+                setUserGroups(fetchedGroups);
+            } catch (err) {
+                console.error('Error fetching groups:', err);
+            } finally {
+                setLoadingGroups(false);
+            }
+        };
+
+        fetchGroups();
     }, [userData, activeTab]);
 
     const handleUpdateProfile = async (formData: ProfileFormData, profilePicFile?: File | null, isRemovingPic?: boolean) => {
@@ -228,10 +265,13 @@ export default function ProfilePage() {
                         <p className="text-2xl font-bold text-brand-ebony font-serif">{userData.connections?.length || 0}</p>
                         <p className="text-xs text-brand-ebony/60 uppercase tracking-widest font-bold mt-1">Connections</p>
                     </button>
-                    <div className="text-center border-l w-full border-brand-ebony/10 p-2">
+                    <button 
+                        onClick={() => setActiveTab('groups')}
+                        className={`text-center border-l w-full border-brand-ebony/10 p-2 rounded-xl transition ${activeTab === 'groups' ? 'bg-brand-burgundy/5 ring-1 ring-brand-burgundy/20' : 'hover:bg-brand-ebony/5'}`}
+                    >
                         <p className="text-2xl font-bold text-brand-ebony font-serif">{userData.groups?.length || 0}</p>
                         <p className="text-xs text-brand-ebony/60 uppercase tracking-widest font-bold mt-1">Groups</p>
-                    </div>
+                    </button>
                 </div>
             </div>
 
@@ -255,6 +295,15 @@ export default function ProfilePage() {
                     >
                         Connections
                         {activeTab === 'connections' && <div className="absolute bottom-0 left-0 right-0 h-1 bg-brand-burgundy rounded-t-full" />}
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('groups')}
+                        className={`pb-3 px-6 text-sm font-bold uppercase tracking-widest transition-all relative ${
+                            activeTab === 'groups' ? 'text-brand-burgundy' : 'text-brand-ebony/40 hover:text-brand-ebony/60'
+                        }`}
+                    >
+                        Groups
+                        {activeTab === 'groups' && <div className="absolute bottom-0 left-0 right-0 h-1 bg-brand-burgundy rounded-t-full" />}
                     </button>
                 </div>
 
@@ -287,7 +336,7 @@ export default function ProfilePage() {
                             </div>
                         )}
                     </div>
-                ) : (
+                ) : activeTab === 'connections' ? (
                     <div className="space-y-4">
                         {loadingConnections ? (
                             <div className="space-y-4">
@@ -334,7 +383,44 @@ export default function ProfilePage() {
                             </div>
                         )}
                     </div>
-                )}
+                ) : activeTab === 'groups' ? (
+                    <div className="space-y-4">
+                        {loadingGroups ? (
+                            <div className="space-y-4">
+                                {[1, 2].map(i => (
+                                    <div key={i} className="bg-brand-parchment/40 h-24 rounded-xl border border-brand-ebony/5 animate-pulse" />
+                                ))}
+                            </div>
+                        ) : userGroups.length > 0 ? (
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                {userGroups.map(group => (
+                                    <div key={group.id} className="bg-brand-parchment/60 border border-brand-ebony/10 rounded-xl p-5 flex items-center justify-between hover:shadow-md transition group">
+                                        <div className="flex items-center gap-4 min-w-0">
+                                            <div className="w-12 h-12 rounded-lg bg-brand-burgundy/10 flex items-center justify-center flex-shrink-0 text-brand-burgundy font-bold text-xl border border-brand-burgundy/20 group-hover:bg-brand-burgundy group-hover:text-white transition-colors">
+                                                {group.groupName.substring(0, 1).toUpperCase()}
+                                            </div>
+                                            <div className="min-w-0">
+                                                <h3 className="font-serif font-bold text-brand-ebony truncate text-lg group-hover:text-brand-burgundy transition-colors">{group.groupName}</h3>
+                                                <div className="flex items-center gap-1 mt-0.5 text-brand-ebony/50 text-xs font-bold uppercase tracking-wider">
+                                                    <Users className="w-3.5 h-3.5" />
+                                                    {group.members?.length || 0} Members
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="bg-brand-parchment/80 border border-brand-ebony/10 rounded-xl shadow-sm p-12 text-center">
+                                <div className="w-16 h-16 bg-brand-ebony/5 rounded-full flex items-center justify-center mx-auto mb-4 border border-brand-ebony/10">
+                                    <Users className="w-8 h-8 text-brand-ebony/30" />
+                                </div>
+                                <p className="text-brand-ebony/70 text-lg mb-2 font-serif italic">No groups joined yet</p>
+                                <p className="text-brand-ebony/50 text-sm">Discover and join communities representing your interests!</p>
+                            </div>
+                        )}
+                    </div>
+                ) : null}
             </div>
 
             {/* Logout Section */}

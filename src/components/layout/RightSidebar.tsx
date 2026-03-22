@@ -1,14 +1,18 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { UserPlus, TrendingUp } from 'lucide-react';
+import { UserPlus, TrendingUp, X } from 'lucide-react';
 import Image from 'next/image';
 import { useAuth } from '@/contexts/AuthContext';
 import { collection, query, onSnapshot, updateDoc, arrayUnion, doc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { User } from '@/types';
+interface RightSidebarProps {
+    isOpen?: boolean;
+    onClose?: () => void;
+}
 
-export function RightSidebar() {
+export function RightSidebar({ isOpen = false, onClose = () => {} }: RightSidebarProps) {
     const { userData } = useAuth();
     const [suggestions, setSuggestions] = useState<User[]>([]);
     const [loading, setLoading] = useState(true);
@@ -62,25 +66,50 @@ export function RightSidebar() {
 
     if (loading) {
         return (
-            <div className="hidden lg:block w-80 fixed right-0 top-0 h-full p-6 overflow-y-auto border-l border-brand-ebony/10 bg-brand-parchment/30">
-                <div className="animate-pulse flex flex-col gap-4">
-                    <div className="h-6 bg-brand-ebony/10 rounded w-1/2 mb-4"></div>
-                    {[1, 2, 3].map(i => (
-                        <div key={i} className="flex gap-3 items-center">
-                            <div className="w-10 h-10 rounded-full bg-brand-ebony/10"></div>
-                            <div className="flex-1 space-y-2">
-                                <div className="h-4 bg-brand-ebony/10 rounded w-3/4"></div>
-                                <div className="h-3 bg-brand-ebony/10 rounded w-1/2"></div>
+            <>
+                {isOpen && (
+                    <div 
+                        className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40 lg:hidden"
+                        onClick={onClose}
+                    />
+                )}
+                <div className={`w-80 fixed right-0 top-0 h-full p-6 overflow-y-auto border-l border-brand-ebony/10 bg-brand-parchment/95 backdrop-blur-xl z-50 transition-transform duration-300 ${isOpen ? 'translate-x-0 shadow-2xl lg:shadow-md' : 'translate-x-full'}`}>
+                    <div className="animate-pulse flex flex-col gap-4 mt-8">
+                        <div className="h-6 bg-brand-ebony/10 rounded w-1/2 mb-4"></div>
+                        {[1, 2, 3].map(i => (
+                            <div key={i} className="flex gap-3 items-center">
+                                <div className="w-10 h-10 rounded-full bg-brand-ebony/10"></div>
+                                <div className="flex-1 space-y-2">
+                                    <div className="h-4 bg-brand-ebony/10 rounded w-3/4"></div>
+                                    <div className="h-3 bg-brand-ebony/10 rounded w-1/2"></div>
+                                </div>
                             </div>
-                        </div>
-                    ))}
+                        ))}
+                    </div>
                 </div>
-            </div>
+            </>
         );
     }
 
     return (
-        <div className="hidden lg:block w-80 fixed right-0 top-0 h-full p-6 overflow-y-auto border-l border-brand-ebony/10 bg-brand-parchment/30 backdrop-blur-sm z-10">
+        <>
+            {/* Mobile Backdrop */}
+            {isOpen && (
+                <div 
+                    className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40 lg:hidden transition-opacity"
+                    onClick={onClose}
+                />
+            )}
+            
+            <div className={`w-80 fixed right-0 top-0 h-full p-6 overflow-y-auto border-l border-brand-ebony/10 bg-brand-parchment/95 lg:bg-brand-parchment/40 backdrop-blur-xl z-50 transition-transform duration-300 ${isOpen ? 'translate-x-0 shadow-2xl lg:shadow-md' : 'translate-x-full'}`}>
+                
+                {/* Close Button */}
+                <button 
+                    onClick={onClose}
+                    className="absolute top-4 right-4 p-2 text-brand-ebony/50 hover:text-brand-burgundy hover:bg-brand-burgundy/10 rounded-full transition-colors z-10"
+                >
+                    <X className="w-5 h-5" />
+                </button>
             {/* Suggestions */}
             <div className="mb-10">
                 <h2 className="text-brand-ebony font-serif font-bold text-lg mb-5 flex items-center">
@@ -150,5 +179,6 @@ export function RightSidebar() {
                 </svg>
             </div>
         </div>
+        </>
     );
 }

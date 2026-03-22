@@ -11,7 +11,7 @@ import { EditPostModal } from '@/components/modals/EditPostModal';
 import { CommentModal } from '@/components/modals/CommentModal';
 import { ConfirmDialog } from '@/components/modals/ConfirmDialog';
 import { SharePostModal } from '@/components/modals/SharePostModal';
-import { PenSquare, Camera, Image as ImageIcon, Paperclip } from 'lucide-react';
+import { PenSquare, Camera, Image as ImageIcon, Paperclip, Users } from 'lucide-react';
 import { RightSidebar } from '@/components/layout/RightSidebar';
 import Link from 'next/link';
 
@@ -24,6 +24,7 @@ export default function HomePage() {
   const [commentingPost, setCommentingPost] = useState<Post | null>(null);
   const [deletingPostId, setDeletingPostId] = useState<string | null>(null);
   const [sharingPost, setSharingPost] = useState<Post | null>(null);
+  const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(false);
 
   // Fetch posts from Firebase
   useEffect(() => {
@@ -172,16 +173,25 @@ export default function HomePage() {
   }
 
   return (
-    <div className="min-h-screen lg:pr-80">
+    <div className={`min-h-screen transition-all duration-300 ${isRightSidebarOpen ? 'lg:pr-80' : ''}`}>
       <div className="max-w-2xl mx-auto p-4 pt-8">
         {/* Feed Header */}
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex flex-wrap items-center justify-between mb-8 gap-4">
           <div className="flex items-center gap-3">
             <div className="h-10 w-1 bg-brand-burgundy rounded-full" />
             <h1 className="text-3xl font-serif font-bold text-brand-ebony tracking-tight">The Feed</h1>
           </div>
-          <div className="text-[10px] font-bold text-brand-gold uppercase tracking-[0.3em] bg-brand-gold/5 px-4 py-1.5 rounded-full border border-brand-gold/20 shadow-inner">
-            Premium Alumni Network
+          <div className="flex items-center gap-3">
+            <button
+               onClick={() => setIsRightSidebarOpen(true)}
+               className="lg:hidden flex items-center gap-2 px-4 py-2 bg-brand-burgundy/10 text-brand-burgundy rounded-full text-sm font-bold hover:bg-brand-burgundy/20 transition-all border border-brand-burgundy/20 shadow-sm"
+            >
+               <Users className="w-4 h-4" />
+               <span className="hidden sm:inline tracking-wider uppercase text-xs">Suggestions</span>
+            </button>
+            <div className="hidden sm:block text-[10px] font-bold text-brand-gold uppercase tracking-[0.3em] bg-brand-gold/5 px-4 py-1.5 rounded-full border border-brand-gold/20 shadow-inner">
+              Premium Alumni Network
+            </div>
           </div>
         </div>
 
@@ -244,7 +254,7 @@ export default function HomePage() {
         </div>
       </div>
 
-      <RightSidebar />
+      <RightSidebar isOpen={isRightSidebarOpen} onClose={() => setIsRightSidebarOpen(false)} />
 
       {/* Modals */}
       <CreatePostModal
