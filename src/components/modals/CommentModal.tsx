@@ -1,23 +1,27 @@
 'use client';
 
 import { useState } from 'react';
-import { X, Send } from 'lucide-react';
-import { Comment } from '@/types';
+import { X, Send, Trash2 } from 'lucide-react';
+import { Comment as AppComment } from '@/types';
 
 interface CommentModalProps {
     isOpen: boolean;
     onClose: () => void;
     onSubmit: (text: string) => Promise<void>;
-    comments: Comment[];
+    onDelete?: (comment: AppComment) => Promise<void>;
+    comments: AppComment[];
     postAuthor: string;
+    currentUserUid?: string;
 }
 
 export const CommentModal: React.FC<CommentModalProps> = ({
     isOpen,
     onClose,
     onSubmit,
+    onDelete,
     comments,
     postAuthor,
+    currentUserUid,
 }) => {
     const [commentText, setCommentText] = useState('');
     const [loading, setLoading] = useState(false);
@@ -71,9 +75,19 @@ export const CommentModal: React.FC<CommentModalProps> = ({
                                     </span>
                                 </div>
                                 <div className="flex-1">
-                                    <div className="bg-gray-100 rounded-lg p-3">
+                                    <div className="bg-gray-100 rounded-lg p-3 relative group/comment">
                                         <p className="font-semibold text-sm">{comment.authorName}</p>
                                         <p className="text-gray-800 mt-1">{comment.text}</p>
+                                        
+                                        {onDelete && currentUserUid === comment.authorUid && (
+                                            <button
+                                                onClick={() => onDelete(comment)}
+                                                className="absolute top-2 right-2 p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all opacity-0 group-hover/comment:opacity-100"
+                                                title="Delete comment"
+                                            >
+                                                <Trash2 className="w-4 h-4" />
+                                            </button>
+                                        )}
                                     </div>
                                     <p className="text-xs text-gray-500 mt-1">
                                         {formatDate(comment.createdAt)}

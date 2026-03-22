@@ -4,11 +4,12 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { doc, getDoc, updateDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import { Post } from '@/types';
+import { Post, Comment as AppComment } from '@/types';
 import { PostCard } from '@/components/feed/PostCard';
 import { ArrowLeft, Loader2 } from 'lucide-react';
 import { useRouter, useParams } from 'next/navigation';
 import { SharePostModal } from '@/components/modals/SharePostModal';
+import { CommentModal } from '@/components/modals/CommentModal';
 
 export default function PostDetailPage() {
     const { userData, loading: authLoading } = useAuth();
@@ -19,6 +20,7 @@ export default function PostDetailPage() {
     const [post, setPost] = useState<Post | null>(null);
     const [loading, setLoading] = useState(true);
     const [sharingPost, setSharingPost] = useState<Post | null>(null);
+    const [isCommenting, setIsCommenting] = useState(false);
 
     useEffect(() => {
         if (!authLoading && !userData) {
@@ -49,7 +51,41 @@ export default function PostDetailPage() {
         if (!userData || !post) return;
         const postRef = doc(db, 'posts', post.id);
         await updateDoc(postRef, {
-            likes: isLiked ? arrayUnion(userData.uid) : arrayRemove(userData.uid)
+            likes: isLiked ? arrayRemove(userData.uid) : arrayUnion(userData.uid)
+        });
+    };
+
+    const handleAddComment = async (text: string) => {
+        if (!userData || !post) return;
+        const postRef = doc(db, 'posts', post.id);
+        const newComment = {
+            authorUid: userData.uid,
+            authorName: userData.name,
+            text,
+            createdAt: new Date()
+        };
+        await updateDoc(postRef, {
+            comments: arrayUnion(newComment)
+        });
+        // Update local state to show new comment immediately
+        setPost({
+            ...post,
+            comments: [...(post.comments || []), newComment as any]
+        });
+    };
+
+    const handleDeleteComment = async (comment: AppComment) => {
+        if (!userData || !post) return;
+        const postRef = doc(db, 'posts', post.id);
+        await updateDoc(postRef, {
+            comments: arrayRemove(comment)
+        });
+        // Update local state
+        setPost({
+            ...post,
+            comments: (post.comments || []).filter(c => 
+                !(c.authorUid === comment.authorUid && c.text === comment.text && c.createdAt === comment.createdAt)
+            )
         });
     };
 
@@ -92,9 +128,21 @@ export default function PostDetailPage() {
                 post={post}
                 currentUser={userData!}
                 onLike={handleLike}
-                onComment={() => { /* Comment focus logic could go here */ }}
+                onComment={() => setIsCommenting(true)}
                 onShare={() => setSharingPost(post)}
             />
+
+            {isCommenting && (
+                <CommentModal
+                    isOpen={true}
+                    onClose={() => setIsCommenting(false)}
+                    onSubmit={handleAddComment}
+                    onDelete={handleDeleteComment}
+                    comments={post.comments || []}
+                    postAuthor={post.authorName}
+                    currentUserUid={userData!.uid}
+                />
+            )}
 
             {sharingPost && (
                 <SharePostModal

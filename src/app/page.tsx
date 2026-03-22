@@ -2,9 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { collection, query, orderBy, onSnapshot, addDoc, updateDoc, deleteDoc, doc, serverTimestamp } from 'firebase/firestore';
+import { collection, query, orderBy, onSnapshot, addDoc, updateDoc, deleteDoc, doc, serverTimestamp, arrayRemove } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import { Post } from '@/types';
+import { Post, Comment as AppComment } from '@/types';
 import { PostCard } from '@/components/feed/PostCard';
 import { CreatePostModal } from '@/components/modals/CreatePostModal';
 import { EditPostModal } from '@/components/modals/EditPostModal';
@@ -84,29 +84,38 @@ export default function HomePage() {
     await updateDoc(postRef, { likes: updatedLikes });
   };
 
-  const handleAddComment = async (text: string) => {
-    if (!userData || !commentingPost) return;
+    const handleAddComment = async (text: string) => {
+        if (!userData || !commentingPost) return;
 
-    const postRef = doc(db, 'posts', commentingPost.id);
-    const post = posts.find(p => p.id === commentingPost.id);
-    if (!post) return;
+        const postRef = doc(db, 'posts', commentingPost.id);
+        const post = posts.find(p => p.id === commentingPost.id);
+        if (!post) return;
 
-    const newComment = {
-      authorUid: userData.uid,
-      authorName: userData.name,
-      text,
-      createdAt: new Date()
+        const newComment = {
+            authorUid: userData.uid,
+            authorName: userData.name,
+            text,
+            createdAt: new Date()
+        };
+
+        const updatedComments = [...(post.comments || []), newComment];
+        await updateDoc(postRef, { comments: updatedComments });
     };
 
-    const updatedComments = [...(post.comments || []), newComment];
-    await updateDoc(postRef, { comments: updatedComments });
-  };
+    const handleDeleteComment = async (comment: AppComment) => {
+        if (!userData || !commentingPost) return;
 
-  const handleDeletePost = async () => {
-    if (!deletingPostId) return;
-    await deleteDoc(doc(db, 'posts', deletingPostId));
-    setDeletingPostId(null);
-  };
+        const postRef = doc(db, 'posts', commentingPost.id);
+        await updateDoc(postRef, {
+            comments: arrayRemove(comment)
+        });
+    };
+
+    const handleDeletePost = async () => {
+        if (!deletingPostId) return;
+        await deleteDoc(doc(db, 'posts', deletingPostId));
+        setDeletingPostId(null);
+    };
 
   if (authLoading || loading) {
     return (
@@ -257,8 +266,10 @@ export default function HomePage() {
           isOpen={true}
           onClose={() => setCommentingPost(null)}
           onSubmit={handleAddComment}
+          onDelete={handleDeleteComment}
           comments={commentingPost.comments || []}
           postAuthor={commentingPost.authorName}
+          currentUserUid={userData.uid}
         />
       )}
 
