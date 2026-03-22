@@ -13,6 +13,10 @@ export const mockUsers: User[] = [
         profession: 'Senior Software Engineer at TechCorp',
         location: 'San Francisco, CA',
         connections: [],
+        pendingRequests: [],
+        sentRequests: [],
+        groups: [],
+        isAdmin: false,
     },
     {
         uid: '2',
@@ -23,6 +27,10 @@ export const mockUsers: User[] = [
         profession: 'Product Designer | UX Enthusiast',
         location: 'New York, NY',
         connections: [],
+        pendingRequests: [],
+        sentRequests: [],
+        groups: [],
+        isAdmin: false,
     },
     {
         uid: '3',
@@ -33,6 +41,10 @@ export const mockUsers: User[] = [
         profession: 'Marketing Strategist',
         location: 'London, UK',
         connections: [],
+        pendingRequests: [],
+        sentRequests: [],
+        groups: [],
+        isAdmin: false,
     }
 ];
 
@@ -74,6 +86,7 @@ export const mockJobs: Job[] = [
         postedByName: 'Admin',
         postedByBatch: 2010,
         createdAt: mockTimestamp,
+        expiresAt: null,
     },
     {
         id: '2',
@@ -86,6 +99,7 @@ export const mockJobs: Job[] = [
         postedByName: 'Admin',
         postedByBatch: 2010,
         createdAt: mockTimestamp,
+        expiresAt: null,
     }
 ];
 

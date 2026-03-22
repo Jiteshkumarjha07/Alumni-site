@@ -36,7 +36,7 @@ export function RightSidebar() {
                                 </div>
                             </div>
                             <button className="text-blue-600 text-xs font-semibold hover:bg-blue-50 px-2 py-1 rounded">
-                                Follow
+                                Connect
                             </button>
                         </div>
                     ))}

@@ -54,7 +54,7 @@ export function ProfileHeader({ user }: ProfileHeaderProps) {
                             Joined 2024
                         </span>
                         <span className="text-blue-600 font-medium">
-                            {user.connections} connections
+                            {user.connections?.length || 0} connections
                         </span>
                     </div>
 

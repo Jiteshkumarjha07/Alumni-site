@@ -9,9 +9,17 @@ import { JobCard } from '@/components/jobs/JobCard';
 import { CreateOpportunityModal, OpportunityFormData } from '@/components/modals/CreateOpportunityModal';
 import { ConfirmDialog } from '@/components/modals/ConfirmDialog';
 import { Briefcase, Plus } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
 export default function JobsPage() {
     const { userData, loading: authLoading } = useAuth();
+    const router = useRouter();
+
+    useEffect(() => {
+        if (!authLoading && !userData) {
+            router.push('/login');
+        }
+    }, [userData, authLoading, router]);
     const [jobs, setJobs] = useState<Job[]>([]);
     const [loading, setLoading] = useState(true);
     const [showCreateModal, setShowCreateModal] = useState(false);
@@ -92,13 +100,9 @@ export default function JobsPage() {
         );
     }
 
-    if (!userData) {
-        return (
-            <div className="flex items-center justify-center min-h-screen">
-                <p className="text-gray-600">Please log in to view job opportunities</p>
-            </div>
-        );
-    }
+    if (!userData) return null; // Wait for redirect
+
+
 
     return (
         <div className="max-w-6xl mx-auto p-4 pt-8">

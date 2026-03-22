@@ -7,9 +7,17 @@ import { db } from '@/lib/firebase';
 import { User } from '@/types';
 import { AlumniCard } from '@/components/network/AlumniCard';
 import { Users, Search } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
 export default function NetworkPage() {
     const { userData, loading: authLoading } = useAuth();
+    const router = useRouter();
+
+    useEffect(() => {
+        if (!authLoading && !userData) {
+            router.push('/login');
+        }
+    }, [userData, authLoading, router]);
     const [allUsers, setAllUsers] = useState<User[]>([]);
     const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
@@ -120,13 +128,9 @@ export default function NetworkPage() {
         );
     }
 
-    if (!userData) {
-        return (
-            <div className="flex items-center justify-center min-h-screen">
-                <p className="text-gray-600">Please log in to view the network</p>
-            </div>
-        );
-    }
+    if (!userData) return null; // Wait for redirect
+
+
 
     return (
         <div className="max-w-6xl mx-auto p-4 pt-8">

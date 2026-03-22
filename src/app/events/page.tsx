@@ -9,9 +9,17 @@ import { EventCard } from '@/components/events/EventCard';
 import { CreateEventModal, EventFormData } from '@/components/modals/CreateEventModal';
 import { Calendar as CalendarIcon, Plus, Loader2 } from 'lucide-react';
 import { uploadMedia } from '@/lib/media';
+import { useRouter } from 'next/navigation';
 
 export default function EventsPage() {
     const { userData, loading: authLoading } = useAuth();
+    const router = useRouter();
+
+    useEffect(() => {
+        if (!authLoading && !userData) {
+            router.push('/login');
+        }
+    }, [userData, authLoading, router]);
     const [events, setEvents] = useState<Event[]>([]);
     const [loading, setLoading] = useState(true);
     const [showCreateModal, setShowCreateModal] = useState(false);
@@ -68,6 +76,8 @@ export default function EventsPage() {
             </div>
         );
     }
+
+    if (!userData) return null; // Wait for redirect
 
     return (
         <div className="max-w-6xl mx-auto pt-8 px-4 pb-20 md:pb-6">

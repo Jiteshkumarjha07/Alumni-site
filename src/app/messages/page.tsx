@@ -17,6 +17,12 @@ function MessagesClient() {
     const router = useRouter();
     const searchParams = useSearchParams();
 
+    useEffect(() => {
+        if (!authLoading && !userData) {
+            router.push('/login');
+        }
+    }, [userData, authLoading, router]);
+
     const [chats, setChats] = useState<Chat[]>([]);
     const [loadingChats, setLoadingChats] = useState(true);
 
@@ -121,13 +127,7 @@ function MessagesClient() {
         );
     }
 
-    if (!userData) {
-        return (
-            <div className="flex h-[calc(100vh-4rem)] items-center justify-center">
-                <p className="text-gray-500">Please log in to view messages.</p>
-            </div>
-        );
-    }
+    if (!userData) return null; // Wait for redirect
 
     return (
         <div className="h-[calc(100vh-4rem)] bg-white max-w-6xl mx-auto md:p-4 p-0">

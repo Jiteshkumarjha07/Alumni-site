@@ -1,5 +1,7 @@
 'use client';
 
+'use client';
+
 import Link from 'next/link';
 import { Home, Users, Briefcase, User, Calendar, Settings, MessageSquare } from 'lucide-react';
 import { BrandHeader } from './BrandHeader';
