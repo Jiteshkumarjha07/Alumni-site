@@ -2,6 +2,7 @@ import React from 'react';
 import { Message } from '@/types';
 import { format } from 'date-fns';
 import { Share2 } from 'lucide-react';
+import Link from 'next/link';
 
 interface MessageBubbleProps {
     message: Message;
@@ -30,17 +31,19 @@ export function MessageBubble({ message, isOwnMessage }: MessageBubbleProps) {
                         }`}
                 >
                     {message.sharedPostId && (
-                        <div className={`mb-2 p-3 rounded-xl border ${isOwnMessage ? 'bg-white/10 border-white/20 text-white' : 'bg-gray-50 border-gray-100 text-gray-800'}`}>
-                            <div className="flex items-center gap-2 mb-1 opacity-70">
-                                <Share2 className="w-3 h-3" />
-                                <span className="text-[10px] uppercase tracking-wider font-bold">Shared Post</span>
+                        <Link href={`/posts/${message.sharedPostId}`} className="block focus:outline-none">
+                            <div className={`mb-2 p-3 rounded-xl border cursor-pointer hover:shadow-md transition-all ${isOwnMessage ? 'bg-white/10 border-white/20 text-white hover:bg-white/20' : 'bg-gray-50 border-gray-100 text-gray-800 hover:bg-white'}`}>
+                                <div className="flex items-center gap-2 mb-1 opacity-70">
+                                    <Share2 className="w-3 h-3" />
+                                    <span className="text-[10px] uppercase tracking-wider font-bold">Open Shared Post</span>
+                                </div>
+                                <p className="text-xs font-bold mb-1 font-serif italic">By {message.sharedPostAuthor}</p>
+                                {message.sharedPostImage && (
+                                    <img src={message.sharedPostImage} alt="Shared" className="w-full h-24 object-cover rounded-lg mb-2" />
+                                )}
+                                <p className="text-xs line-clamp-2 opacity-90">{message.sharedPostContent}</p>
                             </div>
-                            <p className="text-xs font-bold mb-1 font-serif italic">By {message.sharedPostAuthor}</p>
-                            {message.sharedPostImage && (
-                                <img src={message.sharedPostImage} alt="Shared" className="w-full h-24 object-cover rounded-lg mb-2" />
-                            )}
-                            <p className="text-xs line-clamp-2 opacity-90">{message.sharedPostContent}</p>
-                        </div>
+                        </Link>
                     )}
                     <p className="text-sm whitespace-pre-wrap word-break break-words">
                         {message.text}
