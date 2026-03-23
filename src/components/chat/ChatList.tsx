@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useState, useEffect } from 'react';
 import { Chat, User } from '@/types';
 import { collection, query, getDocs, where, onSnapshot } from 'firebase/firestore';

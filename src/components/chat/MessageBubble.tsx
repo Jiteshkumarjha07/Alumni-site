@@ -1,3 +1,5 @@
+'use client';
+
 import React from 'react';
 import { Message } from '@/types';
 import { format } from 'date-fns';
