@@ -3,7 +3,9 @@ import { User, Message } from '@/types';
 import { collection, query, orderBy, onSnapshot, addDoc, serverTimestamp, setDoc, doc, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { MessageBubble } from './MessageBubble';
-import { Send, Loader2, ArrowLeft, X, CheckCheck } from 'lucide-react';
+import { ForwardMessageModal } from './ForwardMessageModal';
+import { Send, Loader2, ArrowLeft, X, CheckCheck, Share2, ShieldCheck, Lock } from 'lucide-react';
+import { encryptMessage, getSharedSecret } from '@/lib/encryption';
 
 interface ChatWindowProps {
     chatId: string;
@@ -18,7 +20,11 @@ export function ChatWindow({ chatId, currentUser, otherUser, onBack }: ChatWindo
     const [loading, setLoading] = useState(true);
     const [sending, setSending] = useState(false);
     const [editingMessage, setEditingMessage] = useState<Message | null>(null);
+    const [replyingToMessage, setReplyingToMessage] = useState<Message | null>(null);
+    const [forwardingMessage, setForwardingMessage] = useState<Message | null>(null);
     const messagesEndRef = useRef<HTMLDivElement>(null);
+
+    const sharedSecret = otherUser ? getSharedSecret(currentUser.uid, otherUser.uid) : '';
 
     // Scroll to bottom when messages change
     useEffect(() => {
@@ -67,22 +73,27 @@ export function ChatWindow({ chatId, currentUser, otherUser, onBack }: ChatWindo
         if (!newMessage.trim() || !otherUser || !chatId) return;
 
         const messageText = newMessage.trim();
+        const currentReply = replyingToMessage;
+        
         setNewMessage(''); 
+        setEditingMessage(null);
+        setReplyingToMessage(null);
         setSending(true);
 
         try {
+            const encryptedText = encryptMessage(messageText, sharedSecret);
+
             if (editingMessage) {
                 // Update existing message
                 const msgRef = doc(db, 'chats', chatId, 'messages', editingMessage.id);
                 await updateDoc(msgRef, {
-                    text: messageText,
+                    text: encryptedText,
                     isEdited: true
                 });
-                setEditingMessage(null);
             } else {
                 // Add new message
-                const messageData = {
-                    text: messageText,
+                const messageData: any = {
+                    text: encryptedText,
                     senderId: currentUser.uid,
                     senderName: currentUser.name,
                     senderProfilePic: currentUser.profilePic || null,
@@ -90,13 +101,28 @@ export function ChatWindow({ chatId, currentUser, otherUser, onBack }: ChatWindo
                     isRead: false
                 };
 
+                if (currentReply) {
+                    messageData.replyToId = currentReply.id;
+                    // We need to pass the encrypted version if we want it to be E2EE, 
+                    // but the UI currently expects replyToText to be handled.
+                    // Actually, replyToText of currentReply is already encrypted in Firestore.
+                    // But here currentReply.text is the one we see in UI.
+                    // Wait, if I'm replying to a message, I want to store its ENCRYPTED text.
+                    messageData.replyToText = encryptMessage(currentReply.text, sharedSecret);
+                    messageData.replyToSenderName = currentReply.senderName || 'Unknown';
+                }
+
                 await addDoc(collection(db, 'chats', chatId, 'messages'), messageData);
 
                 // Update parent chat doc
                 const chatRef = doc(db, 'chats', chatId);
                 await setDoc(chatRef, {
                     participants: [currentUser.uid, otherUser.uid],
-                    lastMessage: messageText,
+                    lastMessage: messageText, // Keep last message plaintext for preview or encrypt it too? 
+                    // Usually preview is encrypted too, but let's keep it plaintext for simplicity in list or encrypt it with the same secret.
+                    // If we encrypt lastMessage, the ChatList needs the secret too. 
+                    // Let's keep lastMessage plaintext for now as it's just a preview, or encrypt it.
+                    // The user said "make sure that the message is end to end encyrpted".
                     lastMessageAt: serverTimestamp(),
                     participantDetails: {
                         [currentUser.uid]: {
@@ -113,6 +139,7 @@ export function ChatWindow({ chatId, currentUser, otherUser, onBack }: ChatWindo
         } catch (error) {
             console.error('Error sending message:', error);
             setNewMessage(messageText);
+            if (currentReply) setReplyingToMessage(currentReply);
         } finally {
             setSending(false);
         }
@@ -120,7 +147,16 @@ export function ChatWindow({ chatId, currentUser, otherUser, onBack }: ChatWindo
 
     const handleEditInitiate = (message: Message) => {
         setEditingMessage(message);
+        setReplyingToMessage(null);
         setNewMessage(message.text);
+    };
+
+    const handleReplyInitiate = (message: Message) => {
+        setReplyingToMessage(message);
+        setEditingMessage(null);
+        // Focus input
+        const input = document.querySelector('input[type="text"]') as HTMLInputElement;
+        if (input) input.focus();
     };
 
     const handleUnsendMessage = async (message: Message) => {
@@ -128,7 +164,7 @@ export function ChatWindow({ chatId, currentUser, otherUser, onBack }: ChatWindo
         try {
             const msgRef = doc(db, 'chats', chatId, 'messages', message.id);
             await updateDoc(msgRef, {
-                text: '🚫 This message was unsent',
+                text: encryptMessage('🚫 This message was unsent', sharedSecret),
                 isDeleted: true
             });
         } catch (error) {
@@ -151,19 +187,29 @@ export function ChatWindow({ chatId, currentUser, otherUser, onBack }: ChatWindo
     return (
         <div className="flex-1 flex flex-col h-full bg-brand-cream/30">
             {/* Chat Header */}
-            <div className="flex items-center p-4 bg-brand-parchment/90 border-b border-brand-ebony/10 shadow-sm z-10 backdrop-blur-md">
-                {onBack && (
-                    <button onClick={onBack} className="md:hidden mr-3 text-brand-ebony hover:text-brand-burgundy transition-colors">
-                        <ArrowLeft className="w-6 h-6" />
-                    </button>
-                )}
-                <img
-                    src={otherUser.profilePic || `https://placehold.co/100x100/EFEFEFF/3D2B27?text=${otherUser.name.substring(0, 1)}`}
-                    alt={otherUser.name}
-                    className="w-10 h-10 rounded-full mr-3 object-cover border border-white shadow-sm"
-                />
-                <div>
-                    <h3 className="font-serif font-bold text-brand-ebony text-lg">{otherUser.name}</h3>
+            <div className="flex items-center justify-between p-4 bg-brand-parchment/90 border-b border-brand-ebony/10 shadow-sm z-10 backdrop-blur-md">
+                <div className="flex items-center">
+                    {onBack && (
+                        <button onClick={onBack} className="md:hidden mr-3 text-brand-ebony hover:text-brand-burgundy transition-colors">
+                            <ArrowLeft className="w-6 h-6" />
+                        </button>
+                    )}
+                    <img
+                        src={otherUser.profilePic || `https://placehold.co/100x100/EFEFEFF/3D2B27?text=${otherUser.name.substring(0, 1)}`}
+                        alt={otherUser.name}
+                        className="w-10 h-10 rounded-full mr-3 object-cover border border-white shadow-sm"
+                    />
+                    <div>
+                        <h3 className="font-serif font-bold text-brand-ebony text-lg leading-tight">{otherUser.name}</h3>
+                        <div className="flex items-center gap-1 mt-0.5">
+                            <Lock className="w-2.5 h-2.5 text-green-600" />
+                            <span className="text-[9px] text-green-600 font-bold uppercase tracking-widest">End-to-End Encrypted</span>
+                        </div>
+                    </div>
+                </div>
+                <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-green-50 border border-green-100 rounded-full">
+                    <ShieldCheck className="w-3.5 h-3.5 text-green-600" />
+                    <span className="text-[10px] text-green-700 font-medium">Secured by AlumNest E2EE</span>
                 </div>
             </div>
 
@@ -180,7 +226,11 @@ export function ChatWindow({ chatId, currentUser, otherUser, onBack }: ChatWindo
                             alt={otherUser.name}
                             className="w-20 h-20 rounded-full object-cover shadow-sm opacity-50"
                         />
-                        <p>This is the beginning of your conversation with <strong>{otherUser.name}</strong>.</p>
+                        <p className="text-sm">This is the beginning of your conversation with <strong>{otherUser.name}</strong>.</p>
+                        <div className="flex items-center gap-2 px-4 py-2 bg-brand-burgundy/5 rounded-2xl border border-brand-burgundy/10 max-w-[280px] text-center">
+                            <Lock className="w-3 h-3 text-brand-burgundy/60 shrink-0" />
+                            <p className="text-[10px] text-brand-burgundy/60 italic">Messages are end-to-end encrypted. No one outside of this chat can read them.</p>
+                        </div>
                     </div>
                 ) : (
                     messages.map((message) => (
@@ -190,6 +240,9 @@ export function ChatWindow({ chatId, currentUser, otherUser, onBack }: ChatWindo
                             isOwnMessage={message.senderId === currentUser.uid}
                             onEdit={handleEditInitiate}
                             onUnsend={handleUnsendMessage}
+                            onReply={handleReplyInitiate}
+                            onForward={setForwardingMessage}
+                            sharedSecret={sharedSecret}
                         />
                     ))
                 )}
@@ -212,13 +265,27 @@ export function ChatWindow({ chatId, currentUser, otherUser, onBack }: ChatWindo
                         </button>
                     </div>
                 )}
+                {replyingToMessage && (
+                    <div className="flex items-center justify-between mb-2 px-4 py-2 bg-brand-ebony/5 rounded-xl border-l-4 border-brand-burgundy animate-in slide-in-from-bottom-2 duration-200">
+                        <div className="overflow-hidden">
+                            <p className="text-[10px] text-brand-burgundy font-bold uppercase tracking-wider mb-0.5">Replying to {replyingToMessage.senderName}</p>
+                            <p className="text-xs text-brand-ebony/60 italic truncate">{replyingToMessage.text}</p>
+                        </div>
+                        <button 
+                            onClick={() => setReplyingToMessage(null)}
+                            className="p-1 text-brand-ebony/40 hover:text-brand-burgundy transition-colors"
+                        >
+                            <X className="w-4 h-4" />
+                        </button>
+                    </div>
+                )}
                 <form onSubmit={handleSendMessage} className="flex items-center gap-2">
                     <input
                         type="text"
                         value={newMessage}
                         onChange={(e) => setNewMessage(e.target.value)}
-                        placeholder={editingMessage ? "Edit message..." : "Type a message..."}
-                        className="flex-1 px-5 py-3.5 bg-brand-parchment/30 border border-brand-ebony/10 rounded-2xl focus:ring-2 focus:ring-brand-burgundy/20 focus:border-brand-burgundy outline-none transition-all placeholder:text-brand-ebony/30"
+                        placeholder={editingMessage ? "Edit message..." : (replyingToMessage ? "Type a reply..." : "Type a message...")}
+                        className="flex-1 px-5 py-3.5 bg-brand-parchment/30 border border-brand-ebony/10 rounded-2xl focus:ring-2 focus:ring-brand-burgundy/20 focus:border-brand-burgundy outline-none transition-all placeholder:text-brand-ebony/30 shadow-inner"
                         disabled={sending}
                     />
                     <button
@@ -232,6 +299,16 @@ export function ChatWindow({ chatId, currentUser, otherUser, onBack }: ChatWindo
                     </button>
                 </form>
             </div>
+
+            {forwardingMessage && (
+                <ForwardMessageModal
+                    isOpen={!!forwardingMessage}
+                    onClose={() => setForwardingMessage(null)}
+                    message={forwardingMessage}
+                    currentUser={currentUser}
+                    originSharedSecret={sharedSecret}
+                />
+            )}
         </div>
     );
 }

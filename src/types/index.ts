@@ -74,6 +74,11 @@ export interface Message {
   isRead?: boolean;
   readAt?: Timestamp;
   isEdited?: boolean;
+  isDeleted?: boolean;
+  isForwarded?: boolean;
+  replyToId?: string;
+  replyToText?: string;
+  replyToSenderName?: string;
   sharedPostId?: string;
   sharedPostContent?: string;
   sharedPostAuthor?: string;
