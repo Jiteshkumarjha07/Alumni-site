@@ -142,6 +142,17 @@ export const CommentModal: React.FC<CommentModalProps> = ({
 
                 {/* Comment Input */}
                 <div className="p-4 border-t">
+                    <div className="flex flex-wrap gap-2 mb-3">
+                        {['👍', '❤️', '😂', '😮', '😢', '🔥', '👏', '🙌', '✨', '💯'].map(emoji => (
+                            <button
+                                key={emoji}
+                                onClick={() => setCommentText(prev => prev + emoji)}
+                                className="w-8 h-8 flex items-center justify-center hover:bg-gray-100 rounded-lg transition text-xl"
+                            >
+                                {emoji}
+                            </button>
+                        ))}
+                    </div>
                     <div className="flex gap-2">
                         <input
                             type="text"
@@ -153,10 +164,14 @@ export const CommentModal: React.FC<CommentModalProps> = ({
                         />
                         <button
                             onClick={handleSubmit}
-                            disabled={!commentText.trim() || loading}
+                            disabled={!commentText.trim() || loading || !currentUserUid}
                             className="p-2 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                            <Send className="w-5 h-5" />
+                            {loading ? (
+                                <Loader2 className="w-5 h-5 animate-spin" />
+                            ) : (
+                                <Send className="w-5 h-5" />
+                            )}
                         </button>
                     </div>
                 </div>

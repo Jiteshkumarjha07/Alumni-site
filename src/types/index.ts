@@ -79,6 +79,8 @@ export interface Message {
   replyToId?: string;
   replyToText?: string;
   replyToSenderName?: string;
+  imageUrl?: string;
+  videoUrl?: string;
   sharedPostId?: string;
   sharedPostContent?: string;
   sharedPostAuthor?: string;

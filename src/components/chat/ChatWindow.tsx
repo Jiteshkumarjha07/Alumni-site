@@ -4,8 +4,9 @@ import { collection, query, orderBy, onSnapshot, addDoc, serverTimestamp, setDoc
 import { db } from '@/lib/firebase';
 import { MessageBubble } from './MessageBubble';
 import { ForwardMessageModal } from './ForwardMessageModal';
-import { Send, Loader2, ArrowLeft, X, CheckCheck, Share2, ShieldCheck, Lock } from 'lucide-react';
+import { Send, Loader2, ArrowLeft, X, CheckCheck, Share2, ShieldCheck, Lock, Image as ImageIcon, Video as VideoIcon, Plus, Trash2 } from 'lucide-react';
 import { encryptMessage, getSharedSecret } from '@/lib/encryption';
+import { uploadMedia, uploadVideo } from '@/lib/media';
 
 interface ChatWindowProps {
     chatId: string;
@@ -22,7 +23,11 @@ export function ChatWindow({ chatId, currentUser, otherUser, onBack }: ChatWindo
     const [editingMessage, setEditingMessage] = useState<Message | null>(null);
     const [replyingToMessage, setReplyingToMessage] = useState<Message | null>(null);
     const [forwardingMessage, setForwardingMessage] = useState<Message | null>(null);
+    const [uploadingMedia, setUploadingMedia] = useState(false);
+    const [mediaPreview, setMediaPreview] = useState<{ url: string; type: 'image' | 'video'; file: File } | null>(null);
     const messagesEndRef = useRef<HTMLDivElement>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+    const videoInputRef = useRef<HTMLInputElement>(null);
 
     const sharedSecret = otherUser ? getSharedSecret(currentUser.uid, otherUser.uid) : '';
 
@@ -70,21 +75,37 @@ export function ChatWindow({ chatId, currentUser, otherUser, onBack }: ChatWindo
 
     const handleSendMessage = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!newMessage.trim() || !otherUser || !chatId) return;
+        if ((!newMessage.trim() && !mediaPreview) || !otherUser || !chatId) return;
 
         const messageText = newMessage.trim();
         const currentReply = replyingToMessage;
+        const currentMedia = mediaPreview;
         
         setNewMessage(''); 
         setEditingMessage(null);
         setReplyingToMessage(null);
+        setMediaPreview(null);
         setSending(true);
 
         try {
-            const encryptedText = encryptMessage(messageText, sharedSecret);
+            let imageUrl = '';
+            let videoUrl = '';
+
+            if (currentMedia) {
+                setUploadingMedia(true);
+                if (currentMedia.type === 'image') {
+                    imageUrl = await uploadMedia(currentMedia.file) || '';
+                } else {
+                    videoUrl = await uploadVideo(currentMedia.file, `chats/${chatId}/videos`) || '';
+                }
+            }
+
+            const encryptedText = messageText ? encryptMessage(messageText, sharedSecret) : '';
+            const encryptedImageUrl = imageUrl ? encryptMessage(imageUrl, sharedSecret) : '';
+            const encryptedVideoUrl = videoUrl ? encryptMessage(videoUrl, sharedSecret) : '';
 
             if (editingMessage) {
-                // Update existing message
+                // Update existing message (only text editing supported for now)
                 const msgRef = doc(db, 'chats', chatId, 'messages', editingMessage.id);
                 await updateDoc(msgRef, {
                     text: encryptedText,
@@ -100,6 +121,9 @@ export function ChatWindow({ chatId, currentUser, otherUser, onBack }: ChatWindo
                     createdAt: serverTimestamp(),
                     isRead: false
                 };
+
+                if (encryptedImageUrl) messageData.imageUrl = encryptedImageUrl;
+                if (encryptedVideoUrl) messageData.videoUrl = encryptedVideoUrl;
 
                 if (currentReply) {
                     messageData.replyToId = currentReply.id;
@@ -139,10 +163,30 @@ export function ChatWindow({ chatId, currentUser, otherUser, onBack }: ChatWindo
         } catch (error) {
             console.error('Error sending message:', error);
             setNewMessage(messageText);
+            setMediaPreview(currentMedia);
             if (currentReply) setReplyingToMessage(currentReply);
         } finally {
             setSending(false);
+            setUploadingMedia(false);
         }
+    };
+
+    const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>, type: 'image' | 'video') => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        // Check file size (e.g., 20MB limit for video)
+        if (type === 'video' && file.size > 20 * 1024 * 1024) {
+            alert('Video file is too large. Please select a video under 20MB.');
+            return;
+        }
+
+        const url = URL.createObjectURL(file);
+        setMediaPreview({ url, type, file });
+        
+        // Focus input
+        const input = document.querySelector('input[type="text"]') as HTMLInputElement;
+        if (input) input.focus();
     };
 
     const handleEditInitiate = (message: Message) => {
@@ -279,25 +323,81 @@ export function ChatWindow({ chatId, currentUser, otherUser, onBack }: ChatWindo
                         </button>
                     </div>
                 )}
-                <form onSubmit={handleSendMessage} className="flex items-center gap-2">
-                    <input
-                        type="text"
-                        value={newMessage}
-                        onChange={(e) => setNewMessage(e.target.value)}
-                        placeholder={editingMessage ? "Edit message..." : (replyingToMessage ? "Type a reply..." : "Type a message...")}
-                        className="flex-1 px-5 py-3.5 bg-brand-parchment/30 border border-brand-ebony/10 rounded-2xl focus:ring-2 focus:ring-brand-burgundy/20 focus:border-brand-burgundy outline-none transition-all placeholder:text-brand-ebony/30 shadow-inner"
-                        disabled={sending}
-                    />
-                    <button
-                        type="submit"
-                        disabled={!newMessage.trim() || sending}
-                        className="p-3.5 bg-brand-burgundy text-white rounded-2xl hover:bg-[#5a2427] transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-md shadow-brand-burgundy/20 flex items-center justify-center min-w-[50px]"
-                    >
-                        {sending ? <Loader2 className="w-5 h-5 animate-spin" /> : (
-                            editingMessage ? <CheckCheck className="w-5 h-5" /> : <Send className="w-5 h-5 ml-0.5" />
+                
+                {mediaPreview && (
+                    <div className="mb-3 relative group w-fit">
+                        {mediaPreview.type === 'image' ? (
+                            <img src={mediaPreview.url} alt="Preview" className="h-32 w-auto rounded-xl border-2 border-brand-burgundy/20 object-cover shadow-md" />
+                        ) : (
+                            <video src={mediaPreview.url} className="h-32 w-auto rounded-xl border-2 border-brand-burgundy/20 shadow-md" muted />
                         )}
-                    </button>
-                </form>
+                        <button 
+                            onClick={() => setMediaPreview(null)}
+                            className="absolute -top-2 -right-2 p-1.5 bg-red-500 text-white rounded-full shadow-lg hover:bg-red-600 transition-colors z-20"
+                        >
+                            <X className="w-3 h-3" />
+                        </button>
+                        {uploadingMedia && (
+                            <div className="absolute inset-0 bg-black/40 rounded-xl flex items-center justify-center z-10">
+                                <Loader2 className="w-6 h-6 animate-spin text-white" />
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                <div className="flex items-center gap-2">
+                    <div className="flex gap-1">
+                        <button
+                            type="button"
+                            onClick={() => fileInputRef.current?.click()}
+                            className="p-3 text-brand-ebony/40 hover:text-brand-burgundy hover:bg-brand-burgundy/5 rounded-2xl transition-all"
+                            title="Send Image"
+                        >
+                            <ImageIcon className="w-5 h-5" />
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => videoInputRef.current?.click()}
+                            className="p-3 text-brand-ebony/40 hover:text-brand-burgundy hover:bg-brand-burgundy/5 rounded-2xl transition-all"
+                            title="Send Video"
+                        >
+                            <VideoIcon className="w-5 h-5" />
+                        </button>
+                        <input 
+                            type="file" 
+                            ref={fileInputRef} 
+                            onChange={(e) => handleFileSelect(e, 'image')} 
+                            accept="image/*" 
+                            className="hidden" 
+                        />
+                        <input 
+                            type="file" 
+                            ref={videoInputRef} 
+                            onChange={(e) => handleFileSelect(e, 'video')} 
+                            accept="video/*" 
+                            className="hidden" 
+                        />
+                    </div>
+                    <form onSubmit={handleSendMessage} className="flex-1 flex items-center gap-2">
+                        <input
+                            type="text"
+                            value={newMessage}
+                            onChange={(e) => setNewMessage(e.target.value)}
+                            placeholder={editingMessage ? "Edit message..." : (replyingToMessage ? "Type a reply..." : "Type a message...")}
+                            className="flex-1 px-5 py-3.5 bg-brand-parchment/30 border border-brand-ebony/10 rounded-2xl focus:ring-2 focus:ring-brand-burgundy/20 focus:border-brand-burgundy outline-none transition-all placeholder:text-brand-ebony/30 shadow-inner"
+                            disabled={sending}
+                        />
+                        <button
+                            type="submit"
+                            disabled={(!newMessage.trim() && !mediaPreview) || sending}
+                            className="p-3.5 bg-brand-burgundy text-white rounded-2xl hover:bg-[#5a2427] transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-md shadow-brand-burgundy/20 flex items-center justify-center min-w-[50px]"
+                        >
+                            {sending ? <Loader2 className="w-5 h-5 animate-spin" /> : (
+                                editingMessage ? <CheckCheck className="w-5 h-5" /> : <Send className="w-5 h-5 ml-0.5" />
+                            )}
+                        </button>
+                    </form>
+                </div>
             </div>
 
             {forwardingMessage && (

@@ -22,6 +22,12 @@ export function MessageBubble({ message, isOwnMessage, onEdit, onUnsend, onReply
     const decryptedReplyText = useMemo(() => 
         message.replyToText ? decryptMessage(message.replyToText, sharedSecret) : null
     , [message.replyToText, sharedSecret]);
+    const decryptedImageUrl = useMemo(() => 
+        message.imageUrl ? decryptMessage(message.imageUrl, sharedSecret) : null
+    , [message.imageUrl, sharedSecret]);
+    const decryptedVideoUrl = useMemo(() => 
+        message.videoUrl ? decryptMessage(message.videoUrl, sharedSecret) : null
+    , [message.videoUrl, sharedSecret]);
 
     const timeString = message.createdAt
         ? format(message.createdAt.toDate(), 'h:mm a')
@@ -173,9 +179,33 @@ export function MessageBubble({ message, isOwnMessage, onEdit, onUnsend, onReply
                                 <p className="text-xs line-clamp-2 opacity-90">{message.sharedPostContent}</p>
                             </div>
                         )}
-                        <p className="text-sm whitespace-pre-wrap word-break break-words">
-                            {decryptedText}
-                        </p>
+
+                        {decryptedImageUrl && (
+                            <div className="mb-2 max-w-full overflow-hidden rounded-xl">
+                                <img 
+                                    src={decryptedImageUrl} 
+                                    alt="Message media" 
+                                    className="w-full h-auto max-h-[300px] object-cover cursor-pointer hover:opacity-95 transition-opacity rounded-lg"
+                                    onClick={() => window.open(decryptedImageUrl, '_blank')}
+                                />
+                            </div>
+                        )}
+
+                        {decryptedVideoUrl && (
+                            <div className="mb-2 max-w-full overflow-hidden rounded-xl">
+                                <video 
+                                    src={decryptedVideoUrl} 
+                                    controls 
+                                    className="w-full h-auto max-h-[300px] rounded-lg shadow-sm"
+                                />
+                            </div>
+                        )}
+
+                        {decryptedText && (
+                            <p className="text-sm whitespace-pre-wrap word-break break-words">
+                                {decryptedText}
+                            </p>
+                        )}
                         <div className={`text-[10px] flex items-center gap-1 mt-1 ${isOwnMessage ? 'text-white/60 justify-end' : 'text-brand-ebony/40 justify-start'}`}>
                             {message.isEdited && <span className="italic mr-1">(edited)</span>}
                             <span>{timeString}</span>
