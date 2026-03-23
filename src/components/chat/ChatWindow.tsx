@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { User, Message } from '@/types';
+import { User, Message, Group } from '@/types';
 import { collection, query, orderBy, onSnapshot, addDoc, serverTimestamp, setDoc, doc, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { MessageBubble } from './MessageBubble';
 import { ForwardMessageModal } from './ForwardMessageModal';
-import { Send, Loader2, ArrowLeft, X, CheckCheck, Share2, ShieldCheck, Lock, Image as ImageIcon, Video as VideoIcon, Plus, Trash2 } from 'lucide-react';
+import { Send, Loader2, ArrowLeft, X, CheckCheck, Share2, ShieldCheck, Lock, Image as ImageIcon, Video as VideoIcon, Plus, Trash2, Users } from 'lucide-react';
 import { encryptMessage, getSharedSecret } from '@/lib/encryption';
 import { uploadMedia, uploadVideo } from '@/lib/media';
 
@@ -12,10 +12,12 @@ interface ChatWindowProps {
     chatId: string;
     currentUser: User;
     otherUser: { name: string; profilePic: string; uid: string } | null;
+    isGroup?: boolean;
+    groupData?: Group | null;
     onBack?: () => void; // For mobile view
 }
 
-export function ChatWindow({ chatId, currentUser, otherUser, onBack }: ChatWindowProps) {
+export function ChatWindow({ chatId, currentUser, otherUser, isGroup = false, groupData, onBack }: ChatWindowProps) {
     const [messages, setMessages] = useState<Message[]>([]);
     const [newMessage, setNewMessage] = useState('');
     const [loading, setLoading] = useState(true);
@@ -30,7 +32,9 @@ export function ChatWindow({ chatId, currentUser, otherUser, onBack }: ChatWindo
     const fileInputRef = useRef<HTMLInputElement>(null);
     const videoInputRef = useRef<HTMLInputElement>(null);
 
-    const sharedSecret = otherUser ? getSharedSecret(currentUser.uid, otherUser.uid) : '';
+    const encryptionSecret = isGroup 
+        ? (groupData?.groupSecret || chatId) 
+        : (otherUser ? getSharedSecret(currentUser.uid, otherUser.uid) : '');
 
     // Scroll to bottom when messages change
     useEffect(() => {
@@ -40,9 +44,11 @@ export function ChatWindow({ chatId, currentUser, otherUser, onBack }: ChatWindo
     // Fetch messages
     useEffect(() => {
         if (!chatId) return;
+        if (isGroup && !groupData) return;
 
         setLoading(true);
-        const messagesRef = collection(db, 'chats', chatId, 'messages');
+        const collectionPath = isGroup ? 'groups' : 'chats';
+        const messagesRef = collection(db, collectionPath, chatId, 'messages');
         const q = query(messagesRef, orderBy('createdAt', 'asc'));
 
         const unsubscribe = onSnapshot(q, (snapshot) => {
@@ -59,16 +65,18 @@ export function ChatWindow({ chatId, currentUser, otherUser, onBack }: ChatWindo
             setMessages(visibleMessages);
             setLoading(false);
 
-            // Mark messages as read
-            const unreadMessages = fetchedMessages.filter(msg => 
-                msg.senderId !== currentUser.uid && !msg.isRead
-            );
+            // Mark messages as read (mostly for 1-to-1, group read tracking is more complex)
+            if (!isGroup) {
+                const unreadMessages = fetchedMessages.filter(msg => 
+                    msg.senderId !== currentUser.uid && !msg.isRead
+                );
 
-            if (unreadMessages.length > 0) {
-                unreadMessages.forEach(msg => {
-                    const msgRef = doc(db, 'chats', chatId, 'messages', msg.id);
-                    updateDoc(msgRef, { isRead: true });
-                });
+                if (unreadMessages.length > 0) {
+                    unreadMessages.forEach(msg => {
+                        const msgRef = doc(db, 'chats', chatId, 'messages', msg.id);
+                        updateDoc(msgRef, { isRead: true });
+                    });
+                }
             }
 
         }, (error) => {
@@ -77,11 +85,11 @@ export function ChatWindow({ chatId, currentUser, otherUser, onBack }: ChatWindo
         });
 
         return () => unsubscribe();
-    }, [chatId, currentUser.uid]);
+    }, [chatId, currentUser.uid, isGroup, groupData]);
 
     const handleSendMessage = async (e: React.FormEvent) => {
         e.preventDefault();
-        if ((!newMessage.trim() && !mediaPreview) || !otherUser || !chatId) return;
+        if ((!newMessage.trim() && !mediaPreview) || (!otherUser && !isGroup) || !chatId) return;
 
         const messageText = newMessage.trim();
         const currentReply = replyingToMessage;
@@ -102,17 +110,20 @@ export function ChatWindow({ chatId, currentUser, otherUser, onBack }: ChatWindo
                 if (currentMedia.type === 'image') {
                     imageUrl = await uploadMedia(currentMedia.file) || '';
                 } else {
-                    videoUrl = await uploadVideo(currentMedia.file, `chats/${chatId}/videos`) || '';
+                    const videoPath = isGroup ? `groups/${chatId}/videos` : `chats/${chatId}/videos`;
+                    videoUrl = await uploadVideo(currentMedia.file, videoPath) || '';
                 }
             }
 
-            const encryptedText = messageText ? encryptMessage(messageText, sharedSecret) : '';
-            const encryptedImageUrl = imageUrl ? encryptMessage(imageUrl, sharedSecret) : '';
-            const encryptedVideoUrl = videoUrl ? encryptMessage(videoUrl, sharedSecret) : '';
+            const encryptedText = messageText ? encryptMessage(messageText, encryptionSecret) : '';
+            const encryptedImageUrl = imageUrl ? encryptMessage(imageUrl, encryptionSecret) : '';
+            const encryptedVideoUrl = videoUrl ? encryptMessage(videoUrl, encryptionSecret) : '';
+
+            const collectionPath = isGroup ? 'groups' : 'chats';
 
             if (editingMessage) {
                 // Update existing message (only text editing supported for now)
-                const msgRef = doc(db, 'chats', chatId, 'messages', editingMessage.id);
+                const msgRef = doc(db, collectionPath, chatId, 'messages', editingMessage.id);
                 await updateDoc(msgRef, {
                     text: encryptedText,
                     isEdited: true
@@ -133,38 +144,38 @@ export function ChatWindow({ chatId, currentUser, otherUser, onBack }: ChatWindo
 
                 if (currentReply) {
                     messageData.replyToId = currentReply.id;
-                    // We need to pass the encrypted version if we want it to be E2EE, 
-                    // but the UI currently expects replyToText to be handled.
-                    // Actually, replyToText of currentReply is already encrypted in Firestore.
-                    // But here currentReply.text is the one we see in UI.
-                    // Wait, if I'm replying to a message, I want to store its ENCRYPTED text.
-                    messageData.replyToText = encryptMessage(currentReply.text, sharedSecret);
+                    messageData.replyToText = encryptMessage(currentReply.text, encryptionSecret);
                     messageData.replyToSenderName = currentReply.senderName || 'Unknown';
                 }
 
-                await addDoc(collection(db, 'chats', chatId, 'messages'), messageData);
+                await addDoc(collection(db, collectionPath, chatId, 'messages'), messageData);
 
-                // Update parent chat doc
-                const chatRef = doc(db, 'chats', chatId);
-                await setDoc(chatRef, {
-                    participants: [currentUser.uid, otherUser.uid],
-                    lastMessage: messageText, // Keep last message plaintext for preview or encrypt it too? 
-                    // Usually preview is encrypted too, but let's keep it plaintext for simplicity in list or encrypt it with the same secret.
-                    // If we encrypt lastMessage, the ChatList needs the secret too. 
-                    // Let's keep lastMessage plaintext for now as it's just a preview, or encrypt it.
-                    // The user said "make sure that the message is end to end encyrpted".
-                    lastMessageAt: serverTimestamp(),
-                    participantDetails: {
-                        [currentUser.uid]: {
-                            name: currentUser.name,
-                            profilePic: currentUser.profilePic || null
-                        },
-                        [otherUser.uid]: {
-                            name: otherUser.name,
-                            profilePic: otherUser.profilePic || null
+                // Update last message pointer
+                if (!isGroup && otherUser) {
+                    const chatRef = doc(db, 'chats', chatId);
+                    await setDoc(chatRef, {
+                        participants: [currentUser.uid, otherUser.uid],
+                        lastMessage: messageText,
+                        lastMessageAt: serverTimestamp(),
+                        participantDetails: {
+                            [currentUser.uid]: {
+                                name: currentUser.name,
+                                profilePic: currentUser.profilePic || null
+                            },
+                            [otherUser.uid]: {
+                                name: otherUser.name,
+                                profilePic: otherUser.profilePic || null
+                            }
                         }
-                    }
-                }, { merge: true });
+                    }, { merge: true });
+                } else if (isGroup) {
+                    const groupRef = doc(db, 'groups', chatId);
+                    await updateDoc(groupRef, {
+                        lastMessage: messageText,
+                        lastMessageAt: serverTimestamp(),
+                        lastSenderName: currentUser.name
+                    });
+                }
             }
         } catch (error) {
             console.error('Error sending message:', error);
@@ -211,11 +222,12 @@ export function ChatWindow({ chatId, currentUser, otherUser, onBack }: ChatWindo
 
     const handleUnsendMessage = async (message: Message, mode: 'me' | 'everyone') => {
         if (!chatId) return;
+        const collectionPath = isGroup ? 'groups' : 'chats';
         try {
-            const msgRef = doc(db, 'chats', chatId, 'messages', message.id);
+            const msgRef = doc(db, collectionPath, chatId, 'messages', message.id);
             if (mode === 'everyone') {
                 await updateDoc(msgRef, {
-                    text: encryptMessage('🚫 This message was unsent', sharedSecret),
+                    text: encryptMessage('🚫 This message was unsent', encryptionSecret),
                     imageUrl: '',
                     videoUrl: '',
                     isDeleted: true
@@ -235,7 +247,7 @@ export function ChatWindow({ chatId, currentUser, otherUser, onBack }: ChatWindo
         }
     };
 
-    if (!otherUser) {
+    if (!otherUser && !isGroup) {
         return (
             <div className="flex-1 flex flex-col items-center justify-center bg-brand-cream/30 text-brand-ebony/50">
                 <div className="w-24 h-24 bg-brand-parchment/50 rounded-full flex items-center justify-center mb-4 border border-brand-ebony/10 shadow-inner">
@@ -247,6 +259,20 @@ export function ChatWindow({ chatId, currentUser, otherUser, onBack }: ChatWindo
         );
     }
 
+    if (isGroup && !groupData) {
+        return (
+            <div className="flex-1 flex items-center justify-center">
+                <Loader2 className="w-8 h-8 animate-spin text-brand-burgundy" />
+            </div>
+        );
+    }
+
+    const title = isGroup ? groupData?.groupName : otherUser?.name;
+    const subtitle = isGroup ? `${groupData?.members.length} Members` : 'End-to-End Encrypted';
+    const profilePic = isGroup 
+        ? null 
+        : (otherUser?.profilePic || `https://placehold.co/100x100/EFEFEFF/3D2B27?text=${otherUser?.name.substring(0, 1)}`);
+
     return (
         <div className="flex-1 flex flex-col h-full bg-brand-cream/30">
             {/* Chat Header */}
@@ -257,16 +283,28 @@ export function ChatWindow({ chatId, currentUser, otherUser, onBack }: ChatWindo
                             <ArrowLeft className="w-6 h-6" />
                         </button>
                     )}
-                    <img
-                        src={otherUser.profilePic || `https://placehold.co/100x100/EFEFEFF/3D2B27?text=${otherUser.name.substring(0, 1)}`}
-                        alt={otherUser.name}
-                        className="w-10 h-10 rounded-full mr-3 object-cover border border-white shadow-sm"
-                    />
+                    {isGroup ? (
+                        <div className="w-10 h-10 bg-brand-burgundy/10 rounded-full flex items-center justify-center mr-3 border border-brand-burgundy/20">
+                            <Users className="w-5 h-5 text-brand-burgundy" />
+                        </div>
+                    ) : (
+                        <img
+                            src={profilePic!}
+                            alt={title!}
+                            className="w-10 h-10 rounded-full mr-3 object-cover border border-white shadow-sm"
+                        />
+                    )}
                     <div>
-                        <h3 className="font-serif font-bold text-brand-ebony text-lg leading-tight">{otherUser.name}</h3>
+                        <h3 className="font-serif font-bold text-brand-ebony text-lg leading-tight">{title}</h3>
                         <div className="flex items-center gap-1 mt-0.5">
-                            <Lock className="w-2.5 h-2.5 text-green-600" />
-                            <span className="text-[9px] text-green-600 font-bold uppercase tracking-widest">End-to-End Encrypted</span>
+                            {isGroup ? (
+                                <span className="text-[10px] text-brand-ebony/50 font-bold uppercase tracking-wider">{subtitle}</span>
+                            ) : (
+                                <>
+                                    <Lock className="w-2.5 h-2.5 text-green-600" />
+                                    <span className="text-[9px] text-green-600 font-bold uppercase tracking-widest">{subtitle}</span>
+                                </>
+                            )}
                         </div>
                     </div>
                 </div>
@@ -284,12 +322,19 @@ export function ChatWindow({ chatId, currentUser, otherUser, onBack }: ChatWindo
                     </div>
                 ) : messages.length === 0 ? (
                     <div className="flex flex-col items-center justify-center h-full text-gray-500 space-y-3">
-                        <img
-                            src={otherUser.profilePic || `https://placehold.co/100x100/EFEFEFF/003366?text=${otherUser.name.substring(0, 1)}`}
-                            alt={otherUser.name}
-                            className="w-20 h-20 rounded-full object-cover shadow-sm opacity-50"
-                        />
-                        <p className="text-sm">This is the beginning of your conversation with <strong>{otherUser.name}</strong>.</p>
+                        {!isGroup && otherUser && (
+                            <img
+                                src={profilePic!}
+                                alt={title!}
+                                className="w-20 h-20 rounded-full object-cover shadow-sm opacity-50"
+                            />
+                        )}
+                        {isGroup && (
+                            <div className="w-20 h-20 bg-brand-burgundy/5 rounded-full flex items-center justify-center opacity-50">
+                                <Users className="w-10 h-10 text-brand-burgundy" />
+                            </div>
+                        )}
+                        <p className="text-sm">This is the beginning of the conversation in <strong>{title}</strong>.</p>
                         <div className="flex items-center gap-2 px-4 py-2 bg-brand-burgundy/5 rounded-2xl border border-brand-burgundy/10 max-w-[280px] text-center">
                             <Lock className="w-3 h-3 text-brand-burgundy/60 shrink-0" />
                             <p className="text-[10px] text-brand-burgundy/60 italic">Messages are end-to-end encrypted. No one outside of this chat can read them.</p>
@@ -305,7 +350,8 @@ export function ChatWindow({ chatId, currentUser, otherUser, onBack }: ChatWindo
                             onUnsend={setUnsendingMessage}
                             onReply={handleReplyInitiate}
                             onForward={setForwardingMessage}
-                            sharedSecret={sharedSecret}
+                            sharedSecret={encryptionSecret}
+                            showSenderName={isGroup}
                         />
                     ))
                 )}
@@ -438,7 +484,7 @@ export function ChatWindow({ chatId, currentUser, otherUser, onBack }: ChatWindo
                     onClose={() => setForwardingMessage(null)}
                     message={forwardingMessage}
                     currentUser={currentUser}
-                    originSharedSecret={sharedSecret}
+                    originSharedSecret={encryptionSecret}
                 />
             )}
 

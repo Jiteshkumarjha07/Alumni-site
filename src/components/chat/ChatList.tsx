@@ -15,13 +15,14 @@ interface ChatListProps {
     onSelectGroup: (groupId: string) => void;
     selectedChatId: string | null;
     selectedGroupId: string | null;
+    viewMode: 'chats' | 'groups';
+    onViewModeChange: (mode: 'chats' | 'groups') => void;
 }
 
-export function ChatList({ currentUser, chats, onSelectChat, onStartChat, onSelectGroup, selectedChatId, selectedGroupId }: ChatListProps) {
+export function ChatList({ currentUser, chats, onSelectChat, onStartChat, onSelectGroup, selectedChatId, selectedGroupId, viewMode, onViewModeChange }: ChatListProps) {
     const [searchQuery, setSearchQuery] = useState('');
     const [searchResults, setSearchResults] = useState<User[]>([]);
     const [isSearching, setIsSearching] = useState(false);
-    const [viewMode, setViewMode] = useState<'chats' | 'groups'>('chats');
     const [isActionsPopupOpen, setIsActionsPopupOpen] = useState(false);
     const [isCreateGroupModalOpen, setIsCreateGroupModalOpen] = useState(false);
     const [userGroups, setUserGroups] = useState<Group[]>([]);
@@ -124,30 +125,36 @@ export function ChatList({ currentUser, chats, onSelectChat, onStartChat, onSele
                                         <Users className="w-4 h-4 text-brand-burgundy" />
                                         Create Group
                                     </button>
-                                    <div className="h-px bg-brand-ebony/5 my-1 mx-2" />
-                                    <button 
-                                        onClick={() => {
-                                            setIsActionsPopupOpen(false);
-                                            setViewMode(viewMode === 'chats' ? 'groups' : 'chats');
-                                        }}
-                                        className="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-brand-ebony hover:bg-brand-burgundy/5 rounded-xl transition-colors"
-                                    >
-                                        {viewMode === 'chats' ? (
-                                            <>
-                                                <Users className="w-4 h-4 text-brand-ebony/40" />
-                                                Show Groups
-                                            </>
-                                        ) : (
-                                            <>
-                                                <MessageCircle className="w-4 h-4 text-brand-ebony/40" />
-                                                Show Private Chats
-                                            </>
-                                        )}
-                                    </button>
                                 </div>
                             </div>
                         )}
                     </div>
+                </div>
+
+                {/* Tabs for switching between Chats and Groups */}
+                <div className="flex p-1 bg-brand-ebony/5 rounded-xl mb-4">
+                    <button
+                        onClick={() => onViewModeChange('chats')}
+                        className={`flex-1 flex items-center justify-center gap-2 py-2 text-xs font-bold uppercase tracking-wider rounded-lg transition-all ${
+                            viewMode === 'chats' 
+                                ? 'bg-white text-brand-burgundy shadow-sm' 
+                                : 'text-brand-ebony/40 hover:text-brand-ebony/60'
+                        }`}
+                    >
+                        <MessageCircle className="w-3.5 h-3.5" />
+                        Chats
+                    </button>
+                    <button
+                        onClick={() => onViewModeChange('groups')}
+                        className={`flex-1 flex items-center justify-center gap-2 py-2 text-xs font-bold uppercase tracking-wider rounded-lg transition-all ${
+                            viewMode === 'groups' 
+                                ? 'bg-white text-brand-burgundy shadow-sm' 
+                                : 'text-brand-ebony/40 hover:text-brand-ebony/60'
+                        }`}
+                    >
+                        <Users className="w-3.5 h-3.5" />
+                        Groups
+                    </button>
                 </div>
 
                 <div className="relative">
@@ -282,12 +289,33 @@ export function ChatList({ currentUser, chats, onSelectChat, onStartChat, onSele
                                             <Users className="w-6 h-6 text-brand-burgundy" />
                                         </div>
                                         <div className="text-left flex-1 min-w-0">
-                                            <p className="font-serif font-bold text-brand-ebony truncate">
-                                                {group.groupName}
-                                            </p>
-                                            <p className="text-xs text-brand-ebony/50 font-medium">
-                                                {group.members.length} Members
-                                            </p>
+                                            <div className="flex justify-between items-baseline mb-0.5">
+                                                <p className="font-serif font-bold text-brand-ebony truncate pr-2">
+                                                    {group.groupName}
+                                                </p>
+                                                {group.lastMessageAt && (
+                                                    <span className="text-xs text-gray-400 whitespace-nowrap">
+                                                        {formatDistanceToNow(group.lastMessageAt.toDate(), { addSuffix: true })}
+                                                    </span>
+                                                )}
+                                            </div>
+                                            <div className="flex items-center gap-1.5 overflow-hidden">
+                                                <p className="text-sm truncate text-brand-ebony/50 italic font-serif flex-1">
+                                                    {group.lastMessage ? (
+                                                        <>
+                                                            <span className="font-sans font-bold not-italic text-[10px] uppercase text-brand-burgundy/60 mr-1">
+                                                                {group.lastSenderName?.split(' ')[0]}:
+                                                            </span>
+                                                            {group.lastMessage}
+                                                        </>
+                                                    ) : (
+                                                        'No messages yet'
+                                                    )}
+                                                </p>
+                                                <span className="text-[10px] bg-brand-ebony/5 px-1.5 py-0.5 rounded text-brand-ebony/40 font-bold shrink-0">
+                                                    {group.members.length}
+                                                </span>
+                                            </div>
                                         </div>
                                     </button>
                                 ))
@@ -302,7 +330,7 @@ export function ChatList({ currentUser, chats, onSelectChat, onStartChat, onSele
                 onClose={() => setIsCreateGroupModalOpen(false)}
                 currentUser={currentUser}
                 onGroupCreated={(groupId) => {
-                    setViewMode('groups');
+                    onViewModeChange('groups');
                     onSelectGroup(groupId);
                 }}
             />

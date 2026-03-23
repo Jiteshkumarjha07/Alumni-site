@@ -96,6 +96,9 @@ export interface Group {
   admins: string[];
   createdAt: Timestamp;
   groupSecret: string;
+  lastMessage?: string;
+  lastMessageAt?: Timestamp;
+  lastSenderName?: string;
 }
 
 export interface Chat {

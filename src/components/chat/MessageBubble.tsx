@@ -13,9 +13,10 @@ interface MessageBubbleProps {
     onReply?: (message: Message) => void;
     onForward?: (message: Message) => void;
     sharedSecret: string;
+    showSenderName?: boolean;
 }
 
-export function MessageBubble({ message, isOwnMessage, onEdit, onUnsend, onReply, onForward, sharedSecret }: MessageBubbleProps) {
+export function MessageBubble({ message, isOwnMessage, onEdit, onUnsend, onReply, onForward, sharedSecret, showSenderName = false }: MessageBubbleProps) {
     const [showMenu, setShowMenu] = useState(false);
 
     const decryptedText = useMemo(() => decryptMessage(message.text, sharedSecret), [message.text, sharedSecret]);
@@ -74,6 +75,11 @@ export function MessageBubble({ message, isOwnMessage, onEdit, onUnsend, onReply
                     />
                 )}
                 <div className="flex flex-col">
+                    {showSenderName && !isOwnMessage && (
+                        <span className="text-[10px] font-bold text-brand-ebony/40 uppercase tracking-widest mb-1 ml-1">
+                            {message.senderName}
+                        </span>
+                    )}
                     {message.isForwarded && (
                         <div className={`flex items-center gap-1 mb-1 opacity-50 ${isOwnMessage ? 'justify-end' : 'justify-start'}`}>
                             <Share2 className="w-2.5 h-2.5" />

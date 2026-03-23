@@ -442,7 +442,7 @@ export default function ProfilePage() {
                         ) : userGroups.length > 0 ? (
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 {userGroups.map(group => (
-                                    <div key={group.id} className="bg-brand-parchment/60 border border-brand-ebony/10 rounded-xl p-5 flex items-center justify-between hover:shadow-md transition group">
+                                    <Link key={group.id} href={`/messages/group/${group.id}`} className="bg-brand-parchment/60 border border-brand-ebony/10 rounded-xl p-5 flex items-center justify-between hover:shadow-md transition group">
                                         <div className="flex items-center gap-4 min-w-0">
                                             <div className="w-12 h-12 rounded-lg bg-brand-burgundy/10 flex items-center justify-center flex-shrink-0 text-brand-burgundy font-bold text-xl border border-brand-burgundy/20 group-hover:bg-brand-burgundy group-hover:text-white transition-colors">
                                                 {group.groupName.substring(0, 1).toUpperCase()}
@@ -455,7 +455,7 @@ export default function ProfilePage() {
                                                 </div>
                                             </div>
                                         </div>
-                                    </div>
+                                    </Link>
                                 ))}
                             </div>
                         ) : (

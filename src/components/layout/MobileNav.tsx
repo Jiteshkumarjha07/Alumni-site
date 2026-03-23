@@ -4,9 +4,8 @@ import { Home, Users, Briefcase, User, Calendar, MessageSquare } from 'lucide-re
 const navigation = [
     { name: 'Home', href: '/', icon: Home },
     { name: 'Messages', href: '/messages', icon: MessageSquare },
+    { name: 'Groups', href: '/messages?view=groups', icon: Users },
     { name: 'Network', href: '/network', icon: Users },
-    { name: 'Jobs', href: '/jobs', icon: Briefcase },
-    { name: 'Events', href: '/events', icon: Calendar },
     { name: 'Profile', href: '/profile', icon: User },
 ];
 
