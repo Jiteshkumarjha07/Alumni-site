@@ -142,7 +142,7 @@ export default function HomePage() {
           <h1 className="text-2xl sm:text-3xl font-serif font-bold text-brand-ebony tracking-tight">The Feed</h1>
         </div>
         <div className="text-[10px] font-bold text-brand-gold uppercase tracking-[0.3em] bg-brand-gold/5 px-4 py-1.5 rounded-full border border-brand-gold/20 shadow-inner">
-          Premium Alumni Network
+          Premium Alumnest Network
         </div>
       </div>
 

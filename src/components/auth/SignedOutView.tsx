@@ -37,7 +37,7 @@ export const SignedOutView: React.FC<SignedOutViewProps> = ({ user, signOut }) =
                     </>
                 ) : (
                     <>
-                        <p className="text-brand-ebony/70 mb-6 font-medium">Connect with fellow alumni from Loyola School Jamshedpur.</p>
+                        <p className="text-brand-ebony/70 mb-6 font-medium">Connect with fellow alumni. For the Tribe.</p>
                         <div className="space-y-3">
                             <Link href="/login" className="block w-full px-6 py-3 bg-brand-burgundy text-white rounded-xl font-bold hover:bg-[#5a2427] transition-all shadow-md shadow-brand-burgundy/20 text-center">
                                 Log In

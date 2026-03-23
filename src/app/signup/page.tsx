@@ -269,7 +269,7 @@ export default function SignUpPage() {
 
                 {/* Footer */}
                 <p className="text-center text-xs font-bold text-brand-ebony/40 mt-6 uppercase tracking-[0.2em]">
-                    © 2024 Loyola Alumni Association • For the Tribe.
+                    © 2024 Alumnest • For the Tribe.
                 </p>
             </div>
         </div>

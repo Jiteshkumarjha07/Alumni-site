@@ -88,12 +88,12 @@ export default function CommunityChatPage() {
                     <ArrowLeft className="w-5 h-5" />
                 </button>
                 <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                        <span className="text-blue-600 font-semibold">LA</span>
+                    <div className="w-10 h-10 bg-brand-burgundy/10 rounded-full flex items-center justify-center">
+                        <span className="text-brand-burgundy font-semibold">AL</span>
                     </div>
                     <div>
-                        <h2 className="font-semibold">Global Community Chat</h2>
-                        <p className="text-sm text-gray-600">All Loyola Alumni</p>
+                        <h2 className="font-semibold text-brand-ebony">Global Community Chat</h2>
+                        <p className="text-sm text-brand-ebony/60">For the Tribe</p>
                     </div>
                 </div>
             </div>
