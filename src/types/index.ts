@@ -73,10 +73,18 @@ export interface Message {
   createdAt: Timestamp;
   isRead?: boolean;
   readAt?: Timestamp;
+  readBy?: string[]; // Array of UIDs who have read this message
   sharedPostId?: string;
   sharedPostContent?: string;
   sharedPostAuthor?: string;
   sharedPostImage?: string;
+  replyTo?: {
+    id: string;
+    text: string;
+    senderName: string;
+  };
+  mediaUrl?: string;
+  mediaType?: 'image' | 'video';
 }
 
 export interface Group {
@@ -96,4 +104,5 @@ export interface Chat {
   lastMessageAt?: Timestamp;
   unreadCount?: Record<string, number>;
   participantDetails?: Record<string, { name: string; profilePic: string }>;
+  deletedBy?: string[]; // Array of UIDs who have "deleted" (hidden) the chat
 }
