@@ -125,9 +125,19 @@ export function MessageBubble({ message, isOwnMessage, onEdit, onUnsend, onReply
                                             <Share2 className="w-3.5 h-3.5" />
                                             Forward
                                         </button>
+                                        <div className="h-px bg-brand-ebony/5 my-1" />
+                                        <button
+                                            onClick={() => {
+                                                onUnsend?.(message);
+                                                setShowMenu(false);
+                                            }}
+                                            className="w-full flex items-center gap-2 px-3 py-2 text-xs text-red-600 hover:bg-red-50 transition-colors"
+                                        >
+                                            <Trash2 className="w-3.5 h-3.5" />
+                                            Unsend
+                                        </button>
                                         {isOwnMessage && canAction && (
                                             <>
-                                                <div className="h-px bg-brand-ebony/5 my-1" />
                                                 <button
                                                     onClick={() => {
                                                         onEdit?.(message);
@@ -137,16 +147,6 @@ export function MessageBubble({ message, isOwnMessage, onEdit, onUnsend, onReply
                                                 >
                                                     <Pencil className="w-3.5 h-3.5" />
                                                     Edit
-                                                </button>
-                                                <button
-                                                    onClick={() => {
-                                                        onUnsend?.(message);
-                                                        setShowMenu(false);
-                                                    }}
-                                                    className="w-full flex items-center gap-2 px-3 py-2 text-xs text-red-600 hover:bg-red-50 transition-colors"
-                                                >
-                                                    <Trash2 className="w-3.5 h-3.5" />
-                                                    Unsend
                                                 </button>
                                             </>
                                         )}

@@ -23,6 +23,7 @@ export function ChatWindow({ chatId, currentUser, otherUser, onBack }: ChatWindo
     const [editingMessage, setEditingMessage] = useState<Message | null>(null);
     const [replyingToMessage, setReplyingToMessage] = useState<Message | null>(null);
     const [forwardingMessage, setForwardingMessage] = useState<Message | null>(null);
+    const [unsendingMessage, setUnsendingMessage] = useState<Message | null>(null);
     const [uploadingMedia, setUploadingMedia] = useState(false);
     const [mediaPreview, setMediaPreview] = useState<{ url: string; type: 'image' | 'video'; file: File } | null>(null);
     const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -50,7 +51,12 @@ export function ChatWindow({ chatId, currentUser, otherUser, onBack }: ChatWindo
                 ...doc.data()
             })) as Message[];
 
-            setMessages(fetchedMessages);
+            // Filter out messages hidden by current user
+            const visibleMessages = fetchedMessages.filter(msg => 
+                !msg.hiddenBy?.includes(currentUser.uid)
+            );
+
+            setMessages(visibleMessages);
             setLoading(false);
 
             // Mark messages as read
@@ -203,14 +209,27 @@ export function ChatWindow({ chatId, currentUser, otherUser, onBack }: ChatWindo
         if (input) input.focus();
     };
 
-    const handleUnsendMessage = async (message: Message) => {
+    const handleUnsendMessage = async (message: Message, mode: 'me' | 'everyone') => {
         if (!chatId) return;
         try {
             const msgRef = doc(db, 'chats', chatId, 'messages', message.id);
-            await updateDoc(msgRef, {
-                text: encryptMessage('🚫 This message was unsent', sharedSecret),
-                isDeleted: true
-            });
+            if (mode === 'everyone') {
+                await updateDoc(msgRef, {
+                    text: encryptMessage('🚫 This message was unsent', sharedSecret),
+                    imageUrl: '',
+                    videoUrl: '',
+                    isDeleted: true
+                });
+            } else {
+                // Unsend for me: add to hiddenBy
+                const currentHiddenBy = message.hiddenBy || [];
+                if (!currentHiddenBy.includes(currentUser.uid)) {
+                    await updateDoc(msgRef, {
+                        hiddenBy: [...currentHiddenBy, currentUser.uid]
+                    });
+                }
+            }
+            setUnsendingMessage(null);
         } catch (error) {
             console.error('Error unsending message:', error);
         }
@@ -283,7 +302,7 @@ export function ChatWindow({ chatId, currentUser, otherUser, onBack }: ChatWindo
                             message={message}
                             isOwnMessage={message.senderId === currentUser.uid}
                             onEdit={handleEditInitiate}
-                            onUnsend={handleUnsendMessage}
+                            onUnsend={setUnsendingMessage}
                             onReply={handleReplyInitiate}
                             onForward={setForwardingMessage}
                             sharedSecret={sharedSecret}
@@ -408,6 +427,38 @@ export function ChatWindow({ chatId, currentUser, otherUser, onBack }: ChatWindo
                     currentUser={currentUser}
                     originSharedSecret={sharedSecret}
                 />
+            )}
+
+            {unsendingMessage && (
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60] p-4 backdrop-blur-sm">
+                    <div className="bg-white rounded-2xl p-6 max-w-sm w-full shadow-2xl animate-in zoom-in-95 duration-200">
+                        <h3 className="text-lg font-serif font-bold text-brand-ebony mb-2">Unsend Message</h3>
+                        <p className="text-sm text-brand-ebony/60 mb-6">Who would you like to unsend this message for?</p>
+                        
+                        <div className="space-y-3">
+                            <button 
+                                onClick={() => handleUnsendMessage(unsendingMessage, 'me')}
+                                className="w-full py-3 px-4 bg-gray-100 hover:bg-gray-200 text-brand-ebony rounded-xl font-semibold transition-colors flex items-center justify-center gap-2"
+                            >
+                                Unsend for me
+                            </button>
+                            {unsendingMessage.senderId === currentUser.uid && (
+                                <button 
+                                    onClick={() => handleUnsendMessage(unsendingMessage, 'everyone')}
+                                    className="w-full py-3 px-4 bg-red-600 hover:bg-red-700 text-white rounded-xl font-semibold transition-colors flex items-center justify-center gap-2"
+                                >
+                                    Unsend for everyone
+                                </button>
+                            )}
+                            <button 
+                                onClick={() => setUnsendingMessage(null)}
+                                className="w-full py-3 px-4 bg-transparent text-brand-ebony/40 hover:text-brand-ebony/60 font-medium transition-colors"
+                            >
+                                Cancel
+                            </button>
+                        </div>
+                    </div>
+                </div>
             )}
         </div>
     );
