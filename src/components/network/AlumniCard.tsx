@@ -3,6 +3,7 @@
 import { User } from '@/types';
 import { UserPlus, UserCheck, UserX, MessageCircle, X, Check } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 interface AlumniCardProps {
     user: User;
@@ -28,12 +29,14 @@ export const AlumniCard: React.FC<AlumniCardProps> = ({
     return (
         <div className="bg-brand-parchment/80 rounded-xl shadow-sm border border-brand-ebony/10 p-6 hover:shadow-md transition">
             <div className="flex flex-col items-center text-center">
-                <img
-                    src={user.profilePic || `https://placehold.co/100x100/EFEFEFF/5a2427?text=${user.name.substring(0, 1)}`}
-                    alt={user.name}
-                    className="w-20 h-20 rounded-full mb-3 border-2 border-brand-cream shadow-sm"
-                />
-                <h3 className="font-serif font-bold text-xl text-brand-ebony">{user.name}</h3>
+                <Link href={`/profile/${user.uid}`} className="flex flex-col items-center hover:opacity-80 transition cursor-pointer">
+                    <img
+                        src={user.profilePic || `https://placehold.co/100x100/EFEFEFF/5a2427?text=${user.name.substring(0, 1)}`}
+                        alt={user.name}
+                        className="w-20 h-20 rounded-full mb-3 border-2 border-brand-cream shadow-sm"
+                    />
+                    <h3 className="font-serif font-bold text-xl text-brand-ebony hover:text-brand-burgundy transition-colors">{user.name}</h3>
+                </Link>
                 <p className="text-sm font-medium text-brand-ebony/80 mb-1">{user.profession || 'Alumni'}</p>
                 <p className="text-xs text-brand-ebony/60 mb-1 tracking-wide uppercase font-bold mt-1">Class of {user.batch}</p>
                 {user.location && (

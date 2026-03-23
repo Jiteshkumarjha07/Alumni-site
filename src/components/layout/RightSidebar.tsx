@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { UserPlus, TrendingUp, X } from 'lucide-react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import { collection, query, onSnapshot, updateDoc, arrayUnion, doc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
@@ -30,13 +31,13 @@ export function RightSidebar({ isOpen = false, onClose = () => {} }: RightSideba
                     .map(doc => ({
                         uid: doc.id,
                         ...doc.data()
-                    }))
+                    } as User))
                     .filter(user => 
-                        user.uid !== userData.uid && // Not current user
-                        !userData.connections?.includes(user.uid) && // Not already connected
-                        !userData.pendingRequests?.includes(user.uid) && // Not received pending request
-                        !user.pendingRequests?.includes(userData.uid) // Not sent pending request
-                    ) as User[];
+                        user.uid !== userData.uid && 
+                        !userData.connections?.includes(user.uid) && 
+                        !userData.pendingRequests?.includes(user.uid) && 
+                        !user.pendingRequests?.includes(userData.uid)
+                    );
 
                 // Shuffle and pick 3 suggestions
                 const shuffled = [...fetchedUsers].sort(() => 0.5 - Math.random());
@@ -121,7 +122,7 @@ export function RightSidebar({ isOpen = false, onClose = () => {} }: RightSideba
                         suggestions.map((user) => (
                             <div key={user.uid} className="flex items-center justify-between group">
                                 <div className="flex items-center space-x-3 overflow-hidden">
-                                    <div className="relative h-11 w-11 flex-shrink-0 rounded-full overflow-hidden border border-brand-ebony/10 shadow-sm">
+                                    <Link href={`/profile/${user.uid}`} className="relative h-11 w-11 flex-shrink-0 rounded-full overflow-hidden border border-brand-ebony/10 shadow-sm hover:opacity-80 transition block">
                                         <Image
                                             src={user.profilePic || `https://placehold.co/100x100/EFEFEFF/3D2B27?text=${user.name.substring(0, 1)}`}
                                             alt={user.name}
@@ -129,11 +130,13 @@ export function RightSidebar({ isOpen = false, onClose = () => {} }: RightSideba
                                             className="object-cover"
                                             unoptimized
                                         />
-                                    </div>
+                                    </Link>
                                     <div className="flex-1 min-w-0 pr-2">
-                                        <p className="text-sm font-bold text-brand-ebony truncate">
-                                            {user.name}
-                                        </p>
+                                        <Link href={`/profile/${user.uid}`}>
+                                            <p className="text-sm font-bold text-brand-ebony truncate hover:text-brand-burgundy transition-colors">
+                                                {user.name}
+                                            </p>
+                                        </Link>
                                         <p className="text-xs text-brand-ebony/60 truncate">
                                             {user.profession || `Class of ${user.batch}`}
                                         </p>
