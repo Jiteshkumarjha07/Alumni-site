@@ -1,17 +1,19 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
-import { collection, query, where, orderBy, onSnapshot, updateDoc, doc, getDocs } from 'firebase/firestore';
+import { updatePassword, deleteUser } from 'firebase/auth';
+import { collection, query, where, orderBy, onSnapshot, updateDoc, doc, getDocs, deleteDoc, writeBatch } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { Post } from '@/types';
 import { PostCard } from '@/components/feed/PostCard';
 import { EditProfileModal, ProfileFormData } from '@/components/modals/EditProfileModal';
 import { ConfirmDialog } from '@/components/modals/ConfirmDialog';
 import { SharePostModal } from '@/components/modals/SharePostModal';
+import { ChangePasswordModal } from '@/components/modals/ChangePasswordModal';
 import { SignedOutView } from '@/components/auth/SignedOutView';
 import { uploadMedia } from '@/lib/media';
-import { Pencil, LogOut, MapPin, Briefcase } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { Pencil, LogOut, MapPin, Briefcase, Settings, MoreVertical, ShieldAlert, Lock, Trash2, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 
@@ -23,6 +25,10 @@ export default function ProfilePage() {
     const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
     const [updating, setUpdating] = useState(false);
     const [sharingPost, setSharingPost] = useState<Post | null>(null);
+    const [showSettings, setShowSettings] = useState(false);
+    const [showChangePassword, setShowChangePassword] = useState(false);
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+    const [deleting, setDeleting] = useState(false);
 
     useEffect(() => {
         if (!userData) {
@@ -105,6 +111,43 @@ export default function ProfilePage() {
         window.location.href = '/login';
     };
 
+    const handleChangePassword = async (newPassword: string) => {
+        if (!user) return;
+        await updatePassword(user, newPassword);
+    };
+
+    const handleDeleteAccount = async () => {
+        if (!user || !userData) return;
+
+        setDeleting(true);
+        try {
+            // 1. Delete all user posts
+            const postsQuery = query(collection(db, 'posts'), where('authorUid', '==', userData.uid));
+            const postsSnapshot = await getDocs(postsQuery);
+            const batch = writeBatch(db);
+            postsSnapshot.docs.forEach((postDoc) => {
+                batch.delete(doc(db, 'posts', postDoc.id));
+            });
+            await batch.commit();
+
+            // 2. Delete user document
+            await deleteDoc(doc(db, 'users', userData.uid));
+
+            // 3. Delete auth account
+            await deleteUser(user);
+
+            window.location.href = '/signup';
+        } catch (error: any) {
+            console.error('Error deleting account:', error);
+            if (error.code === 'auth/requires-recent-login') {
+                alert('For security reasons, please log out and log back in before deleting your account.');
+            } else {
+                alert('Failed to delete account. Please try again later.');
+            }
+            setDeleting(false);
+        }
+    };
+
     if (authLoading || loading) {
         return (
             <div className="flex items-center justify-center min-h-screen">
@@ -122,8 +165,54 @@ export default function ProfilePage() {
 
     return (
         <div className="max-w-4xl mx-auto p-4 pt-8">
-            {/* Cover Photo Area */}
-            <div className="bg-gradient-to-r from-brand-burgundy to-[#4a1c20] h-48 rounded-t-xl opacity-90 border-b-4 border-brand-gold/60"></div>
+            {/* Cover Photo Area with Settings Menu */}
+            <div className="bg-gradient-to-r from-brand-burgundy to-[#4a1c20] h-48 rounded-t-xl opacity-90 border-b-4 border-brand-gold/60 relative">
+                <div className="absolute top-4 right-4 flex gap-2">
+                    <div className="relative">
+                        <button
+                            onClick={() => setShowSettings(!showSettings)}
+                            className="p-2 bg-white/10 hover:bg-white/20 backdrop-blur-md rounded-full text-white transition-all border border-white/20"
+                            title="Account Settings"
+                        >
+                            <Settings className="w-6 h-6" />
+                        </button>
+
+                        {showSettings && (
+                            <div className="absolute right-0 mt-2 w-56 bg-white rounded-2xl shadow-2xl py-2 z-50 border border-gray-100 animate-in fade-in slide-in-from-top-2 duration-200">
+                                <div className="px-4 py-2 border-b border-gray-50 mb-1">
+                                    <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Account Settings</p>
+                                </div>
+                                
+                                <button
+                                    onClick={() => { setShowChangePassword(true); setShowSettings(false); }}
+                                    className="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-brand-burgundy/5 flex items-center gap-3 transition-colors"
+                                >
+                                    <Lock className="w-4 h-4 text-brand-burgundy/60" />
+                                    <span className="font-semibold">Change Password</span>
+                                </button>
+                                
+                                <button
+                                    onClick={() => { setShowLogoutConfirm(true); setShowSettings(false); }}
+                                    className="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-brand-burgundy/5 flex items-center gap-3 transition-colors"
+                                >
+                                    <LogOut className="w-4 h-4 text-brand-burgundy/60" />
+                                    <span className="font-semibold">Logout</span>
+                                </button>
+
+                                <div className="border-t border-gray-50 mt-1 pt-1">
+                                    <button
+                                        onClick={() => { setShowDeleteConfirm(true); setShowSettings(false); }}
+                                        className="w-full text-left px-4 py-3 text-sm text-red-600 hover:bg-red-50 flex items-center gap-3 transition-colors"
+                                    >
+                                        <ShieldAlert className="w-4 h-4 text-red-500/60" />
+                                        <span className="font-semibold">Delete Account</span>
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            </div>
 
             {/* Profile Header */}
             <div className="bg-brand-parchment/90 rounded-b-xl shadow-md p-6 -mt-20 relative border border-brand-ebony/10">
@@ -224,23 +313,18 @@ export default function ProfilePage() {
                 </div>
             </div>
 
-            {/* Logout Section */}
-            <div className="flex gap-4 justify-center py-8 opacity-70 hover:opacity-100 transition-opacity">
-                <button
-                    onClick={() => setShowLogoutConfirm(true)}
-                    className="flex items-center gap-2 px-6 py-2 bg-transparent text-brand-ebony/80 rounded-full hover:bg-brand-ebony/5 transition border border-brand-ebony/20 text-sm font-semibold tracking-wide"
-                >
-                    <LogOut className="w-4 h-4" />
-                    Secure Logout
-                </button>
+            {/* Removed bottom logout section */}
+            <div className="py-8 text-center text-brand-ebony/30 text-xs font-serif italic tracking-widest">
+                Alumnest &bull; For the Tribe
             </div>
 
             {/* Modals */}
-            {updating && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                    <div className="bg-white rounded-lg p-6 text-center">
-                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-                        <p className="text-gray-700">Updating profile...</p>
+            {(updating || deleting) && (
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[110]">
+                    <div className="bg-white rounded-2xl p-8 text-center shadow-2xl animate-in zoom-in duration-200 max-w-xs w-full">
+                        <Loader2 className="w-12 h-12 animate-spin text-brand-burgundy mx-auto mb-4" />
+                        <p className="text-gray-800 font-bold">{deleting ? 'Deleting Account...' : 'Updating Profile...'}</p>
+                        <p className="text-xs text-gray-500 mt-2">Please wait a moment</p>
                     </div>
                 </div>
             )}
@@ -260,6 +344,22 @@ export default function ProfilePage() {
                 message="Are you sure you want to log out?"
                 confirmText="Log Out"
                 variant="warning"
+            />
+
+            <ConfirmDialog
+                isOpen={showDeleteConfirm}
+                onClose={() => setShowDeleteConfirm(false)}
+                onConfirm={handleDeleteAccount}
+                title="Delete Account"
+                message="Are you absolutely sure? This will permanently remove your profile, your posts, and all associated data. This action cannot be undone."
+                confirmText="Delete Everything"
+                variant="danger"
+            />
+
+            <ChangePasswordModal
+                isOpen={showChangePassword}
+                onClose={() => setShowChangePassword(false)}
+                onSubmit={handleChangePassword}
             />
 
             {sharingPost && (
