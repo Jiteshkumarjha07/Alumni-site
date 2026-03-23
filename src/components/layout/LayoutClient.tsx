@@ -49,32 +49,32 @@ export function LayoutClient({ children }: { children: React.ReactNode }) {
         setPrevPath(pathname);
     }, [pathname]);
 
-    // Desktop view: No animations, no swipe, fixed sidebar space
-    if (!isMobile) {
-        return (
-            <main className={`${userData ? 'md:pl-64' : ''} min-h-screen`}>
-                {children}
-            </main>
-        );
-    }
-
-    // Mobile view: Support swipe and transitions
+    // Apply fluid padding and spacing to the main container
+    // Fixed sidebar space on md: screens, fluid padding for all
     return (
         <SwipeProvider>
-            <main className="min-h-screen pb-24 overflow-x-hidden relative">
-                <AnimatePresence initial={false} custom={direction} mode="wait">
-                    <motion.div
-                        key={pathname}
-                        custom={direction}
-                        variants={variants}
-                        initial="initial"
-                        animate="animate"
-                        exit="exit"
-                        className="w-full"
-                    >
-                        {children}
-                    </motion.div>
-                </AnimatePresence>
+            <main className={`min-h-screen transition-all duration-300 ${userData ? 'md:pl-64' : ''} ${isMobile ? 'pb-24' : 'pb-8'}`}>
+                <div className="mx-auto w-full px-4 sm:px-6 md:px-8 lg:px-12 max-w-screen-2xl">
+                    {isMobile ? (
+                        <AnimatePresence initial={false} custom={direction} mode="wait">
+                            <motion.div
+                                key={pathname}
+                                custom={direction}
+                                variants={variants}
+                                initial="initial"
+                                animate="animate"
+                                exit="exit"
+                                className="w-full"
+                            >
+                                {children}
+                            </motion.div>
+                        </AnimatePresence>
+                    ) : (
+                        <div className="w-full animate-in fade-in duration-500">
+                            {children}
+                        </div>
+                    )}
+                </div>
             </main>
         </SwipeProvider>
     );

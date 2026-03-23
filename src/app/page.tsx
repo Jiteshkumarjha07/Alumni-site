@@ -134,12 +134,12 @@ export default function HomePage() {
   }
 
   return (
-    <div className="max-w-2xl mx-auto p-4 pt-8">
+    <div className="max-w-2xl mx-auto py-8">
       {/* Feed Header */}
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-8 gap-4">
         <div className="flex items-center gap-3">
           <div className="h-10 w-1 bg-brand-burgundy rounded-full" />
-          <h1 className="text-3xl font-serif font-bold text-brand-ebony tracking-tight">The Feed</h1>
+          <h1 className="text-2xl sm:text-3xl font-serif font-bold text-brand-ebony tracking-tight">The Feed</h1>
         </div>
         <div className="text-[10px] font-bold text-brand-gold uppercase tracking-[0.3em] bg-brand-gold/5 px-4 py-1.5 rounded-full border border-brand-gold/20 shadow-inner">
           Premium Alumni Network

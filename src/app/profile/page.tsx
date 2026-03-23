@@ -164,14 +164,14 @@ export default function ProfilePage() {
     }
 
     return (
-        <div className="max-w-4xl mx-auto p-4 pt-8">
+        <div className="max-w-4xl mx-auto py-8">
             {/* Cover Photo Area */}
-            <div className="bg-gradient-to-r from-brand-burgundy to-[#4a1c20] h-48 rounded-t-xl opacity-90 border-b-4 border-brand-gold/60 relative"></div>
+            <div className="bg-gradient-to-r from-brand-burgundy to-[#4a1c20] h-32 sm:h-40 md:h-48 rounded-t-xl opacity-90 border-b-4 border-brand-gold/60 relative"></div>
 
             {/* Profile Header */}
-            <div className="bg-brand-parchment/90 rounded-b-xl shadow-md p-6 -mt-20 relative border border-brand-ebony/10 z-10">
+            <div className="bg-brand-parchment/90 rounded-b-xl shadow-md p-4 sm:p-6 -mt-12 sm:-mt-16 md:-mt-20 relative border border-brand-ebony/10 z-10">
                 {/* Account Settings Menu (Top Right of Header) */}
-                <div className="absolute top-4 right-4 z-[60]">
+                <div className="absolute top-2 right-2 sm:top-4 sm:right-4 z-[60]">
                     <div className="relative">
                         <button
                             onClick={() => setShowSettings(!showSettings)}
@@ -261,18 +261,18 @@ export default function ProfilePage() {
                 </div>
 
                 {/* Stats */}
-                <div className="grid grid-cols-3 gap-4 mt-6 pt-6 border-t border-brand-ebony/10">
-                    <div className="text-center">
-                        <p className="text-2xl font-bold text-brand-ebony font-serif">{posts.length}</p>
-                        <p className="text-xs text-brand-ebony/60 uppercase tracking-widest font-bold mt-1">Posts</p>
+                <div className="grid grid-cols-3 gap-2 sm:gap-4 mt-6 pt-6 border-t border-brand-ebony/10">
+                    <div className="text-center px-1">
+                        <p className="text-xl sm:text-2xl font-bold text-brand-ebony font-serif">{posts.length}</p>
+                        <p className="text-[10px] sm:text-xs text-brand-ebony/60 uppercase tracking-widest font-bold mt-1">Posts</p>
                     </div>
-                    <div className="text-center border-l w-full border-brand-ebony/10">
-                        <p className="text-2xl font-bold text-brand-ebony font-serif">{userData.connections?.length || 0}</p>
-                        <p className="text-xs text-brand-ebony/60 uppercase tracking-widest font-bold mt-1">Connections</p>
+                    <div className="text-center border-l w-full border-brand-ebony/10 px-1">
+                        <p className="text-xl sm:text-2xl font-bold text-brand-ebony font-serif">{userData.connections?.length || 0}</p>
+                        <p className="text-[10px] sm:text-xs text-brand-ebony/60 uppercase tracking-widest font-bold mt-1">Connections</p>
                     </div>
-                    <div className="text-center border-l w-full border-brand-ebony/10">
-                        <p className="text-2xl font-bold text-brand-ebony font-serif">{userData.groups?.length || 0}</p>
-                        <p className="text-xs text-brand-ebony/60 uppercase tracking-widest font-bold mt-1">Groups</p>
+                    <div className="text-center border-l w-full border-brand-ebony/10 px-1">
+                        <p className="text-xl sm:text-2xl font-bold text-brand-ebony font-serif">{userData.groups?.length || 0}</p>
+                        <p className="text-[10px] sm:text-xs text-brand-ebony/60 uppercase tracking-widest font-bold mt-1">Groups</p>
                     </div>
                 </div>
             </div>
