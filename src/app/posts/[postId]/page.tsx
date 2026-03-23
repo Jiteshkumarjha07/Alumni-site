@@ -87,7 +87,7 @@ export default function PostDetailPage() {
         return (
             <div className="max-w-2xl mx-auto pt-20 px-4 text-center">
                 <h1 className="text-2xl font-serif font-bold text-brand-ebony mb-4">Post not found</h1>
-                <p className="text-brand-ebony/60 mb-8">The post you're looking for might have been deleted or moved.</p>
+                <p className="text-brand-ebony/60 mb-8">The post you&apos;re looking for might have been deleted or moved.</p>
                 <button
                     onClick={() => router.push('/')}
                     className="text-brand-burgundy font-bold hover:underline"

@@ -51,14 +51,14 @@ export const CommentModal: React.FC<CommentModalProps> = ({
     };
 
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[80vh] flex flex-col">
+        <div className="fixed inset-0 bg-brand-ebony/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div className="bg-brand-parchment rounded-2xl max-w-2xl w-full max-h-[80vh] flex flex-col border border-brand-ebony/10 shadow-2xl">
                 {/* Header */}
-                <div className="flex items-center justify-between p-4 border-b">
-                    <h2 className="text-xl font-semibold">Comments</h2>
+                <div className="flex items-center justify-between p-4 border-b border-brand-ebony/10">
+                    <h2 className="text-xl font-serif font-bold text-brand-ebony">Comments</h2>
                     <button
                         onClick={onClose}
-                        className="p-2 hover:bg-gray-100 rounded-full transition"
+                        className="p-2 hover:bg-brand-burgundy/5 text-brand-ebony/60 rounded-full transition"
                     >
                         <X className="w-5 h-5" />
                     </button>
@@ -69,15 +69,15 @@ export const CommentModal: React.FC<CommentModalProps> = ({
                     {comments.length > 0 ? (
                         comments.map((comment, index) => (
                             <div key={index} className="flex gap-3">
-                                <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
-                                    <span className="text-sm font-semibold text-blue-600">
+                                <div className="w-8 h-8 rounded-full bg-brand-burgundy/10 flex items-center justify-center flex-shrink-0">
+                                    <span className="text-sm font-bold text-brand-burgundy">
                                         {comment.authorName.substring(0, 1)}
                                     </span>
                                 </div>
                                 <div className="flex-1">
-                                    <div className="bg-gray-100 rounded-lg p-3 relative group/comment">
-                                        <p className="font-semibold text-sm">{comment.authorName}</p>
-                                        <p className="text-gray-800 mt-1">{comment.text}</p>
+                                    <div className="bg-brand-ebony/5 rounded-2xl px-4 py-2 relative group/comment">
+                                        <p className="font-bold text-xs text-brand-burgundy mb-0.5">{comment.authorName}</p>
+                                        <p className="text-brand-ebony leading-relaxed">{comment.text}</p>
                                         
                                         {onDelete && currentUserUid === comment.authorUid && (
                                             <button
@@ -89,7 +89,7 @@ export const CommentModal: React.FC<CommentModalProps> = ({
                                             </button>
                                         )}
                                     </div>
-                                    <p className="text-xs text-gray-500 mt-1">
+                                    <p className="text-[10px] font-bold text-brand-ebony/30 uppercase tracking-widest mt-1 px-1">
                                         {formatDate(comment.createdAt)}
                                     </p>
                                 </div>
@@ -101,7 +101,7 @@ export const CommentModal: React.FC<CommentModalProps> = ({
                 </div>
 
                 {/* Comment Input */}
-                <div className="p-4 border-t">
+                <div className="p-4 border-t border-brand-ebony/10 bg-brand-ebony/5">
                     <div className="flex gap-2">
                         <input
                             type="text"
@@ -109,12 +109,12 @@ export const CommentModal: React.FC<CommentModalProps> = ({
                             onChange={(e) => setCommentText(e.target.value)}
                             onKeyPress={(e) => e.key === 'Enter' && handleSubmit()}
                             placeholder="Write a comment..."
-                            className="flex-1 px-4 py-2 border border-gray-300 rounded-full focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            className="flex-1 px-4 py-3 bg-brand-parchment border border-brand-ebony/10 rounded-xl focus:ring-2 focus:ring-brand-burgundy/20 focus:border-brand-burgundy transition outline-none text-brand-ebony"
                         />
                         <button
                             onClick={handleSubmit}
                             disabled={!commentText.trim() || loading}
-                            className="p-2 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="p-3 bg-brand-burgundy text-white rounded-full hover:bg-[#5a2427] transition shadow-md shadow-brand-burgundy/20 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             <Send className="w-5 h-5" />
                         </button>

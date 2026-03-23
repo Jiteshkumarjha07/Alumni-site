@@ -4,6 +4,7 @@ import "./globals.css";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { MobileNav } from "@/components/layout/MobileNav";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { ThemeProvider } from "@/contexts/ThemeContext";
 import { LayoutClient } from "@/components/layout/LayoutClient";
 
 const geistSans = Geist({
@@ -37,15 +38,17 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <AuthProvider>
-          <div className="min-h-screen">
-            <Sidebar />
-            
-            <LayoutClient>
-              {children}
-            </LayoutClient>
-
-            <MobileNav />
-          </div>
+          <ThemeProvider>
+            <div className="min-h-screen">
+              <Sidebar />
+              
+              <LayoutClient>
+                {children}
+              </LayoutClient>
+  
+              <MobileNav />
+            </div>
+          </ThemeProvider>
         </AuthProvider>
       </body>
     </html>

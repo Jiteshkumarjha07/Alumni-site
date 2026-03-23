@@ -139,9 +139,10 @@ export default function ProfilePage() {
             await deleteUser(user);
 
             window.location.href = '/signup';
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error('Error deleting account:', error);
-            if (error.code === 'auth/requires-recent-login') {
+            const err = error as { code?: string };
+            if (err.code === 'auth/requires-recent-login') {
                 alert('For security reasons, please log out and log back in before deleting your account.');
             } else {
                 alert('Failed to delete account. Please try again later.');

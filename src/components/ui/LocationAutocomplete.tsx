@@ -96,6 +96,7 @@ export function LocationAutocomplete({ value, onChange }: LocationAutocompletePr
                     required
                 />
                 <MapPin className="w-5 h-5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                <p className="text-xs text-brand-ebony/40 uppercase tracking-widest font-bold mt-1">Try &quot;Mumbai&quot; or &quot;California&quot;</p>
             </div>
 
             {/* Dropdown Menu */}

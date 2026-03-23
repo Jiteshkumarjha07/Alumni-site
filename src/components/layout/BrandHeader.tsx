@@ -7,7 +7,7 @@ export function BrandHeader() {
             {/* The Logo */}
             <div className="flex items-center gap-4 mb-2 group">
                 <div className="relative">
-                    <div className="w-16 h-12 bg-white/50 rounded-lg flex items-center justify-center border border-brand-ebony/10 shadow-sm">
+                    <div className="w-16 h-12 bg-brand-parchment rounded-lg flex items-center justify-center border border-brand-ebony/10 shadow-sm transition-colors">
                         <GraduationCap className="w-10 h-10 text-brand-burgundy" />
                     </div>
                     {/* Decorative tassel line if needed, but GraduationCap icon is cleaner */}

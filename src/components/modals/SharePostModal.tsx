@@ -117,19 +117,19 @@ export function SharePostModal({ isOpen, onClose, post, currentUser }: SharePost
     );
 
     return (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-brand-ebony/40 backdrop-blur-sm">
-            <div className="bg-white rounded-3xl w-full max-w-md shadow-2xl border border-brand-ebony/10 overflow-hidden">
-                <div className="p-6 border-b border-brand-ebony/5 flex items-center justify-between">
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-brand-ebony/60 backdrop-blur-sm">
+            <div className="bg-brand-parchment rounded-3xl w-full max-w-md shadow-2xl border border-brand-ebony/10 overflow-hidden">
+                <div className="p-6 border-b border-brand-ebony/10 flex items-center justify-between bg-brand-ebony/5">
                     <div>
-                        <h2 className="text-xl font-serif font-bold text-brand-ebony">Share Post</h2>
-                        <p className="text-xs text-brand-ebony/50 font-medium uppercase tracking-widest mt-1">Select connection</p>
+                        <h2 className="text-xl font-serif font-bold text-brand-ebony leading-none">Share Post</h2>
+                        <p className="text-[10px] text-brand-ebony/50 font-bold uppercase tracking-widest mt-1">Select connection</p>
                     </div>
                     <button onClick={onClose} className="p-2 hover:bg-brand-burgundy/5 rounded-full transition-colors text-brand-ebony/40 hover:text-brand-burgundy">
                         <X className="w-5 h-5" />
                     </button>
                 </div>
 
-                <div className="p-4 bg-brand-parchment/30">
+                <div className="p-4 bg-brand-ebony/5 border-b border-brand-ebony/5">
                     <div className="relative">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-brand-ebony/30" />
                         <input
@@ -137,7 +137,7 @@ export function SharePostModal({ isOpen, onClose, post, currentUser }: SharePost
                             placeholder="Search connections..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            className="w-full pl-10 pr-4 py-2 bg-white border border-brand-ebony/10 rounded-xl text-sm focus:ring-2 focus:ring-brand-burgundy/20 outline-none transition-all"
+                            className="w-full pl-10 pr-4 py-2.5 bg-brand-parchment border border-brand-ebony/10 rounded-xl text-sm focus:ring-2 focus:ring-brand-burgundy/20 outline-none transition-all text-brand-ebony"
                         />
                     </div>
                 </div>
@@ -194,9 +194,9 @@ export function SharePostModal({ isOpen, onClose, post, currentUser }: SharePost
                     )}
                 </div>
 
-                <div className="p-6 bg-brand-parchment/20 border-t border-brand-ebony/5">
-                    <div className="flex items-center gap-3 p-3 bg-white/60 rounded-2xl border border-brand-ebony/5">
-                        <div className="w-12 h-12 bg-brand-ebony/5 rounded-lg overflow-hidden flex-shrink-0">
+                <div className="p-6 bg-brand-ebony/5 border-t border-brand-ebony/10">
+                    <div className="flex items-center gap-3 p-3 bg-brand-parchment/60 rounded-2xl border border-brand-ebony/10">
+                        <div className="w-12 h-12 bg-brand-ebony/10 rounded-lg overflow-hidden flex-shrink-0">
                             {post.imageUrl ? (
                                 <img src={post.imageUrl} className="w-full h-full object-cover" />
                             ) : (
@@ -206,8 +206,8 @@ export function SharePostModal({ isOpen, onClose, post, currentUser }: SharePost
                             )}
                         </div>
                         <div className="overflow-hidden">
-                            <p className="text-[10px] font-bold text-brand-burgundy uppercase tracking-widest mb-0.5">Sharing Post by {post.authorName}</p>
-                            <p className="text-xs text-brand-ebony/70 line-clamp-1">{post.content}</p>
+                            <p className="text-[10px] font-bold text-brand-burgundy uppercase tracking-widest mb-0.5 leading-tight">Sharing Post by {post.authorName}</p>
+                            <p className="text-xs text-brand-ebony/70 line-clamp-1 italic font-serif">{post.content}</p>
                         </div>
                     </div>
                 </div>

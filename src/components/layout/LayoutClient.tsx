@@ -32,6 +32,14 @@ const variants = {
 export function LayoutClient({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
     const { userData } = useAuth();
+    // Disable swiping on interactive elements
+    const handleCapture = (e: React.TouchEvent | React.MouseEvent) => {
+        const target = e.target as HTMLElement;
+        const interactiveElements = ['A', 'BUTTON', 'INPUT', 'TEXTAREA', 'SELECT'];
+        if (interactiveElements.includes(target.tagName) || target.closest('[data-interactive]')) {
+            e.stopPropagation();
+        }
+    };
     const [isMobile, setIsMobile] = React.useState(false);
     
     React.useEffect(() => {

@@ -109,15 +109,15 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
     };
 
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-2xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 bg-brand-ebony/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div className="bg-brand-parchment rounded-2xl max-w-md w-full max-h-[90vh] overflow-y-auto border border-brand-ebony/10 shadow-2xl">
                 {/* Header */}
-                <div className="flex items-center justify-between p-4 border-b sticky top-0 bg-white z-10">
-                    <h2 className="text-xl font-semibold">Edit Profile</h2>
+                <div className="flex items-center justify-between p-4 border-b border-brand-ebony/10 sticky top-0 bg-brand-parchment z-10">
+                    <h2 className="text-xl font-serif font-bold text-brand-ebony">Edit Profile</h2>
                     <button
                         onClick={onClose}
                         disabled={loading}
-                        className="p-2 hover:bg-gray-100 rounded-full transition disabled:opacity-50"
+                        className="p-2 hover:bg-brand-burgundy/5 text-brand-ebony/60 rounded-full transition disabled:opacity-50"
                     >
                         <X className="w-5 h-5" />
                     </button>
@@ -128,11 +128,11 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
                     {/* Profile Picture */}
                     <div className="flex flex-col items-center">
                         <div className="relative group">
-                            <div className="w-28 h-28 rounded-full overflow-hidden bg-gray-200 border-4 border-gray-100 shadow-md">
+                            <div className="w-28 h-28 rounded-full overflow-hidden bg-brand-ebony/10 border-4 border-brand-parchment shadow-md">
                                 {previewUrl ? (
                                     <img src={previewUrl} alt="Preview" className="w-full h-full object-cover" />
                                 ) : (
-                                    <div className="w-full h-full flex items-center justify-center text-gray-400">
+                                    <div className="w-full h-full flex items-center justify-center text-brand-ebony/20">
                                         <svg className="w-14 h-14" fill="currentColor" viewBox="0 0 20 20">
                                             <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
                                         </svg>
@@ -147,7 +147,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
                         </div>
 
                         <div className="flex gap-3 mt-4">
-                            <label className="cursor-pointer px-4 py-2 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-lg text-sm font-medium transition">
+                            <label className="cursor-pointer px-4 py-2 bg-brand-burgundy/5 text-brand-burgundy hover:bg-brand-burgundy/10 rounded-lg text-sm font-bold transition uppercase tracking-widest border border-brand-burgundy/10">
                                 <Upload className="w-4 h-4 inline mr-1" />
                                 Upload Photo
                                 <input type="file" accept="image/*" onChange={handleFileChange} className="hidden" />
@@ -155,18 +155,18 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
                             {previewUrl && (
                                 <button
                                     onClick={handleRemovePic}
-                                    className="px-4 py-2 bg-red-50 text-red-600 hover:bg-red-100 rounded-lg text-sm font-medium transition"
+                                    className="px-4 py-2 bg-red-50 text-red-600 hover:bg-red-100 rounded-lg text-sm font-bold transition uppercase tracking-widest border border-red-100"
                                 >
                                     Remove
                                 </button>
                             )}
                         </div>
-                        <p className="text-xs text-gray-500 mt-2">Max size: 5MB</p>
+                        <p className="text-[10px] text-brand-ebony/40 mt-2 uppercase tracking-widest font-bold">Max size: 5MB</p>
                     </div>
 
                     {/* Name */}
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <label className="block text-sm font-bold text-brand-ebony/70 mb-2 uppercase tracking-widest">
                             Name <span className="text-red-500">*</span>
                         </label>
                         <input
@@ -174,13 +174,13 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
                             value={formData.name}
                             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                             placeholder="Enter your full name"
-                            className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                            className="w-full px-4 py-3 bg-brand-ebony/5 border border-brand-ebony/10 rounded-xl focus:ring-2 focus:ring-brand-burgundy/20 focus:border-brand-burgundy transition outline-none text-brand-ebony"
                         />
                     </div>
 
                     {/* Profession */}
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <label className="block text-sm font-bold text-brand-ebony/70 mb-2 uppercase tracking-widest">
                             Profession <span className="text-red-500">*</span>
                         </label>
                         <input
@@ -188,13 +188,12 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
                             value={formData.profession}
                             onChange={(e) => setFormData({ ...formData, profession: e.target.value })}
                             placeholder="e.g., Software Engineer"
-                            className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                            className="w-full px-4 py-3 bg-brand-ebony/5 border border-brand-ebony/10 rounded-xl focus:ring-2 focus:ring-brand-burgundy/20 focus:border-brand-burgundy transition outline-none text-brand-ebony"
                         />
                     </div>
 
-                    {/* Location */}
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <label className="block text-sm font-bold text-brand-ebony/70 mb-2 uppercase tracking-widest">
                             Location <span className="text-red-500">*</span>
                         </label>
                         <input
@@ -202,24 +201,24 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
                             value={formData.location}
                             onChange={(e) => setFormData({ ...formData, location: e.target.value })}
                             placeholder="e.g., New York, USA"
-                            className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                            className="w-full px-4 py-3 bg-brand-ebony/5 border border-brand-ebony/10 rounded-xl focus:ring-2 focus:ring-brand-burgundy/20 focus:border-brand-burgundy transition outline-none text-brand-ebony"
                         />
                     </div>
                 </div>
 
                 {/* Actions */}
-                <div className="flex justify-end gap-3 p-4 border-t bg-gray-50 sticky bottom-0">
+                <div className="flex justify-end gap-3 p-4 border-t border-brand-ebony/10 bg-brand-ebony/5 sticky bottom-0">
                     <button
                         onClick={onClose}
                         disabled={loading}
-                        className="px-6 py-2.5 border border-gray-300 rounded-lg font-semibold hover:bg-white transition disabled:opacity-50"
+                        className="px-6 py-2.5 border border-brand-ebony/10 rounded-xl font-bold text-brand-ebony/60 hover:bg-white transition disabled:opacity-50 uppercase tracking-widest text-sm"
                     >
                         Cancel
                     </button>
                     <button
                         onClick={handleSubmit}
                         disabled={loading}
-                        className="px-6 py-2.5 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed min-w-[120px]"
+                        className="px-6 py-2.5 bg-brand-burgundy text-white rounded-xl font-bold hover:bg-[#5a2427] transition-all shadow-md shadow-brand-burgundy/20 disabled:opacity-50 disabled:cursor-not-allowed min-w-[140px] uppercase tracking-widest text-sm"
                     >
                         {loading ? (
                             <span className="flex items-center justify-center gap-2">

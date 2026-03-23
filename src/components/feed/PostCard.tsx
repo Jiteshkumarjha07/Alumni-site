@@ -71,14 +71,14 @@ export const PostCard: React.FC<PostCardProps> = ({
                         </button>
 
                         {showMenu && (
-                            <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-10">
+                            <div className="absolute right-0 mt-2 w-48 bg-brand-parchment rounded-lg shadow-lg border border-brand-ebony/10 py-1 z-10">
                                 {onEdit && (
                                     <button
                                         onClick={() => {
                                             onEdit();
                                             setShowMenu(false);
                                         }}
-                                        className="w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center gap-2"
+                                        className="w-full px-4 py-2 text-left hover:bg-brand-ebony/5 flex items-center gap-2 text-brand-ebony"
                                     >
                                         <Pencil className="w-4 h-4" />
                                         Edit Post
@@ -90,7 +90,7 @@ export const PostCard: React.FC<PostCardProps> = ({
                                             onDelete();
                                             setShowMenu(false);
                                         }}
-                                        className="w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center gap-2 text-red-600"
+                                        className="w-full px-4 py-2 text-left hover:bg-brand-ebony/5 flex items-center gap-2 text-red-600"
                                     >
                                         <Trash2 className="w-4 h-4" />
                                         Delete Post
