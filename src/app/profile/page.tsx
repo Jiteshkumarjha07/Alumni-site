@@ -2,18 +2,19 @@
 
 import { useState, useEffect } from 'react';
 import { updatePassword, deleteUser } from 'firebase/auth';
-import { collection, query, where, orderBy, onSnapshot, updateDoc, doc, getDocs, deleteDoc, writeBatch } from 'firebase/firestore';
+import { collection, query, where, orderBy, onSnapshot, updateDoc, doc, getDocs, deleteDoc, writeBatch, arrayRemove } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import { Post } from '@/types';
+import { Post, Comment as AppComment } from '@/types';
 import { PostCard } from '@/components/feed/PostCard';
 import { EditProfileModal, ProfileFormData } from '@/components/modals/EditProfileModal';
 import { ConfirmDialog } from '@/components/modals/ConfirmDialog';
 import { SharePostModal } from '@/components/modals/SharePostModal';
 import { ChangePasswordModal } from '@/components/modals/ChangePasswordModal';
+import { CommentModal } from '@/components/modals/CommentModal';
 import { SignedOutView } from '@/components/auth/SignedOutView';
 import { uploadMedia } from '@/lib/media';
 import { useAuth } from '@/contexts/AuthContext';
-import { Pencil, LogOut, MapPin, Briefcase, Settings, MoreVertical, ShieldAlert, Lock, Trash2, Loader2, Menu } from 'lucide-react';
+import { Pencil, LogOut, MapPin, Briefcase, Settings, MoreVertical, ShieldAlert, Lock, Trash2, Loader2, Menu, MessageCircle, Heart } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 
@@ -25,6 +26,7 @@ export default function ProfilePage() {
     const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
     const [updating, setUpdating] = useState(false);
     const [sharingPost, setSharingPost] = useState<Post | null>(null);
+    const [commentingPost, setCommentingPost] = useState<Post | null>(null);
     const [showSettings, setShowSettings] = useState(false);
     const [showChangePassword, setShowChangePassword] = useState(false);
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -146,6 +148,48 @@ export default function ProfilePage() {
             }
             setDeleting(false);
         }
+    };
+
+    const handleLikePost = async (postId: string, isLiked: boolean) => {
+        if (!userData) return;
+
+        const postRef = doc(db, 'posts', postId);
+        const post = posts.find(p => p.id === postId);
+        if (!post) return;
+
+        const likes = post.likes || [];
+        const updatedLikes = isLiked
+            ? likes.filter(uid => uid !== userData.uid)
+            : [...likes, userData.uid];
+
+        await updateDoc(postRef, { likes: updatedLikes });
+    };
+
+    const handleAddComment = async (text: string) => {
+        if (!userData || !commentingPost) return;
+
+        const postRef = doc(db, 'posts', commentingPost.id);
+        const post = posts.find(p => p.id === commentingPost.id);
+        if (!post) return;
+
+        const newComment = {
+            authorUid: userData.uid,
+            authorName: userData.name,
+            text,
+            createdAt: new Date()
+        };
+
+        const updatedComments = [...(post.comments || []), newComment];
+        await updateDoc(postRef, { comments: updatedComments });
+    };
+
+    const handleDeleteComment = async (comment: AppComment) => {
+        if (!userData || !commentingPost) return;
+
+        const postRef = doc(db, 'posts', commentingPost.id);
+        await updateDoc(postRef, {
+            comments: arrayRemove(comment)
+        });
     };
 
     if (authLoading || loading) {
@@ -290,8 +334,8 @@ export default function ProfilePage() {
                                 key={post.id}
                                 post={post}
                                 currentUser={userData}
-                                onLike={() => { /* no-op */ }}
-                                onComment={() => { /* no-op */ }}
+                                onLike={(isLiked) => handleLikePost(post.id, isLiked)}
+                                onComment={() => setCommentingPost(post)}
                                 onShare={() => setSharingPost(post)}
                             />
                         ))
@@ -368,6 +412,18 @@ export default function ProfilePage() {
                     onClose={() => setSharingPost(null)}
                     post={sharingPost}
                     currentUser={userData}
+                />
+            )}
+
+            {commentingPost && (
+                <CommentModal
+                    isOpen={true}
+                    onClose={() => setCommentingPost(null)}
+                    onSubmit={handleAddComment}
+                    onDelete={handleDeleteComment}
+                    comments={posts.find(p => p.id === commentingPost.id)?.comments || []}
+                    postAuthor={commentingPost.authorName}
+                    currentUserUid={userData.uid}
                 />
             )}
         </div>
