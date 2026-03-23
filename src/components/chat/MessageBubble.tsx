@@ -1,7 +1,7 @@
 import React from 'react';
 import { Message } from '@/types';
 import { format } from 'date-fns';
-import { Share2 } from 'lucide-react';
+import { Share2, CheckCheck } from 'lucide-react';
 
 interface MessageBubbleProps {
     message: Message;
@@ -45,9 +45,12 @@ export function MessageBubble({ message, isOwnMessage }: MessageBubbleProps) {
                     <p className="text-sm whitespace-pre-wrap word-break break-words">
                         {message.text}
                     </p>
-                    <span className={`text-[10px] block mt-1 ${isOwnMessage ? 'text-blue-100 text-right' : 'text-gray-400 text-left'}`}>
-                        {timeString}
-                    </span>
+                    <div className={`text-[10px] flex items-center gap-1 mt-1 ${isOwnMessage ? 'text-blue-100 justify-end' : 'text-gray-400 justify-start'}`}>
+                        <span>{timeString}</span>
+                        {isOwnMessage && (
+                            <CheckCheck className={`w-3 h-3 ${message.isRead ? 'text-blue-300' : 'opacity-40'}`} />
+                        )}
+                    </div>
                 </div>
             </div>
         </div>

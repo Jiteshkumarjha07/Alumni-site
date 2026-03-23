@@ -2,10 +2,11 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { collection, query, where, orderBy, onSnapshot, doc, getDocs, getDoc } from 'firebase/firestore';
+import { collection, query, where, orderBy, onSnapshot, doc, getDocs, getDoc, updateDoc, arrayRemove } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { Post, User, Group } from '@/types';
 import { PostCard } from '@/components/feed/PostCard';
+import { CommentModal } from '@/components/modals/CommentModal';
 import { SharePostModal } from '@/components/modals/SharePostModal';
 import { MapPin, Briefcase, MessageCircle, Users } from 'lucide-react';
 import Link from 'next/link';
@@ -20,6 +21,7 @@ export default function PublicProfilePage() {
     const [posts, setPosts] = useState<Post[]>([]);
     const [loading, setLoading] = useState(true);
     const [sharingPost, setSharingPost] = useState<Post | null>(null);
+    const [commentingPost, setCommentingPost] = useState<Post | null>(null);
     const [activeTab, setActiveTab] = useState<'posts' | 'connections' | 'groups'>('posts');
     const [connections, setConnections] = useState<User[]>([]);
     const [loadingConnections, setLoadingConnections] = useState(false);
@@ -139,6 +141,48 @@ export default function PublicProfilePage() {
 
         fetchGroups();
     }, [profileUser, activeTab]);
+
+    const handleLikePost = async (postId: string, isLiked: boolean) => {
+        if (!userData) return;
+
+        const postRef = doc(db, 'posts', postId);
+        const post = posts.find(p => p.id === postId);
+        if (!post) return;
+
+        const likes = post.likes || [];
+        const updatedLikes = isLiked
+            ? likes.filter(uid => uid !== userData.uid)
+            : [...likes, userData.uid];
+
+        await updateDoc(postRef, { likes: updatedLikes });
+    };
+
+    const handleAddComment = async (text: string) => {
+        if (!userData || !commentingPost) return;
+
+        const postRef = doc(db, 'posts', commentingPost.id);
+        const post = posts.find(p => p.id === commentingPost.id);
+        if (!post) return;
+
+        const newComment = {
+            authorUid: userData.uid,
+            authorName: userData.name,
+            text,
+            createdAt: new Date()
+        };
+
+        const updatedComments = [...(post.comments || []), newComment];
+        await updateDoc(postRef, { comments: updatedComments });
+    };
+
+    const handleDeleteComment = async (comment: any) => {
+        if (!userData || !commentingPost) return;
+
+        const postRef = doc(db, 'posts', commentingPost.id);
+        await updateDoc(postRef, {
+            comments: arrayRemove(comment)
+        });
+    };
 
     if (authLoading || loading || (userData?.uid === profileId)) {
         return (
@@ -295,8 +339,8 @@ export default function PublicProfilePage() {
                                     key={post.id}
                                     post={post}
                                     currentUser={userData}
-                                    onLike={() => { /* no-op */ }}
-                                    onComment={() => { /* no-op */ }}
+                                    onLike={(isLiked) => handleLikePost(post.id, isLiked)}
+                                    onComment={() => setCommentingPost(post)}
                                     onShare={() => setSharingPost(post)}
                                 />
                             ))
@@ -383,6 +427,18 @@ export default function PublicProfilePage() {
                     onClose={() => setSharingPost(null)}
                     post={sharingPost}
                     currentUser={userData!}
+                />
+            )}
+
+            {commentingPost && (
+                <CommentModal
+                    isOpen={true}
+                    onClose={() => setCommentingPost(null)}
+                    onSubmit={handleAddComment}
+                    onDelete={handleDeleteComment}
+                    comments={posts.find(p => p.id === commentingPost.id)?.comments || []}
+                    postAuthor={commentingPost.authorName}
+                    currentUserUid={userData?.uid}
                 />
             )}
         </div>

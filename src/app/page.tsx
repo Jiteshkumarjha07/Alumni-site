@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { collection, query, orderBy, onSnapshot, addDoc, updateDoc, deleteDoc, doc, serverTimestamp } from 'firebase/firestore';
+import { collection, query, orderBy, onSnapshot, addDoc, updateDoc, deleteDoc, doc, serverTimestamp, arrayRemove } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { Post } from '@/types';
 import { PostCard } from '@/components/feed/PostCard';
@@ -108,6 +108,15 @@ export default function HomePage() {
 
     const updatedComments = [...(post.comments || []), newComment];
     await updateDoc(postRef, { comments: updatedComments });
+  };
+
+  const handleDeleteComment = async (comment: any) => {
+    if (!userData || !commentingPost) return;
+
+    const postRef = doc(db, 'posts', commentingPost.id);
+    await updateDoc(postRef, {
+      comments: arrayRemove(comment)
+    });
   };
 
   const handleDeletePost = async () => {
@@ -278,8 +287,10 @@ export default function HomePage() {
           isOpen={true}
           onClose={() => setCommentingPost(null)}
           onSubmit={handleAddComment}
+          onDelete={handleDeleteComment}
           comments={commentingPost.comments || []}
           postAuthor={commentingPost.authorName}
+          currentUserUid={userData.uid}
         />
       )}
 

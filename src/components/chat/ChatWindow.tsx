@@ -41,9 +41,16 @@ export function ChatWindow({ chatId, currentUser, otherUser, onBack }: ChatWindo
             setMessages(fetchedMessages);
             setLoading(false);
 
-            // Mark messages as read (optional enhancement: only update if there are unread messages)
-            if (fetchedMessages.length > 0 && currentUser.uid) {
-                // In a production app, we would update the chat document's unreadCount for the currentUser to 0 here.
+            // Mark messages as read
+            const unreadMessages = fetchedMessages.filter(msg => 
+                msg.senderId !== currentUser.uid && !msg.isRead
+            );
+
+            if (unreadMessages.length > 0) {
+                unreadMessages.forEach(msg => {
+                    const msgRef = doc(db, 'chats', chatId, 'messages', msg.id);
+                    updateDoc(msgRef, { isRead: true });
+                });
             }
 
         }, (error) => {
