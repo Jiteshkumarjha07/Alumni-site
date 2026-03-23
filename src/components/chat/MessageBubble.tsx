@@ -103,79 +103,80 @@ export function MessageBubble({ message, isOwnMessage, onEdit, onUnsend, onReply
                         </div>
                     )}
                     <div
-                        className={`px-3.5 py-2 relative shadow-sm max-w-full ${isOwnMessage
-                                ? 'bg-brand-burgundy text-white rounded-2xl rounded-tr-sm'
+                        className={`px-3 py-1.5 relative group shadow-sm max-w-full w-fit ${isOwnMessage
+                                ? 'bg-brand-burgundy text-white rounded-2xl rounded-tr-sm ml-auto'
                                 : 'bg-white border border-brand-ebony/10 text-brand-ebony rounded-2xl rounded-tl-sm'
                             }`}
                     >
-                        {/* More Menu Button */}
-                        <div className="absolute -top-3 -right-1 sm:-top-2 sm:-right-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity z-10 shadow-lg sm:shadow-none">
-                            <div className="relative">
-                                <button
-                                    onClick={() => setShowMenu(!showMenu)}
-                                    className={`p-2 sm:p-1.5 rounded-full shadow-md border border-brand-ebony/10 transition-colors ${
-                                        isOwnMessage ? 'bg-white text-brand-burgundy hover:bg-brand-cream' : 'bg-brand-burgundy text-white hover:bg-brand-burgundy/90'
-                                    }`}
-                                >
-                                    <MoreVertical className="w-4 h-4 sm:w-3.5 sm:h-3.5" />
-                                </button>
-                                {showMenu && (
-                                    <div className={`absolute ${isOwnMessage ? 'right-0' : 'left-0'} mt-1 bg-white rounded-lg shadow-xl border border-brand-ebony/10 py-1 min-w-[140px] z-20`}>
-                                        <button
-                                            onClick={() => {
-                                                onReply?.(message);
-                                                setShowMenu(false);
-                                            }}
-                                            className="w-full flex items-center gap-2 px-3 py-2 text-xs text-brand-ebony hover:bg-brand-parchment/30 transition-colors"
-                                        >
-                                            <Share2 className="w-3.5 h-3.5 rotate-180" />
-                                            Reply
-                                        </button>
-                                        <button
-                                            onClick={handleCopy}
-                                            className="w-full flex items-center gap-2 px-3 py-2 text-xs text-brand-ebony hover:bg-brand-parchment/30 transition-colors"
-                                        >
-                                            <Share2 className="w-3.5 h-3.5" />
-                                            Copy
-                                        </button>
-                                        <button
-                                            onClick={() => {
-                                                onForward?.(message);
-                                                setShowMenu(false);
-                                            }}
-                                            className="w-full flex items-center gap-2 px-3 py-2 text-xs text-brand-ebony hover:bg-brand-parchment/30 transition-colors"
-                                        >
-                                            <Share2 className="w-3.5 h-3.5" />
-                                            Forward
-                                        </button>
-                                        <div className="h-px bg-brand-ebony/5 my-1" />
-                                        <button
-                                            onClick={() => {
-                                                onUnsend?.(message);
-                                                setShowMenu(false);
-                                            }}
-                                            className="w-full flex items-center gap-2 px-3 py-2 text-xs text-red-600 hover:bg-red-50 transition-colors"
-                                        >
-                                            <Trash2 className="w-3.5 h-3.5" />
-                                            {isOwnMessage ? 'Unsend' : 'Delete'}
-                                        </button>
-                                        {isOwnMessage && canAction && (
-                                            <>
-                                                <button
-                                                    onClick={() => {
-                                                        onEdit?.(message);
-                                                        setShowMenu(false);
-                                                    }}
-                                                    className="w-full flex items-center gap-2 px-3 py-2 text-xs text-brand-ebony hover:bg-brand-parchment/30 transition-colors"
-                                                >
-                                                    <Pencil className="w-3.5 h-3.5" />
-                                                    Edit
-                                                </button>
-                                            </>
-                                        )}
-                                    </div>
-                                )}
-                            </div>
+                        {/* More Menu Button - Now inside and subtle */}
+                        <div className="absolute top-1 right-1 opacity-20 group-hover:opacity-100 transition-opacity z-10">
+                            <button
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    setShowMenu(!showMenu);
+                                }}
+                                className={`p-1 rounded-md transition-colors ${
+                                    isOwnMessage ? 'hover:bg-white/20 text-white/40' : 'hover:bg-brand-ebony/5 text-brand-ebony/30'
+                                }`}
+                            >
+                                <MoreVertical className="w-3.5 h-3.5" />
+                            </button>
+                            {showMenu && (
+                                <div className={`absolute ${isOwnMessage ? 'right-0' : 'left-0'} mt-1 bg-white rounded-lg shadow-xl border border-brand-ebony/10 py-1 min-w-[140px] z-20`}>
+                                    <button
+                                        onClick={() => {
+                                            onReply?.(message);
+                                            setShowMenu(false);
+                                        }}
+                                        className="w-full flex items-center gap-2 px-3 py-2 text-xs text-brand-ebony hover:bg-brand-parchment/30 transition-colors"
+                                    >
+                                        <Share2 className="w-3.5 h-3.5 rotate-180" />
+                                        Reply
+                                    </button>
+                                    <button
+                                        onClick={handleCopy}
+                                        className="w-full flex items-center gap-2 px-3 py-2 text-xs text-brand-ebony hover:bg-brand-parchment/30 transition-colors"
+                                    >
+                                        <Share2 className="w-3.5 h-3.5" />
+                                        Copy
+                                    </button>
+                                    <button
+                                        onClick={() => {
+                                            onForward?.(message);
+                                            setShowMenu(false);
+                                        }}
+                                        className="w-full flex items-center gap-2 px-3 py-2 text-xs text-brand-ebony hover:bg-brand-parchment/30 transition-colors"
+                                    >
+                                        <Share2 className="w-3.5 h-3.5" />
+                                        Forward
+                                    </button>
+                                    <div className="h-px bg-brand-ebony/5 my-1" />
+                                    <button
+                                        onClick={() => {
+                                            onUnsend?.(message);
+                                            setShowMenu(false);
+                                        }}
+                                        className="w-full flex items-center gap-2 px-3 py-2 text-xs text-red-600 hover:bg-red-50 transition-colors"
+                                    >
+                                        <Trash2 className="w-3.5 h-3.5" />
+                                        {isOwnMessage ? 'Unsend' : 'Delete'}
+                                    </button>
+                                    {isOwnMessage && canAction && (
+                                        <>
+                                            <button
+                                                onClick={() => {
+                                                    onEdit?.(message);
+                                                    setShowMenu(false);
+                                                }}
+                                                className="w-full flex items-center gap-2 px-3 py-2 text-xs text-brand-ebony hover:bg-brand-parchment/30 transition-colors"
+                                            >
+                                                <Pencil className="w-3.5 h-3.5" />
+                                                Edit
+                                            </button>
+                                        </>
+                                    )}
+                                </div>
+                            )}
                         </div>
 
                         {decryptedReplyText && (
@@ -190,7 +191,7 @@ export function MessageBubble({ message, isOwnMessage, onEdit, onUnsend, onReply
                         )}
 
                         {message.sharedPostId && (
-                            <div className={`mb-2 p-3 rounded-xl border ${isOwnMessage ? 'bg-white/10 border-white/20 text-white' : 'bg-gray-50 border-gray-100 text-gray-800'}`}>
+                            <div className={`mb-2 p-2.5 rounded-xl border w-full min-w-[200px] ${isOwnMessage ? 'bg-white/10 border-white/20 text-white' : 'bg-gray-50 border-gray-100 text-gray-800'}`}>
                                 <div className="flex items-center gap-2 mb-1 opacity-70">
                                     <Share2 className="w-3 h-3" />
                                     <span className="text-[10px] uppercase tracking-wider font-bold">Shared Post</span>
@@ -224,18 +225,18 @@ export function MessageBubble({ message, isOwnMessage, onEdit, onUnsend, onReply
                             </div>
                         )}
 
-                        <div className="flex flex-wrap items-end justify-end gap-x-2">
+                        <div className="flex flex-wrap items-end justify-end gap-x-2 mt-0.5">
                             {decryptedText && (
-                                <p className="text-[14px] leading-relaxed whitespace-pre-wrap [overflow-wrap:anywhere] break-words flex-1 min-w-[60px]">
+                                <p className="text-[14px] leading-relaxed whitespace-pre-wrap [overflow-wrap:anywhere] break-words flex-1 min-w-[120px]">
                                     {decryptedText}
                                 </p>
                             )}
                             
-                            <div className={`flex items-center gap-1 mt-1 mb-[-2px] ml-auto shrink-0 select-none ${isOwnMessage ? 'text-white/70' : 'text-brand-ebony/40'}`}>
-                                {message.isEdited && <span className="text-[9px] italic">(edited)</span>}
-                                <span className="text-[10px] font-medium uppercase tracking-tighter">{timeString}</span>
+                            <div className={`flex items-center gap-1 mb-[-1px] shrink-0 select-none ${isOwnMessage ? 'text-white/70' : 'text-brand-ebony/40'}`}>
+                                {message.isEdited && <span className="text-[8px] italic opacity-80">(edited)</span>}
+                                <span className="text-[9px] font-medium tracking-tight whitespace-nowrap">{timeString}</span>
                                 {isOwnMessage && (
-                                    <CheckCheck className={`w-3 h-3 ${message.isRead ? 'text-brand-gold' : 'opacity-50'}`} />
+                                    <CheckCheck className={`w-2.5 h-2.5 ${message.isRead ? 'text-brand-gold' : 'opacity-40'}`} />
                                 )}
                             </div>
                         </div>

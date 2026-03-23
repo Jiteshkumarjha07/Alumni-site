@@ -412,13 +412,13 @@ export function ChatWindow({ chatId, currentUser, otherUser, isGroup = false, gr
                     </div>
                 )}
 
-                <div className="flex overflow-x-auto gap-2 mb-3 pb-1 px-1 no-scrollbar active:cursor-grabbing snap-x">
+                <div className="flex overflow-x-auto gap-1 mb-2 pb-1 px-1 no-scrollbar active:cursor-grabbing snap-x border-b border-brand-ebony/5">
                     {['👍', '❤️', '😂', '😮', '😢', '🔥', '👏', '🙌', '✨', '💯'].map(emoji => (
                         <button
                             key={emoji}
                             type="button"
                             onClick={() => setNewMessage(prev => prev + emoji)}
-                            className="w-10 h-10 sm:w-8 sm:h-8 flex-shrink-0 flex items-center justify-center hover:bg-brand-burgundy/5 rounded-lg transition-colors text-xl snap-center"
+                            className="w-9 h-9 sm:w-8 sm:h-8 flex-shrink-0 flex items-center justify-center hover:bg-brand-burgundy/5 rounded-lg transition-colors text-lg snap-center"
                         >
                             {emoji}
                         </button>
@@ -470,7 +470,7 @@ export function ChatWindow({ chatId, currentUser, otherUser, isGroup = false, gr
                         <button
                             type="submit"
                             disabled={(!newMessage.trim() && !mediaPreview) || sending}
-                            className="p-3 sm:p-3.5 bg-brand-burgundy text-white rounded-2xl hover:bg-[#5a2427] transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-md shadow-brand-burgundy/20 flex items-center justify-center min-w-[48px] sm:min-w-[50px]"
+                            className="p-3 bg-brand-burgundy text-white rounded-2xl hover:bg-[#5a2427] transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-md shadow-brand-burgundy/20 flex items-center justify-center min-w-[44px] h-[44px] sm:min-w-[50px] sm:h-[50px]"
                         >
                             {sending ? <Loader2 className="w-5 h-5 animate-spin" /> : (
                                 editingMessage ? <CheckCheck className="w-5 h-5" /> : <Send className="w-5 h-5 ml-0.5" />
