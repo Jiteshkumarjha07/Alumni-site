@@ -137,7 +137,7 @@ export function ChatList({ currentUser, chats, onSelectChat, onStartChat, onSele
                 <div className="flex p-1 bg-brand-ebony/5 rounded-xl mb-4">
                     <button
                         onClick={() => onViewModeChange('chats')}
-                        className={`flex-1 flex items-center justify-center gap-2 py-2 text-xs font-bold uppercase tracking-wider rounded-lg transition-all ${
+                        className={`flex-1 flex items-center justify-center gap-2 py-3 sm:py-2 text-xs font-bold uppercase tracking-wider rounded-lg transition-all ${
                             viewMode === 'chats' 
                                 ? 'bg-white text-brand-burgundy shadow-sm' 
                                 : 'text-brand-ebony/40 hover:text-brand-ebony/60'
@@ -148,7 +148,7 @@ export function ChatList({ currentUser, chats, onSelectChat, onStartChat, onSele
                     </button>
                     <button
                         onClick={() => onViewModeChange('groups')}
-                        className={`flex-1 flex items-center justify-center gap-2 py-2 text-xs font-bold uppercase tracking-wider rounded-lg transition-all ${
+                        className={`flex-1 flex items-center justify-center gap-2 py-3 sm:py-2 text-xs font-bold uppercase tracking-wider rounded-lg transition-all ${
                             viewMode === 'groups' 
                                 ? 'bg-white text-brand-burgundy shadow-sm' 
                                 : 'text-brand-ebony/40 hover:text-brand-ebony/60'
@@ -229,10 +229,9 @@ export function ChatList({ currentUser, chats, onSelectChat, onStartChat, onSele
                                         <button
                                             key={chat.id}
                                             onClick={() => onSelectChat(chat.id)}
-                                            className={`w-full flex items-center p-3 rounded-xl transition-all mb-1 ${selectedChatId === chat.id 
-                                                ? 'bg-brand-burgundy/10 border-l-4 border-brand-burgundy translate-x-1 shadow-sm' 
-                                                : 'hover:bg-brand-burgundy/5 translate-x-0'
-                                                }`}
+                                            className={`w-full flex items-center p-4 sm:p-3 hover:bg-brand-burgundy/5 transition-all relative ${
+                                                selectedChatId === chat.id ? 'bg-brand-burgundy/5 border-r-4 border-brand-burgundy' : ''
+                                            }`}
                                         >
                                             <div className="relative">
                                                 <img
@@ -282,10 +281,9 @@ export function ChatList({ currentUser, chats, onSelectChat, onStartChat, onSele
                                     <button
                                         key={group.id}
                                         onClick={() => onSelectGroup(group.id)}
-                                        className={`w-full flex items-center p-3 rounded-xl transition-all mb-1 ${selectedGroupId === group.id 
-                                            ? 'bg-brand-burgundy/10 border-l-4 border-brand-burgundy translate-x-1 shadow-sm' 
-                                            : 'hover:bg-brand-burgundy/5 translate-x-0'
-                                            }`}
+                                        className={`w-full flex items-center p-4 sm:p-3 hover:bg-brand-burgundy/5 transition-all relative ${
+                                            selectedGroupId === group.id ? 'bg-brand-burgundy/5 border-r-4 border-brand-burgundy' : ''
+                                        }`}
                                     >
                                         <div className="w-12 h-12 bg-pink-100 rounded-full flex items-center justify-center mr-3 flex-shrink-0">
                                             <Users className="w-6 h-6 text-brand-burgundy" />
@@ -302,7 +300,7 @@ export function ChatList({ currentUser, chats, onSelectChat, onStartChat, onSele
                                                 )}
                                             </div>
                                             <div className="flex items-center gap-1.5 overflow-hidden">
-                                                <p className="text-sm truncate text-brand-ebony/50 italic font-serif flex-1">
+                                                <p className="text-sm line-clamp-1 text-brand-ebony/50 italic font-serif flex-1">
                                                     {group.lastMessage ? (
                                                         <>
                                                             <span className="font-sans font-bold not-italic text-[10px] uppercase text-brand-burgundy/60 mr-1">

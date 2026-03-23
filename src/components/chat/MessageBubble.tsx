@@ -68,7 +68,7 @@ export function MessageBubble({ message, isOwnMessage, onEdit, onUnsend, onReply
 
     return (
         <div className={`flex w-full mb-4 group ${isOwnMessage ? 'justify-end' : 'justify-start'}`}>
-            <div className={`flex max-w-[70%] ${isOwnMessage ? 'flex-row-reverse' : 'flex-row'} items-end gap-2`}>
+            <div className={`flex max-w-[85%] sm:max-w-[75%] md:max-w-[70%] ${isOwnMessage ? 'flex-row-reverse' : 'flex-row'} items-end gap-2`}>
                 {!isOwnMessage && message.senderProfilePic && (
                     <img
                         src={message.senderProfilePic}
@@ -94,15 +94,15 @@ export function MessageBubble({ message, isOwnMessage, onEdit, onUnsend, onReply
                                 : 'bg-white border border-brand-ebony/10 text-brand-ebony rounded-bl-none'
                             }`}
                     >
-                        <div className="absolute -top-2 -right-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity z-10">
+                        <div className="absolute -top-3 -right-1 sm:-top-2 sm:-right-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity z-10 shadow-lg sm:shadow-none">
                             <div className="relative">
                                 <button
                                     onClick={() => setShowMenu(!showMenu)}
-                                    className={`p-1.5 rounded-full shadow-md border border-brand-ebony/10 transition-colors ${
+                                    className={`p-2 sm:p-1.5 rounded-full shadow-md border border-brand-ebony/10 transition-colors ${
                                         isOwnMessage ? 'bg-white text-brand-burgundy hover:bg-brand-cream' : 'bg-brand-burgundy text-white hover:bg-brand-burgundy/90'
                                     }`}
                                 >
-                                    <MoreVertical className="w-3.5 h-3.5" />
+                                    <MoreVertical className="w-4 h-4 sm:w-3.5 sm:h-3.5" />
                                 </button>
                                 {showMenu && (
                                     <div className={`absolute ${isOwnMessage ? 'right-0' : 'left-0'} mt-1 bg-white rounded-lg shadow-xl border border-brand-ebony/10 py-1 min-w-[140px] z-20`}>
@@ -210,7 +210,7 @@ export function MessageBubble({ message, isOwnMessage, onEdit, onUnsend, onReply
                         )}
 
                         {decryptedText && (
-                            <p className="text-sm whitespace-pre-wrap word-break break-words">
+                            <p className="text-sm whitespace-pre-wrap [overflow-wrap:anywhere] break-words">
                                 {decryptedText}
                             </p>
                         )}

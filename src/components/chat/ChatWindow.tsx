@@ -361,7 +361,7 @@ export function ChatWindow({ chatId, currentUser, otherUser, isGroup = false, gr
             </div>
 
             {/* Input Area */}
-            <div className="p-4 bg-white/90 border-t border-brand-ebony/10 backdrop-blur-md">
+            <div className="p-4 pb-12 sm:pb-4 bg-white/90 border-t border-brand-ebony/10 backdrop-blur-md">
                 {editingMessage && (
                     <div className="flex items-center justify-between mb-2 px-4 py-1.5 bg-brand-burgundy/5 rounded-lg border border-brand-burgundy/10">
                         <p className="text-xs text-brand-burgundy font-medium italic">Editing message...</p>
@@ -412,13 +412,13 @@ export function ChatWindow({ chatId, currentUser, otherUser, isGroup = false, gr
                     </div>
                 )}
 
-                <div className="flex flex-wrap gap-2 mb-3 px-1">
+                <div className="flex overflow-x-auto gap-2 mb-3 pb-1 px-1 no-scrollbar active:cursor-grabbing snap-x">
                     {['👍', '❤️', '😂', '😮', '😢', '🔥', '👏', '🙌', '✨', '💯'].map(emoji => (
                         <button
                             key={emoji}
                             type="button"
                             onClick={() => setNewMessage(prev => prev + emoji)}
-                            className="w-8 h-8 flex items-center justify-center hover:bg-brand-burgundy/5 rounded-lg transition-colors text-xl"
+                            className="w-10 h-10 sm:w-8 sm:h-8 flex-shrink-0 flex items-center justify-center hover:bg-brand-burgundy/5 rounded-lg transition-colors text-xl snap-center"
                         >
                             {emoji}
                         </button>
@@ -464,13 +464,13 @@ export function ChatWindow({ chatId, currentUser, otherUser, isGroup = false, gr
                             value={newMessage}
                             onChange={(e) => setNewMessage(e.target.value)}
                             placeholder={editingMessage ? "Edit message..." : (replyingToMessage ? "Type a reply..." : "Type a message...")}
-                            className="flex-1 px-5 py-3.5 bg-brand-parchment/30 border border-brand-ebony/10 rounded-2xl focus:ring-2 focus:ring-brand-burgundy/20 focus:border-brand-burgundy outline-none transition-all placeholder:text-brand-ebony/30 shadow-inner"
+                            className="flex-1 px-4 sm:px-5 py-3 sm:py-3.5 bg-brand-parchment/30 border border-brand-ebony/10 rounded-2xl focus:ring-2 focus:ring-brand-burgundy/20 focus:border-brand-burgundy outline-none transition-all placeholder:text-brand-ebony/30 shadow-inner text-base sm:text-sm"
                             disabled={sending}
                         />
                         <button
                             type="submit"
                             disabled={(!newMessage.trim() && !mediaPreview) || sending}
-                            className="p-3.5 bg-brand-burgundy text-white rounded-2xl hover:bg-[#5a2427] transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-md shadow-brand-burgundy/20 flex items-center justify-center min-w-[50px]"
+                            className="p-3 sm:p-3.5 bg-brand-burgundy text-white rounded-2xl hover:bg-[#5a2427] transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-md shadow-brand-burgundy/20 flex items-center justify-center min-w-[48px] sm:min-w-[50px]"
                         >
                             {sending ? <Loader2 className="w-5 h-5 animate-spin" /> : (
                                 editingMessage ? <CheckCheck className="w-5 h-5" /> : <Send className="w-5 h-5 ml-0.5" />
