@@ -161,6 +161,18 @@ export default function GroupChatPage() {
 
             {/* Input */}
             <div className="bg-white border-t p-4">
+                <div className="flex flex-wrap gap-2 mb-3 px-1">
+                    {['👍', '❤️', '😂', '😮', '😢', '🔥', '👏', '🙌', '✨', '💯'].map(emoji => (
+                        <button
+                            key={emoji}
+                            type="button"
+                            onClick={() => setNewMessage(prev => prev + emoji)}
+                            className="w-8 h-8 flex items-center justify-center hover:bg-brand-burgundy/5 rounded-lg transition-colors text-xl font-sans"
+                        >
+                            {emoji}
+                        </button>
+                    ))}
+                </div>
                 <div className="flex gap-2">
                     <input
                         type="text"

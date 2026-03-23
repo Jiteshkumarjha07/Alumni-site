@@ -1,22 +1,31 @@
 import React, { useState, useEffect } from 'react';
 import { Chat, User } from '@/types';
-import { collection, query, getDocs, where } from 'firebase/firestore';
+import { collection, query, getDocs, where, onSnapshot } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import { Search, Loader2 } from 'lucide-react';
+import { Search, Loader2, Plus, Users, MessageCircle, MoreVertical } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
+import { CreateGroupModal } from '../modals/CreateGroupModal';
+import { Group } from '@/types';
 
 interface ChatListProps {
     currentUser: User;
     chats: Chat[];
     onSelectChat: (chatId: string) => void;
     onStartChat: (otherUser: User) => void;
+    onSelectGroup: (groupId: string) => void;
     selectedChatId: string | null;
+    selectedGroupId: string | null;
 }
 
-export function ChatList({ currentUser, chats, onSelectChat, onStartChat, selectedChatId }: ChatListProps) {
+export function ChatList({ currentUser, chats, onSelectChat, onStartChat, onSelectGroup, selectedChatId, selectedGroupId }: ChatListProps) {
     const [searchQuery, setSearchQuery] = useState('');
     const [searchResults, setSearchResults] = useState<User[]>([]);
     const [isSearching, setIsSearching] = useState(false);
+    const [viewMode, setViewMode] = useState<'chats' | 'groups'>('chats');
+    const [isActionsPopupOpen, setIsActionsPopupOpen] = useState(false);
+    const [isCreateGroupModalOpen, setIsCreateGroupModalOpen] = useState(false);
+    const [userGroups, setUserGroups] = useState<Group[]>([]);
+    const [loadingGroups, setLoadingGroups] = useState(false);
 
     useEffect(() => {
         const searchUsers = async () => {
@@ -52,15 +61,100 @@ export function ChatList({ currentUser, chats, onSelectChat, onStartChat, select
         return () => clearTimeout(timeoutId);
     }, [searchQuery, currentUser.uid]);
 
+    // Fetch user groups
+    useEffect(() => {
+        if (!currentUser.uid || viewMode !== 'groups') return;
+
+        setLoadingGroups(true);
+        const groupsRef = collection(db, 'groups');
+        const q = query(groupsRef, where('members', 'array-contains', currentUser.uid));
+
+        const unsubscribe = onSnapshot(q, (snapshot) => {
+            const fetchedGroups = snapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            })) as Group[];
+            
+            setUserGroups(fetchedGroups.sort((a, b) => 
+                (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0)
+            ));
+            setLoadingGroups(false);
+        });
+
+        return () => unsubscribe();
+    }, [currentUser.uid, viewMode]);
+
     return (
         <div className="w-full h-full flex flex-col bg-brand-parchment/10 border-r border-brand-ebony/10">
             {/* Header & Search */}
-            <div className="p-4 border-b border-brand-ebony/10">
-                <h2 className="text-xl font-serif font-bold text-brand-ebony mb-4 tracking-tight">Messages</h2>
+            <div className="p-4 border-b border-brand-ebony/10 relative">
+                <div className="flex justify-between items-center mb-4">
+                    <h2 className="text-xl font-serif font-bold text-brand-ebony tracking-tight">Messages</h2>
+                    <div className="relative">
+                        <button
+                            onClick={() => setIsActionsPopupOpen(!isActionsPopupOpen)}
+                            className="p-2 bg-brand-burgundy/5 text-brand-burgundy rounded-xl hover:bg-brand-burgundy/10 transition-colors shadow-sm border border-brand-burgundy/20"
+                        >
+                            <Plus className="w-5 h-5" />
+                        </button>
+
+                        {isActionsPopupOpen && (
+                            <div className="absolute right-0 top-12 w-56 bg-white rounded-2xl shadow-2xl border border-brand-ebony/5 z-[80] overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+                                <div className="p-2 space-y-1">
+                                    <button 
+                                        onClick={() => {
+                                            setIsActionsPopupOpen(false);
+                                            // Focus search input or just clear it
+                                            setSearchQuery('');
+                                            const input = document.getElementById('chat-search-input');
+                                            if (input) input.focus();
+                                        }}
+                                        className="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-brand-ebony hover:bg-brand-parchment/30 rounded-xl transition-colors"
+                                    >
+                                        <MessageCircle className="w-4 h-4 text-brand-burgundy" />
+                                        New Message
+                                    </button>
+                                    <button 
+                                        onClick={() => {
+                                            setIsActionsPopupOpen(false);
+                                            setIsCreateGroupModalOpen(true);
+                                        }}
+                                        className="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-brand-ebony hover:bg-brand-parchment/30 rounded-xl transition-colors"
+                                    >
+                                        <Users className="w-4 h-4 text-brand-burgundy" />
+                                        Create Group
+                                    </button>
+                                    <div className="h-px bg-brand-ebony/5 my-1 mx-2" />
+                                    <button 
+                                        onClick={() => {
+                                            setIsActionsPopupOpen(false);
+                                            setViewMode(viewMode === 'chats' ? 'groups' : 'chats');
+                                        }}
+                                        className="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-brand-ebony hover:bg-brand-burgundy/5 rounded-xl transition-colors"
+                                    >
+                                        {viewMode === 'chats' ? (
+                                            <>
+                                                <Users className="w-4 h-4 text-brand-ebony/40" />
+                                                Show Groups
+                                            </>
+                                        ) : (
+                                            <>
+                                                <MessageCircle className="w-4 h-4 text-brand-ebony/40" />
+                                                Show Private Chats
+                                            </>
+                                        )}
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </div>
+
                 <div className="relative">
                     <input
+                        id="chat-search-input"
                         type="text"
-                        placeholder="Search alumni to chat..."
+                        placeholder={viewMode === 'chats' ? "Search alumni to chat..." : "Search your groups..."}
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         className="w-full pl-10 pr-4 py-2 bg-white/60 border border-brand-ebony/10 rounded-xl focus:ring-2 focus:ring-brand-burgundy/20 focus:border-brand-burgundy outline-none transition-all"
@@ -106,64 +200,112 @@ export function ChatList({ currentUser, chats, onSelectChat, onStartChat, select
                 ) : (
                     // Active Chats
                     <div className="p-2">
-                        {chats.length === 0 ? (
-                            <div className="text-center py-8 text-gray-500">
-                                <MessageSquare className="w-12 h-12 mx-auto text-gray-300 mb-3" />
-                                <p>No active conversations.</p>
-                                <p className="text-sm">Search above to start chatting!</p>
-                            </div>
+                        {viewMode === 'chats' ? (
+                            chats.length === 0 ? (
+                                <div className="text-center py-8 text-gray-500">
+                                    <MessageSquare className="w-12 h-12 mx-auto text-gray-300 mb-3" />
+                                    <p>No active conversations.</p>
+                                    <p className="text-sm">Search above to start chatting!</p>
+                                </div>
+                            ) : (
+                                chats.map((chat) => {
+                                    const otherUserId = chat.participants.find(id => id !== currentUser.uid);
+                                    const otherUserDetails = otherUserId ? chat.participantDetails?.[otherUserId] : null;
+
+                                    const name = otherUserDetails?.name || 'Unknown User';
+                                    const profilePic = otherUserDetails?.profilePic || `https://placehold.co/100x100/EFEFEFF/003366?text=${name.substring(0, 1)}`;
+                                    const unreadCount = chat.unreadCount?.[currentUser.uid] || 0;
+
+                                    return (
+                                        <button
+                                            key={chat.id}
+                                            onClick={() => onSelectChat(chat.id)}
+                                            className={`w-full flex items-center p-3 rounded-xl transition-all mb-1 ${selectedChatId === chat.id 
+                                                ? 'bg-brand-burgundy/10 border-l-4 border-brand-burgundy translate-x-1 shadow-sm' 
+                                                : 'hover:bg-brand-burgundy/5 translate-x-0'
+                                                }`}
+                                        >
+                                            <div className="relative">
+                                                <img
+                                                    src={profilePic}
+                                                    alt={name}
+                                                    className="w-12 h-12 rounded-full object-cover mr-3"
+                                                />
+                                            </div>
+                                            <div className="text-left flex-1 min-w-0">
+                                                <div className="flex justify-between items-baseline mb-0.5">
+                                                    <p className={`font-serif font-bold truncate pr-2 ${unreadCount > 0 ? 'text-brand-ebony' : 'text-brand-ebony/80'}`}>
+                                                        {name}
+                                                    </p>
+                                                    {chat.lastMessageAt && (
+                                                        <span className="text-xs text-gray-400 whitespace-nowrap">
+                                                            {formatDistanceToNow(chat.lastMessageAt.toDate(), { addSuffix: true })}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                                <p className={`text-sm truncate font-medium ${unreadCount > 0 ? 'text-brand-ebony' : 'text-brand-ebony/50 italic font-serif'}`}>
+                                                    {chat.lastMessage || 'Start a conversation'}
+                                                </p>
+                                            </div>
+                                            {unreadCount > 0 && (
+                                                <div className="ml-3 bg-brand-burgundy text-white text-[10px] font-bold rounded-full w-5 h-5 flex items-center justify-center shadow-sm">
+                                                    {unreadCount > 99 ? '99+' : unreadCount}
+                                                </div>
+                                            )}
+                                        </button>
+                                    );
+                                })
+                            )
                         ) : (
-                            chats.map((chat) => {
-                                const otherUserId = chat.participants.find(id => id !== currentUser.uid);
-                                const otherUserDetails = otherUserId ? chat.participantDetails?.[otherUserId] : null;
-
-                                const name = otherUserDetails?.name || 'Unknown User';
-                                const profilePic = otherUserDetails?.profilePic || `https://placehold.co/100x100/EFEFEFF/003366?text=${name.substring(0, 1)}`;
-                                const unreadCount = chat.unreadCount?.[currentUser.uid] || 0;
-
-                                return (
+                            // Groups View
+                            loadingGroups ? (
+                                <div className="flex justify-center py-8">
+                                    <Loader2 className="w-8 h-8 animate-spin text-brand-burgundy" />
+                                </div>
+                            ) : userGroups.length === 0 ? (
+                                <div className="text-center py-8 text-gray-500">
+                                    <Users className="w-12 h-12 mx-auto text-gray-300 mb-3" />
+                                    <p>No groups joined yet.</p>
+                                    <p className="text-sm">Create a group to get started!</p>
+                                </div>
+                            ) : (
+                                userGroups.map((group) => (
                                     <button
-                                        key={chat.id}
-                                        onClick={() => onSelectChat(chat.id)}
-                                        className={`w-full flex items-center p-3 rounded-xl transition-all mb-1 ${selectedChatId === chat.id 
+                                        key={group.id}
+                                        onClick={() => onSelectGroup(group.id)}
+                                        className={`w-full flex items-center p-3 rounded-xl transition-all mb-1 ${selectedGroupId === group.id 
                                             ? 'bg-brand-burgundy/10 border-l-4 border-brand-burgundy translate-x-1 shadow-sm' 
                                             : 'hover:bg-brand-burgundy/5 translate-x-0'
                                             }`}
                                     >
-                                        <div className="relative">
-                                            <img
-                                                src={profilePic}
-                                                alt={name}
-                                                className="w-12 h-12 rounded-full object-cover mr-3"
-                                            />
+                                        <div className="w-12 h-12 bg-pink-100 rounded-full flex items-center justify-center mr-3 flex-shrink-0">
+                                            <Users className="w-6 h-6 text-brand-burgundy" />
                                         </div>
                                         <div className="text-left flex-1 min-w-0">
-                                            <div className="flex justify-between items-baseline mb-0.5">
-                                                <p className={`font-serif font-bold truncate pr-2 ${unreadCount > 0 ? 'text-brand-ebony' : 'text-brand-ebony/80'}`}>
-                                                    {name}
-                                                </p>
-                                                {chat.lastMessageAt && (
-                                                    <span className="text-xs text-gray-400 whitespace-nowrap">
-                                                        {formatDistanceToNow(chat.lastMessageAt.toDate(), { addSuffix: true })}
-                                                    </span>
-                                                )}
-                                            </div>
-                                            <p className={`text-sm truncate font-medium ${unreadCount > 0 ? 'text-brand-ebony' : 'text-brand-ebony/50 italic font-serif'}`}>
-                                                {chat.lastMessage || 'Start a conversation'}
+                                            <p className="font-serif font-bold text-brand-ebony truncate">
+                                                {group.groupName}
+                                            </p>
+                                            <p className="text-xs text-brand-ebony/50 font-medium">
+                                                {group.members.length} Members
                                             </p>
                                         </div>
-                                        {unreadCount > 0 && (
-                                            <div className="ml-3 bg-brand-burgundy text-white text-[10px] font-bold rounded-full w-5 h-5 flex items-center justify-center shadow-sm">
-                                                {unreadCount > 99 ? '99+' : unreadCount}
-                                            </div>
-                                        )}
                                     </button>
-                                );
-                            })
+                                ))
+                            )
                         )}
                     </div>
                 )}
             </div>
+
+            <CreateGroupModal 
+                isOpen={isCreateGroupModalOpen}
+                onClose={() => setIsCreateGroupModalOpen(false)}
+                currentUser={currentUser}
+                onGroupCreated={(groupId) => {
+                    setViewMode('groups');
+                    onSelectGroup(groupId);
+                }}
+            />
         </div>
     );
 }

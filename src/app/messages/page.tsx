@@ -7,7 +7,7 @@ import { ChatWindow } from '@/components/chat/ChatWindow';
 import { collection, query, where, onSnapshot } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { Chat, User } from '@/types';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Users } from 'lucide-react';
 import { useSearchParams, useRouter } from 'next/navigation';
 
 import { Suspense } from 'react';
@@ -22,7 +22,9 @@ function MessagesClient() {
 
     // State for the currently active chat
     const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
+    const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
     const [selectedUser, setSelectedUser] = useState<{ name: string; profilePic: string; uid: string } | null>(null);
+    const [selectedGroup, setSelectedGroup] = useState<{ name: string; id: string } | null>(null);
 
     // Helper to generate a consistent chat ID between two users
     const getChatId = (uid1: string, uid2: string) => {
@@ -56,6 +58,15 @@ function MessagesClient() {
                 });
             }
         }
+    };
+
+    const handleSelectGroup = (groupId: string) => {
+        setSelectedChatId(null);
+        setSelectedUser(null);
+        setSelectedGroupId(groupId);
+        
+        // We'll fetch the group name if needed, or just rely on the ID for now
+        // For simplicity, we can fetch it once or pass it from ChatList
     };
 
     // 1. Fetch user's chats
@@ -145,22 +156,42 @@ function MessagesClient() {
                             chats={chats}
                             onSelectChat={handleSelectChat}
                             onStartChat={handleStartChat}
+                            onSelectGroup={handleSelectGroup}
                             selectedChatId={selectedChatId}
+                            selectedGroupId={selectedGroupId}
                         />
                     )}
                 </div>
 
                 {/* Right Pane: Active Chat Window */}
-                <div className={`flex-1 overflow-hidden ${!selectedChatId ? 'hidden md:flex' : 'flex'}`}>
-                    <ChatWindow
-                        chatId={selectedChatId || ''}
-                        currentUser={userData}
-                        otherUser={selectedUser}
-                        onBack={() => {
-                            setSelectedChatId(null);
-                            setSelectedUser(null);
-                        }}
-                    />
+                <div className={`flex-1 overflow-hidden ${(!selectedChatId && !selectedGroupId) ? 'hidden md:flex' : 'flex'}`}>
+                    {selectedGroupId ? (
+                        <div className="flex-1 flex flex-col items-center justify-center p-8 text-center bg-gray-50">
+                            <div className="w-16 h-16 bg-brand-burgundy/10 rounded-full flex items-center justify-center mb-4">
+                                <Users className="w-8 h-8 text-brand-burgundy" />
+                            </div>
+                            <h3 className="text-xl font-serif font-bold text-brand-ebony mb-2">Group Messaging</h3>
+                            <p className="text-brand-ebony/60 max-w-sm mb-6">
+                                Group messaging is now available! Click below to enter the full group chat interface.
+                            </p>
+                            <button 
+                                onClick={() => router.push(`/messages/group/${selectedGroupId}`)}
+                                className="px-6 py-3 bg-brand-burgundy text-white rounded-xl font-bold hover:bg-[#5a2427] transition-all shadow-lg shadow-brand-burgundy/20"
+                            >
+                                Open Group Chat
+                            </button>
+                        </div>
+                    ) : (
+                        <ChatWindow
+                            chatId={selectedChatId || ''}
+                            currentUser={userData}
+                            otherUser={selectedUser}
+                            onBack={() => {
+                                setSelectedChatId(null);
+                                setSelectedUser(null);
+                            }}
+                        />
+                    )}
                 </div>
             </div>
         </div>
