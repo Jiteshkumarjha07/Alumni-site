@@ -13,7 +13,7 @@ import { ChangePasswordModal } from '@/components/modals/ChangePasswordModal';
 import { SignedOutView } from '@/components/auth/SignedOutView';
 import { uploadMedia } from '@/lib/media';
 import { useAuth } from '@/contexts/AuthContext';
-import { Pencil, LogOut, MapPin, Briefcase, Settings, MoreVertical, ShieldAlert, Lock, Trash2, Loader2 } from 'lucide-react';
+import { Pencil, LogOut, MapPin, Briefcase, Settings, MoreVertical, ShieldAlert, Lock, Trash2, Loader2, Menu } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 
@@ -165,20 +165,24 @@ export default function ProfilePage() {
 
     return (
         <div className="max-w-4xl mx-auto p-4 pt-8">
-            {/* Cover Photo Area with Settings Menu */}
-            <div className="bg-gradient-to-r from-brand-burgundy to-[#4a1c20] h-48 rounded-t-xl opacity-90 border-b-4 border-brand-gold/60 relative">
-                <div className="absolute top-4 right-4 flex gap-2">
+            {/* Cover Photo Area */}
+            <div className="bg-gradient-to-r from-brand-burgundy to-[#4a1c20] h-48 rounded-t-xl opacity-90 border-b-4 border-brand-gold/60 relative"></div>
+
+            {/* Profile Header */}
+            <div className="bg-brand-parchment/90 rounded-b-xl shadow-md p-6 -mt-20 relative border border-brand-ebony/10 z-10">
+                {/* Account Settings Menu (Top Right of Header) */}
+                <div className="absolute top-4 right-4 z-[60]">
                     <div className="relative">
                         <button
                             onClick={() => setShowSettings(!showSettings)}
-                            className="p-2 bg-white/10 hover:bg-white/20 backdrop-blur-md rounded-full text-white transition-all border border-white/20"
+                            className="p-2 text-brand-ebony/40 hover:text-brand-burgundy hover:bg-brand-burgundy/5 rounded-full transition-all"
                             title="Account Settings"
                         >
-                            <Settings className="w-6 h-6" />
+                            <Menu className="w-6 h-6" />
                         </button>
 
                         {showSettings && (
-                            <div className="absolute right-0 mt-2 w-56 bg-white rounded-2xl shadow-2xl py-2 z-50 border border-gray-100 animate-in fade-in slide-in-from-top-2 duration-200">
+                            <div className="absolute right-0 mt-2 w-56 bg-white rounded-2xl shadow-2xl py-2 z-[70] border border-gray-100 animate-in fade-in slide-in-from-top-2 duration-200">
                                 <div className="px-4 py-2 border-b border-gray-50 mb-1">
                                     <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Account Settings</p>
                                 </div>
@@ -212,10 +216,6 @@ export default function ProfilePage() {
                         )}
                     </div>
                 </div>
-            </div>
-
-            {/* Profile Header */}
-            <div className="bg-brand-parchment/90 rounded-b-xl shadow-md p-6 -mt-20 relative border border-brand-ebony/10">
                 <div className="flex flex-col md:flex-row items-center md:items-end gap-6">
                     {/* Profile Picture */}
                     <div className="relative">
