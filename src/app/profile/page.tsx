@@ -10,6 +10,7 @@ import { EditProfileModal, ProfileFormData } from '@/components/modals/EditProfi
 import { ConfirmDialog } from '@/components/modals/ConfirmDialog';
 import { SharePostModal } from '@/components/modals/SharePostModal';
 import { SignedOutView } from '@/components/auth/SignedOutView';
+import { uploadMedia } from '@/lib/media';
 import { Pencil, LogOut, MapPin, Briefcase } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
