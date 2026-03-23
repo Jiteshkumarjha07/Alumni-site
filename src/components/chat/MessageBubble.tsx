@@ -134,7 +134,7 @@ export function MessageBubble({ message, isOwnMessage, onEdit, onUnsend, onReply
                                             className="w-full flex items-center gap-2 px-3 py-2 text-xs text-red-600 hover:bg-red-50 transition-colors"
                                         >
                                             <Trash2 className="w-3.5 h-3.5" />
-                                            Unsend
+                                            {isOwnMessage ? 'Unsend' : 'Delete'}
                                         </button>
                                         {isOwnMessage && canAction && (
                                             <>
@@ -180,7 +180,7 @@ export function MessageBubble({ message, isOwnMessage, onEdit, onUnsend, onReply
                             </div>
                         )}
 
-                        {decryptedImageUrl && (
+                        {decryptedImageUrl && !message.isDeleted && (
                             <div className="mb-2 max-w-full overflow-hidden rounded-xl">
                                 <img 
                                     src={decryptedImageUrl} 
@@ -191,7 +191,7 @@ export function MessageBubble({ message, isOwnMessage, onEdit, onUnsend, onReply
                             </div>
                         )}
 
-                        {decryptedVideoUrl && (
+                        {decryptedVideoUrl && !message.isDeleted && (
                             <div className="mb-2 max-w-full overflow-hidden rounded-xl">
                                 <video 
                                     src={decryptedVideoUrl} 

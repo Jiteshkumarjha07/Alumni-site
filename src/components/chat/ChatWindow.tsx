@@ -432,15 +432,21 @@ export function ChatWindow({ chatId, currentUser, otherUser, onBack }: ChatWindo
             {unsendingMessage && (
                 <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60] p-4 backdrop-blur-sm">
                     <div className="bg-white rounded-2xl p-6 max-w-sm w-full shadow-2xl animate-in zoom-in-95 duration-200">
-                        <h3 className="text-lg font-serif font-bold text-brand-ebony mb-2">Unsend Message</h3>
-                        <p className="text-sm text-brand-ebony/60 mb-6">Who would you like to unsend this message for?</p>
+                        <h3 className="text-lg font-serif font-bold text-brand-ebony mb-2">
+                            {unsendingMessage.senderId === currentUser.uid ? 'Unsend Message' : 'Delete Message'}
+                        </h3>
+                        <p className="text-sm text-brand-ebony/60 mb-6">
+                            {unsendingMessage.senderId === currentUser.uid 
+                                ? 'Who would you like to unsend this message for?' 
+                                : 'Choose how you want to delete this message.'}
+                        </p>
                         
                         <div className="space-y-3">
                             <button 
                                 onClick={() => handleUnsendMessage(unsendingMessage, 'me')}
                                 className="w-full py-3 px-4 bg-gray-100 hover:bg-gray-200 text-brand-ebony rounded-xl font-semibold transition-colors flex items-center justify-center gap-2"
                             >
-                                Unsend for me
+                                {unsendingMessage.senderId === currentUser.uid ? 'Unsend for me' : 'Delete for me'}
                             </button>
                             {unsendingMessage.senderId === currentUser.uid && (
                                 <button 
