@@ -364,6 +364,19 @@ export function ChatWindow({ chatId, currentUser, otherUser, onBack }: ChatWindo
                     </div>
                 )}
 
+                <div className="flex flex-wrap gap-2 mb-3 px-1">
+                    {['👍', '❤️', '😂', '😮', '😢', '🔥', '👏', '🙌', '✨', '💯'].map(emoji => (
+                        <button
+                            key={emoji}
+                            type="button"
+                            onClick={() => setNewMessage(prev => prev + emoji)}
+                            className="w-8 h-8 flex items-center justify-center hover:bg-brand-burgundy/5 rounded-lg transition-colors text-xl"
+                        >
+                            {emoji}
+                        </button>
+                    ))}
+                </div>
+
                 <div className="flex items-center gap-2">
                     <div className="flex gap-1">
                         <button
