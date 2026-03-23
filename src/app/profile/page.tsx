@@ -9,13 +9,13 @@ import { PostCard } from '@/components/feed/PostCard';
 import { EditProfileModal, ProfileFormData } from '@/components/modals/EditProfileModal';
 import { ConfirmDialog } from '@/components/modals/ConfirmDialog';
 import { SharePostModal } from '@/components/modals/SharePostModal';
-import { uploadMedia } from '@/lib/media';
+import { SignedOutView } from '@/components/auth/SignedOutView';
 import { Pencil, LogOut, MapPin, Briefcase } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 
 export default function ProfilePage() {
-    const { userData, signOut, loading: authLoading } = useAuth();
+    const { user, userData, signOut, loading: authLoading } = useAuth();
     const [posts, setPosts] = useState<Post[]>([]);
     const [loading, setLoading] = useState(true);
     const [showEditProfile, setShowEditProfile] = useState(false);
@@ -116,16 +116,7 @@ export default function ProfilePage() {
     }
 
     if (!userData) {
-        return (
-            <div className="flex items-center justify-center min-h-screen">
-                <div className="text-center">
-                    <p className="text-gray-600 mb-4">Please log in to view your profile</p>
-                    <Link href="/login" className="text-blue-600 hover:text-blue-700 font-medium">
-                        Go to Login
-                    </Link>
-                </div>
-            </div>
-        );
+        return <SignedOutView user={user} signOut={signOut} />;
     }
 
     return (

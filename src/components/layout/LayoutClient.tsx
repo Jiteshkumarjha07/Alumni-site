@@ -4,6 +4,7 @@ import React from 'react';
 import { SwipeProvider } from '@/components/layout/SwipeProvider';
 import { motion, AnimatePresence } from 'framer-motion';
 import { usePathname } from 'next/navigation';
+import { useAuth } from '@/contexts/AuthContext';
 
 const variants = {
     initial: (direction: number) => ({
@@ -30,6 +31,7 @@ const variants = {
 
 export function LayoutClient({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
+    const { userData } = useAuth();
     const [isMobile, setIsMobile] = React.useState(false);
     
     React.useEffect(() => {
@@ -50,7 +52,7 @@ export function LayoutClient({ children }: { children: React.ReactNode }) {
     // Desktop view: No animations, no swipe, fixed sidebar space
     if (!isMobile) {
         return (
-            <main className="md:pl-64 min-h-screen">
+            <main className={`${userData ? 'md:pl-64' : ''} min-h-screen`}>
                 {children}
             </main>
         );

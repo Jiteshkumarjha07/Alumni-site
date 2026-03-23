@@ -1,6 +1,8 @@
 import Link from 'next/link';
 import { Home, Users, Briefcase, User, Calendar, MessageSquare } from 'lucide-react';
 
+import { useAuth } from '@/contexts/AuthContext';
+
 const navigation = [
     { name: 'Home', href: '/', icon: Home },
     { name: 'Messages', href: '/messages', icon: MessageSquare },
@@ -11,6 +13,9 @@ const navigation = [
 ];
 
 export function MobileNav() {
+    const { userData } = useAuth();
+    if (!userData) return null;
+
     return (
         <div className="fixed bottom-0 left-0 right-0 bg-white border-t py-2 px-4 flex justify-around items-center md:hidden z-50">
             {navigation.map((item) => (
