@@ -267,7 +267,7 @@ export default function HomePage() {
           onClose={() => setCommentingPost(null)}
           onSubmit={handleAddComment}
           onDelete={handleDeleteComment}
-          comments={commentingPost.comments || []}
+          comments={posts.find(p => p.id === commentingPost.id)?.comments || []}
           postAuthor={commentingPost.authorName}
           currentUserUid={userData.uid}
         />

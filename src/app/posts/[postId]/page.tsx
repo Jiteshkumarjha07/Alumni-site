@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { doc, getDoc, updateDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
+import { doc, getDoc, updateDoc, arrayUnion, arrayRemove, onSnapshot } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { Post, Comment as AppComment } from '@/types';
 import { PostCard } from '@/components/feed/PostCard';
@@ -28,23 +28,21 @@ export default function PostDetailPage() {
             return;
         }
 
-        const fetchPost = async () => {
-            if (!postId) return;
-            try {
-                const postDoc = await getDoc(doc(db, 'posts', postId));
-                if (postDoc.exists()) {
-                    setPost({ id: postDoc.id, ...postDoc.data() } as Post);
-                }
-            } catch (error) {
-                console.error('Error fetching post:', error);
-            } finally {
-                setLoading(false);
-            }
-        };
+        if (!postId || !userData) return;
 
-        if (userData) {
-            fetchPost();
-        }
+        const unsubscribe = onSnapshot(doc(db, 'posts', postId), (doc) => {
+            if (doc.exists()) {
+                setPost({ id: doc.id, ...doc.data() } as Post);
+            } else {
+                setPost(null);
+            }
+            setLoading(false);
+        }, (error) => {
+            console.error('Error fetching post:', error);
+            setLoading(false);
+        });
+
+        return () => unsubscribe();
     }, [postId, userData, authLoading, router]);
 
     const handleLike = async (isLiked: boolean) => {
@@ -67,11 +65,6 @@ export default function PostDetailPage() {
         await updateDoc(postRef, {
             comments: arrayUnion(newComment)
         });
-        // Update local state to show new comment immediately
-        setPost({
-            ...post,
-            comments: [...(post.comments || []), newComment as any]
-        });
     };
 
     const handleDeleteComment = async (comment: AppComment) => {
@@ -79,13 +72,6 @@ export default function PostDetailPage() {
         const postRef = doc(db, 'posts', post.id);
         await updateDoc(postRef, {
             comments: arrayRemove(comment)
-        });
-        // Update local state
-        setPost({
-            ...post,
-            comments: (post.comments || []).filter(c => 
-                !(c.authorUid === comment.authorUid && c.text === comment.text && c.createdAt === comment.createdAt)
-            )
         });
     };
 
