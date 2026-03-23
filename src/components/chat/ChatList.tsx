@@ -53,19 +53,19 @@ export function ChatList({ currentUser, chats, onSelectChat, onStartChat, select
     }, [searchQuery, currentUser.uid]);
 
     return (
-        <div className="w-full h-full flex flex-col bg-white border-r">
+        <div className="w-full h-full flex flex-col bg-brand-parchment/10 border-r border-brand-ebony/10">
             {/* Header & Search */}
-            <div className="p-4 border-b">
-                <h2 className="text-xl font-bold text-gray-900 mb-4">Messages</h2>
+            <div className="p-4 border-b border-brand-ebony/10">
+                <h2 className="text-xl font-serif font-bold text-brand-ebony mb-4 tracking-tight">Messages</h2>
                 <div className="relative">
                     <input
                         type="text"
                         placeholder="Search alumni to chat..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                        className="w-full pl-10 pr-4 py-2 bg-white/60 border border-brand-ebony/10 rounded-xl focus:ring-2 focus:ring-brand-burgundy/20 focus:border-brand-burgundy outline-none transition-all"
                     />
-                    <Search className="w-5 h-5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                    <Search className="w-5 h-5 text-brand-ebony/30 absolute left-3 top-1/2 -translate-y-1/2" />
                 </div>
             </div>
 
@@ -86,16 +86,16 @@ export function ChatList({ currentUser, chats, onSelectChat, onStartChat, select
                                         onStartChat(user);
                                         setSearchQuery('');
                                     }}
-                                    className="w-full flex items-center p-3 hover:bg-gray-50 rounded-lg transition-colors"
+                                    className="w-full flex items-center p-3 hover:bg-brand-burgundy/5 rounded-xl transition-colors"
                                 >
                                     <img
-                                        src={user.profilePic || `https://placehold.co/100x100/EFEFEFF/003366?text=${user.name.substring(0, 1)}`}
+                                        src={user.profilePic || `https://placehold.co/100x100/EFEFEFF/3D2B27?text=${user.name.substring(0, 1)}`}
                                         alt={user.name}
-                                        className="w-12 h-12 rounded-full object-cover mr-3"
+                                        className="w-12 h-12 rounded-full object-cover mr-3 border-2 border-white shadow-sm"
                                     />
                                     <div className="text-left flex-1">
-                                        <p className="font-semibold text-gray-900">{user.name}</p>
-                                        <p className="text-sm text-gray-500 line-clamp-1">{user.profession || `Batch of ${user.batch}`}</p>
+                                        <p className="font-serif font-bold text-brand-ebony">{user.name}</p>
+                                        <p className="text-xs text-brand-ebony/50 uppercase tracking-widest font-bold font-sans">{user.profession || `Batch of ${user.batch}`}</p>
                                     </div>
                                 </button>
                             ))
@@ -125,7 +125,9 @@ export function ChatList({ currentUser, chats, onSelectChat, onStartChat, select
                                     <button
                                         key={chat.id}
                                         onClick={() => onSelectChat(chat.id)}
-                                        className={`w-full flex items-center p-3 rounded-lg transition-colors mb-1 ${selectedChatId === chat.id ? 'bg-blue-50' : 'hover:bg-gray-50'
+                                        className={`w-full flex items-center p-3 rounded-xl transition-all mb-1 ${selectedChatId === chat.id 
+                                            ? 'bg-brand-burgundy/10 border-l-4 border-brand-burgundy translate-x-1 shadow-sm' 
+                                            : 'hover:bg-brand-burgundy/5 translate-x-0'
                                             }`}
                                     >
                                         <div className="relative">
@@ -136,8 +138,8 @@ export function ChatList({ currentUser, chats, onSelectChat, onStartChat, select
                                             />
                                         </div>
                                         <div className="text-left flex-1 min-w-0">
-                                            <div className="flex justify-between items-baseline mb-1">
-                                                <p className={`font-semibold truncate pr-2 ${unreadCount > 0 ? 'text-gray-900' : 'text-gray-700'}`}>
+                                            <div className="flex justify-between items-baseline mb-0.5">
+                                                <p className={`font-serif font-bold truncate pr-2 ${unreadCount > 0 ? 'text-brand-ebony' : 'text-brand-ebony/80'}`}>
                                                     {name}
                                                 </p>
                                                 {chat.lastMessageAt && (
@@ -146,12 +148,12 @@ export function ChatList({ currentUser, chats, onSelectChat, onStartChat, select
                                                     </span>
                                                 )}
                                             </div>
-                                            <p className={`text-sm truncate ${unreadCount > 0 ? 'font-medium text-gray-900' : 'text-gray-500'}`}>
+                                            <p className={`text-sm truncate font-medium ${unreadCount > 0 ? 'text-brand-ebony' : 'text-brand-ebony/50 italic font-serif'}`}>
                                                 {chat.lastMessage || 'Start a conversation'}
                                             </p>
                                         </div>
                                         {unreadCount > 0 && (
-                                            <div className="ml-3 bg-blue-600 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                                            <div className="ml-3 bg-brand-burgundy text-white text-[10px] font-bold rounded-full w-5 h-5 flex items-center justify-center shadow-sm">
                                                 {unreadCount > 99 ? '99+' : unreadCount}
                                             </div>
                                         )}

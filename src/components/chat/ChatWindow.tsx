@@ -3,7 +3,7 @@ import { User, Message } from '@/types';
 import { collection, query, orderBy, onSnapshot, addDoc, serverTimestamp, setDoc, doc, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { MessageBubble } from './MessageBubble';
-import { Send, Loader2, ArrowLeft } from 'lucide-react';
+import { Send, Loader2, ArrowLeft, X, CheckCheck } from 'lucide-react';
 
 interface ChatWindowProps {
     chatId: string;
@@ -17,6 +17,7 @@ export function ChatWindow({ chatId, currentUser, otherUser, onBack }: ChatWindo
     const [newMessage, setNewMessage] = useState('');
     const [loading, setLoading] = useState(true);
     const [sending, setSending] = useState(false);
+    const [editingMessage, setEditingMessage] = useState<Message | null>(null);
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
     // Scroll to bottom when messages change
@@ -66,79 +67,103 @@ export function ChatWindow({ chatId, currentUser, otherUser, onBack }: ChatWindo
         if (!newMessage.trim() || !otherUser || !chatId) return;
 
         const messageText = newMessage.trim();
-        setNewMessage(''); // optimistic UI clear
+        setNewMessage(''); 
         setSending(true);
 
         try {
-            // 1. Add the message to the subcollection
-            const messageData = {
-                text: messageText,
-                senderId: currentUser.uid,
-                senderName: currentUser.name,
-                senderProfilePic: currentUser.profilePic || null,
-                createdAt: serverTimestamp(),
-                isRead: false
-            };
+            if (editingMessage) {
+                // Update existing message
+                const msgRef = doc(db, 'chats', chatId, 'messages', editingMessage.id);
+                await updateDoc(msgRef, {
+                    text: messageText,
+                    isEdited: true
+                });
+                setEditingMessage(null);
+            } else {
+                // Add new message
+                const messageData = {
+                    text: messageText,
+                    senderId: currentUser.uid,
+                    senderName: currentUser.name,
+                    senderProfilePic: currentUser.profilePic || null,
+                    createdAt: serverTimestamp(),
+                    isRead: false
+                };
 
-            await addDoc(collection(db, 'chats', chatId, 'messages'), messageData);
+                await addDoc(collection(db, 'chats', chatId, 'messages'), messageData);
 
-            // 2. Update (or create) the parent chat document
-            const chatRef = doc(db, 'chats', chatId);
-
-            await setDoc(chatRef, {
-                participants: [currentUser.uid, otherUser.uid],
-                lastMessage: messageText,
-                lastMessageAt: serverTimestamp(),
-                // Simplistic unread count logic (just tracking the fact there is a message)
-                participantDetails: {
-                    [currentUser.uid]: {
-                        name: currentUser.name,
-                        profilePic: currentUser.profilePic || null
-                    },
-                    [otherUser.uid]: {
-                        name: otherUser.name,
-                        profilePic: otherUser.profilePic || null
+                // Update parent chat doc
+                const chatRef = doc(db, 'chats', chatId);
+                await setDoc(chatRef, {
+                    participants: [currentUser.uid, otherUser.uid],
+                    lastMessage: messageText,
+                    lastMessageAt: serverTimestamp(),
+                    participantDetails: {
+                        [currentUser.uid]: {
+                            name: currentUser.name,
+                            profilePic: currentUser.profilePic || null
+                        },
+                        [otherUser.uid]: {
+                            name: otherUser.name,
+                            profilePic: otherUser.profilePic || null
+                        }
                     }
-                }
-            }, { merge: true });
-
+                }, { merge: true });
+            }
         } catch (error) {
             console.error('Error sending message:', error);
-            // Re-set message if failed
             setNewMessage(messageText);
         } finally {
             setSending(false);
         }
     };
 
+    const handleEditInitiate = (message: Message) => {
+        setEditingMessage(message);
+        setNewMessage(message.text);
+    };
+
+    const handleUnsendMessage = async (message: Message) => {
+        if (!chatId) return;
+        try {
+            const msgRef = doc(db, 'chats', chatId, 'messages', message.id);
+            await updateDoc(msgRef, {
+                text: '🚫 This message was unsent',
+                isDeleted: true
+            });
+        } catch (error) {
+            console.error('Error unsending message:', error);
+        }
+    };
+
     if (!otherUser) {
         return (
-            <div className="flex-1 flex flex-col items-center justify-center bg-gray-50 text-gray-500">
-                <div className="w-24 h-24 bg-gray-200 rounded-full flex items-center justify-center mb-4">
-                    <Send className="w-10 h-10 text-gray-400 ml-1" />
+            <div className="flex-1 flex flex-col items-center justify-center bg-brand-cream/30 text-brand-ebony/50">
+                <div className="w-24 h-24 bg-brand-parchment/50 rounded-full flex items-center justify-center mb-4 border border-brand-ebony/10 shadow-inner">
+                    <Send className="w-10 h-10 text-brand-burgundy/40 ml-1" />
                 </div>
-                <h3 className="text-xl font-semibold text-gray-700">Your Messages</h3>
-                <p>Select a chat or search for an alumni to start talking.</p>
+                <h3 className="text-xl font-serif font-bold text-brand-ebony">Your Messages</h3>
+                <p className="text-sm italic">Select a chat or search for an alumni to start talking.</p>
             </div>
         );
     }
 
     return (
-        <div className="flex-1 flex flex-col h-full bg-gray-50">
+        <div className="flex-1 flex flex-col h-full bg-brand-cream/30">
             {/* Chat Header */}
-            <div className="flex items-center p-4 bg-white border-b shadow-sm z-10">
+            <div className="flex items-center p-4 bg-brand-parchment/90 border-b border-brand-ebony/10 shadow-sm z-10 backdrop-blur-md">
                 {onBack && (
-                    <button onClick={onBack} className="md:hidden mr-3 text-gray-600 hover:text-gray-900">
+                    <button onClick={onBack} className="md:hidden mr-3 text-brand-ebony hover:text-brand-burgundy transition-colors">
                         <ArrowLeft className="w-6 h-6" />
                     </button>
                 )}
                 <img
-                    src={otherUser.profilePic || `https://placehold.co/100x100/EFEFEFF/003366?text=${otherUser.name.substring(0, 1)}`}
+                    src={otherUser.profilePic || `https://placehold.co/100x100/EFEFEFF/3D2B27?text=${otherUser.name.substring(0, 1)}`}
                     alt={otherUser.name}
-                    className="w-10 h-10 rounded-full mr-3 object-cover shadow-sm"
+                    className="w-10 h-10 rounded-full mr-3 object-cover border border-white shadow-sm"
                 />
                 <div>
-                    <h3 className="font-semibold text-gray-900">{otherUser.name}</h3>
+                    <h3 className="font-serif font-bold text-brand-ebony text-lg">{otherUser.name}</h3>
                 </div>
             </div>
 
@@ -163,6 +188,8 @@ export function ChatWindow({ chatId, currentUser, otherUser, onBack }: ChatWindo
                             key={message.id}
                             message={message}
                             isOwnMessage={message.senderId === currentUser.uid}
+                            onEdit={handleEditInitiate}
+                            onUnsend={handleUnsendMessage}
                         />
                     ))
                 )}
@@ -170,22 +197,38 @@ export function ChatWindow({ chatId, currentUser, otherUser, onBack }: ChatWindo
             </div>
 
             {/* Input Area */}
-            <div className="p-4 bg-white border-t">
+            <div className="p-4 bg-white/90 border-t border-brand-ebony/10 backdrop-blur-md">
+                {editingMessage && (
+                    <div className="flex items-center justify-between mb-2 px-4 py-1.5 bg-brand-burgundy/5 rounded-lg border border-brand-burgundy/10">
+                        <p className="text-xs text-brand-burgundy font-medium italic">Editing message...</p>
+                        <button 
+                            onClick={() => {
+                                setEditingMessage(null);
+                                setNewMessage('');
+                            }}
+                            className="text-brand-burgundy hover:text-brand-ebony transition-colors"
+                        >
+                            <X className="w-3.5 h-3.5" />
+                        </button>
+                    </div>
+                )}
                 <form onSubmit={handleSendMessage} className="flex items-center gap-2">
                     <input
                         type="text"
                         value={newMessage}
                         onChange={(e) => setNewMessage(e.target.value)}
-                        placeholder="Type a message..."
-                        className="flex-1 px-4 py-3 border border-gray-300 rounded-full focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none bg-gray-50"
+                        placeholder={editingMessage ? "Edit message..." : "Type a message..."}
+                        className="flex-1 px-5 py-3.5 bg-brand-parchment/30 border border-brand-ebony/10 rounded-2xl focus:ring-2 focus:ring-brand-burgundy/20 focus:border-brand-burgundy outline-none transition-all placeholder:text-brand-ebony/30"
                         disabled={sending}
                     />
                     <button
                         type="submit"
                         disabled={!newMessage.trim() || sending}
-                        className="p-3 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed shadow-sm flex items-center justify-center"
+                        className="p-3.5 bg-brand-burgundy text-white rounded-2xl hover:bg-[#5a2427] transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-md shadow-brand-burgundy/20 flex items-center justify-center min-w-[50px]"
                     >
-                        {sending ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5 ml-1" />}
+                        {sending ? <Loader2 className="w-5 h-5 animate-spin" /> : (
+                            editingMessage ? <CheckCheck className="w-5 h-5" /> : <Send className="w-5 h-5 ml-0.5" />
+                        )}
                     </button>
                 </form>
             </div>
