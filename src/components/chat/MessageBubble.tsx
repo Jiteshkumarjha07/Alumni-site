@@ -36,6 +36,20 @@ export function MessageBubble({ message, isOwnMessage, onEdit, onUnsend, onReply
         ? format(message.createdAt.toDate(), 'h:mm a')
         : '';
 
+    const senderColor = useMemo(() => {
+        if (isOwnMessage || !message.senderId) return 'text-brand-burgundy';
+        const colors = [
+            'text-blue-600', 'text-green-600', 'text-purple-600', 
+            'text-orange-600', 'text-pink-600', 'text-teal-600', 
+            'text-indigo-600', 'text-amber-600'
+        ];
+        let hash = 0;
+        for (let i = 0; i < message.senderId.length; i++) {
+            hash = message.senderId.charCodeAt(i) + ((hash << 5) - hash);
+        }
+        return colors[Math.abs(hash) % colors.length];
+    }, [message.senderId, isOwnMessage]);
+
     const canAction = message.createdAt && (
         (Date.now() - message.createdAt.toMillis()) < 10 * 60 * 1000
     );
@@ -78,7 +92,7 @@ export function MessageBubble({ message, isOwnMessage, onEdit, onUnsend, onReply
                 )}
                 <div className="flex flex-col">
                     {showSenderName && !isOwnMessage && (
-                        <span className="text-[10px] font-bold text-brand-ebony/40 uppercase tracking-widest mb-1 ml-1">
+                        <span className={`text-[10px] font-bold uppercase tracking-widest mb-0.5 ml-1 drop-shadow-sm ${senderColor}`}>
                             {message.senderName}
                         </span>
                     )}
@@ -89,11 +103,12 @@ export function MessageBubble({ message, isOwnMessage, onEdit, onUnsend, onReply
                         </div>
                     )}
                     <div
-                        className={`px-4 py-2 rounded-2xl relative shadow-sm ${isOwnMessage
-                                ? 'bg-brand-burgundy text-white rounded-br-none'
-                                : 'bg-white border border-brand-ebony/10 text-brand-ebony rounded-bl-none'
+                        className={`px-3.5 py-2 relative shadow-sm max-w-full ${isOwnMessage
+                                ? 'bg-brand-burgundy text-white rounded-2xl rounded-tr-sm'
+                                : 'bg-white border border-brand-ebony/10 text-brand-ebony rounded-2xl rounded-tl-sm'
                             }`}
                     >
+                        {/* More Menu Button */}
                         <div className="absolute -top-3 -right-1 sm:-top-2 sm:-right-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity z-10 shadow-lg sm:shadow-none">
                             <div className="relative">
                                 <button
@@ -164,10 +179,10 @@ export function MessageBubble({ message, isOwnMessage, onEdit, onUnsend, onReply
                         </div>
 
                         {decryptedReplyText && (
-                            <div className={`mb-2 p-2 rounded-lg border-l-4 text-[11px] leading-tight max-w-full truncate ${
+                            <div className={`mb-1.5 p-2 rounded-lg border-l-4 text-[10px] leading-tight max-w-full truncate ${
                                 isOwnMessage 
-                                    ? 'bg-white/10 border-white/40 text-white/80' 
-                                    : 'bg-brand-ebony/5 border-brand-burgundy/40 text-brand-ebony/60'
+                                    ? 'bg-black/10 border-white/40 text-white/90' 
+                                    : 'bg-brand-ebony/5 border-brand-burgundy/40 text-brand-ebony/70'
                             }`}>
                                 <p className="font-bold mb-0.5 opacity-80">{message.replyToSenderName}</p>
                                 <p className="truncate italic">{decryptedReplyText}</p>
@@ -209,17 +224,20 @@ export function MessageBubble({ message, isOwnMessage, onEdit, onUnsend, onReply
                             </div>
                         )}
 
-                        {decryptedText && (
-                            <p className="text-sm whitespace-pre-wrap [overflow-wrap:anywhere] break-words">
-                                {decryptedText}
-                            </p>
-                        )}
-                        <div className={`text-[10px] flex items-center gap-1 mt-1 ${isOwnMessage ? 'text-white/60 justify-end' : 'text-brand-ebony/40 justify-start'}`}>
-                            {message.isEdited && <span className="italic mr-1">(edited)</span>}
-                            <span>{timeString}</span>
-                            {isOwnMessage && (
-                                <CheckCheck className={`w-3 h-3 ${message.isRead ? 'text-brand-gold' : 'opacity-40'}`} />
+                        <div className="flex flex-wrap items-end justify-end gap-x-2">
+                            {decryptedText && (
+                                <p className="text-[14px] leading-relaxed whitespace-pre-wrap [overflow-wrap:anywhere] break-words flex-1 min-w-[60px]">
+                                    {decryptedText}
+                                </p>
                             )}
+                            
+                            <div className={`flex items-center gap-1 mt-1 mb-[-2px] ml-auto shrink-0 select-none ${isOwnMessage ? 'text-white/70' : 'text-brand-ebony/40'}`}>
+                                {message.isEdited && <span className="text-[9px] italic">(edited)</span>}
+                                <span className="text-[10px] font-medium uppercase tracking-tighter">{timeString}</span>
+                                {isOwnMessage && (
+                                    <CheckCheck className={`w-3 h-3 ${message.isRead ? 'text-brand-gold' : 'opacity-50'}`} />
+                                )}
+                            </div>
                         </div>
                     </div>
                 </div>
