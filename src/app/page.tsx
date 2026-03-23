@@ -291,6 +291,7 @@ export default function HomePage() {
           comments={commentingPost.comments || []}
           postAuthor={commentingPost.authorName}
           currentUserUid={userData.uid}
+          currentUserName={userData.name}
         />
       )}
 

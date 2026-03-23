@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { X, Send, Trash2 } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { X, Send, Trash2, Loader2 } from 'lucide-react';
 import { Comment } from '@/types';
 
 interface CommentModalProps {
@@ -11,6 +11,7 @@ interface CommentModalProps {
     comments: Comment[];
     postAuthor: string;
     currentUserUid?: string;
+    currentUserName?: string;
     onDelete?: (comment: Comment) => void;
 }
 
@@ -21,25 +22,63 @@ export const CommentModal: React.FC<CommentModalProps> = ({
     comments,
     postAuthor,
     currentUserUid,
+    currentUserName,
     onDelete,
 }) => {
     const [commentText, setCommentText] = useState('');
     const [loading, setLoading] = useState(false);
+    const [displayComments, setDisplayComments] = useState<Comment[]>(comments);
+
+    // Sync displayComments with props when they change (from server)
+    useEffect(() => {
+        setDisplayComments(comments);
+    }, [comments]);
 
     if (!isOpen) return null;
 
     const handleSubmit = async () => {
-        if (!commentText.trim()) return;
+        if (!commentText.trim() || !currentUserUid) return;
 
+        const originalText = commentText;
+        const optimisticComment: Comment = {
+            authorUid: currentUserUid,
+            authorName: currentUserName || 'You',
+            text: commentText.trim(),
+            createdAt: new Date(),
+        };
+
+        // Optimistic update: show comment instantly
+        setDisplayComments(prev => [...prev, optimisticComment]);
+        setCommentText('');
         setLoading(true);
+
         try {
-            await onSubmit(commentText);
-            setCommentText('');
+            await onSubmit(originalText);
         } catch (error) {
             console.error('Error adding comment:', error);
+            // Rollback on error
+            setDisplayComments(prev => prev.filter(c => c !== optimisticComment));
+            setCommentText(originalText);
             alert('Failed to add comment. Please try again.');
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleDelete = async (comment: Comment) => {
+        if (!onDelete) return;
+
+        const previousComments = [...displayComments];
+        // Optimistic update: remove instantly
+        setDisplayComments(prev => prev.filter(c => c !== comment));
+
+        try {
+            await onDelete(comment);
+        } catch (error) {
+            console.error('Error deleting comment:', error);
+            // Rollback on error
+            setDisplayComments(previousComments);
+            alert('Failed to delete comment.');
         }
     };
 
@@ -66,9 +105,9 @@ export const CommentModal: React.FC<CommentModalProps> = ({
 
                 {/* Comments List */}
                 <div className="flex-1 overflow-y-auto p-4 space-y-4">
-                    {comments.length > 0 ? (
-                        comments.map((comment, index) => (
-                            <div key={index} className="flex gap-3">
+                    {displayComments.length > 0 ? (
+                        displayComments.map((comment, index) => (
+                            <div key={`${comment.authorUid}-${index}`} className="flex gap-3">
                                 <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
                                     <span className="text-sm font-semibold text-blue-600">
                                         {comment.authorName.substring(0, 1)}
@@ -80,8 +119,8 @@ export const CommentModal: React.FC<CommentModalProps> = ({
                                             <p className="font-semibold text-sm">{comment.authorName}</p>
                                             {currentUserUid === comment.authorUid && onDelete && (
                                                 <button
-                                                    onClick={() => onDelete(comment)}
-                                                    className="opacity-0 group-hover:opacity-100 p-1 text-gray-400 hover:text-red-500 transition-all rounded"
+                                                    onClick={() => handleDelete(comment)}
+                                                    className="opacity-100 sm:opacity-0 sm:group-hover:opacity-100 p-1 text-gray-400 hover:text-red-500 transition-all rounded"
                                                     title="Delete comment"
                                                 >
                                                     <Trash2 className="w-3.5 h-3.5" />

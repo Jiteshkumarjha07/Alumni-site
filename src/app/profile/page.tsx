@@ -527,6 +527,7 @@ export default function ProfilePage() {
                     comments={posts.find(p => p.id === commentingPost.id)?.comments || []}
                     postAuthor={commentingPost.authorName}
                     currentUserUid={userData.uid}
+                    currentUserName={userData.name}
                 />
             )}
         </div>
