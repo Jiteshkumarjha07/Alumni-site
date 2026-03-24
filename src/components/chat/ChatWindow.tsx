@@ -51,18 +51,22 @@ export function ChatWindow({ chatId, currentUser, otherUser, isGroup = false, gr
         setLoading(true);
         const collectionPath = isGroup ? 'groups' : 'chats';
         const messagesRef = collection(db, collectionPath, chatId, 'messages');
-        const q = query(messagesRef, orderBy('createdAt', 'asc'));
+        const q = query(messagesRef); // Fetch all to avoid excluding pending messages
 
         const unsubscribe = onSnapshot(q, (snapshot) => {
             const fetchedMessages = snapshot.docs.map(doc => ({
                 id: doc.id,
-                ...doc.data()
+                ...doc.data({ serverTimestamps: 'estimate' })
             })) as Message[];
 
             // Filter out messages hidden by current user
-            const visibleMessages = fetchedMessages.filter(msg => 
-                !msg.hiddenBy?.includes(currentUser.uid)
-            );
+            const visibleMessages = fetchedMessages
+                .filter(msg => !msg.hiddenBy?.includes(currentUser.uid))
+                .sort((a, b) => {
+                    const timeA = a.createdAt?.toMillis() || 0;
+                    const timeB = b.createdAt?.toMillis() || 0;
+                    return timeA - timeB;
+                });
 
             setMessages(visibleMessages);
             setLoading(false);
