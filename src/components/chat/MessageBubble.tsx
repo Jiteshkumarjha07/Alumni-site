@@ -3,7 +3,7 @@
 import React from 'react';
 import { Message } from '@/types';
 import { format } from 'date-fns';
-import { Share2, CheckCheck, MoreVertical, Pencil, Trash2, Lock } from 'lucide-react';
+import { Share2, CheckCheck, MoreVertical, Pencil, Trash2 } from 'lucide-react';
 import { useState, useMemo } from 'react';
 import { decryptMessage } from '@/lib/encryption';
 
@@ -102,142 +102,141 @@ export function MessageBubble({ message, isOwnMessage, onEdit, onUnsend, onReply
                             <span className="text-[9px] uppercase tracking-tighter font-bold italic">Forwarded</span>
                         </div>
                     )}
-                        <div className="relative group">
-                            {/* More Menu Button - Now more integrated */}
-                            <div className={`absolute -top-1 ${isOwnMessage ? '-left-8' : '-right-8'} opacity-0 group-hover:opacity-100 transition-opacity z-10`}>
-                                <button
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        setShowMenu(!showMenu);
-                                    }}
-                                    className="p-1.5 rounded-full hover:bg-brand-ebony/5 text-brand-ebony/30 transition-colors"
-                                >
-                                    <MoreVertical className="w-4 h-4" />
-                                </button>
-                                {showMenu && (
-                                    <div className={`absolute ${isOwnMessage ? 'left-0' : 'right-0'} mt-1 bg-white rounded-xl shadow-xl border border-brand-ebony/10 py-1.5 min-w-[150px] z-50 animate-in zoom-in-95 duration-100`}>
-                                        <button
-                                            onClick={() => {
-                                                onReply?.(message);
-                                                setShowMenu(false);
-                                            }}
-                                            className="w-full flex items-center gap-2.5 px-4 py-2 text-xs font-semibold text-brand-ebony hover:bg-brand-parchment/40 transition-colors"
-                                        >
-                                            <Share2 className="w-4 h-4 rotate-180 opacity-60" />
-                                            Reply
-                                        </button>
-                                        <button
-                                            onClick={handleCopy}
-                                            className="w-full flex items-center gap-2.5 px-4 py-2 text-xs font-semibold text-brand-ebony hover:bg-brand-parchment/40 transition-colors"
-                                        >
-                                            <Share2 className="w-4 h-4 opacity-60" />
-                                            Copy
-                                        </button>
-                                        <button
-                                            onClick={() => {
-                                                onForward?.(message);
-                                                setShowMenu(false);
-                                            }}
-                                            className="w-full flex items-center gap-2.5 px-4 py-2 text-xs font-semibold text-brand-ebony hover:bg-brand-parchment/40 transition-colors"
-                                        >
-                                            <Share2 className="w-4 h-4 opacity-60" />
-                                            Forward
-                                        </button>
-                                        <div className="h-px bg-brand-ebony/5 my-1.5 mx-2" />
-                                        <button
-                                            onClick={() => {
-                                                onUnsend?.(message);
-                                                setShowMenu(false);
-                                            }}
-                                            className="w-full flex items-center gap-2.5 px-4 py-2 text-xs font-bold text-red-600 hover:bg-red-50 transition-colors"
-                                        >
-                                            <Trash2 className="w-4 h-4 opacity-60" />
-                                            {isOwnMessage ? 'Unsend for everyone' : 'Delete for me'}
-                                        </button>
-                                        {isOwnMessage && canAction && (
-                                            <button
-                                                onClick={() => {
-                                                    onEdit?.(message);
-                                                    setShowMenu(false);
-                                                }}
-                                                className="w-full flex items-center gap-2.5 px-4 py-2 text-xs font-semibold text-brand-ebony hover:bg-brand-parchment/40 transition-colors"
-                                            >
-                                                <Pencil className="w-4 h-4 opacity-60" />
-                                                Edit Message
-                                            </button>
-                                        )}
-                                    </div>
-                                )}
-                            </div>
-
-                            <div
-                                className={`px-4 py-2.5 relative shadow-sm max-w-full w-fit transition-all duration-200 ${isOwnMessage
-                                        ? 'bg-brand-burgundy text-white rounded-2xl rounded-tr-sm ml-auto select-text'
-                                        : 'bg-white border border-brand-ebony/10 text-brand-ebony rounded-2xl rounded-tl-sm select-text'
-                                    }`}
+                    <div className="relative group">
+                        {/* More Menu Button - Now more integrated */}
+                        <div className={`absolute -top-1 ${isOwnMessage ? '-left-8' : '-right-8'} opacity-0 group-hover:opacity-100 transition-opacity z-10`}>
+                            <button
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    setShowMenu(!showMenu);
+                                }}
+                                className="p-1.5 rounded-full hover:bg-brand-ebony/5 text-brand-ebony/30 transition-colors"
                             >
-                                {decryptedReplyText && (
-                                    <div className={`mb-2 p-2 rounded-lg border-l-[3px] text-[10px] leading-relaxed max-w-full ${
-                                        isOwnMessage 
-                                            ? 'bg-black/10 border-white/30 text-white/90' 
-                                            : 'bg-brand-ebony/5 border-brand-burgundy/30 text-brand-ebony/70'
-                                    }`}>
-                                        <p className="font-bold mb-0.5 opacity-80">{message.replyToSenderName}</p>
-                                        <p className="line-clamp-2 italic">{decryptedReplyText}</p>
-                                    </div>
-                                )}
-
-                                {message.sharedPostId && (
-                                    <div className={`mb-2 p-3 rounded-xl border w-full min-w-[220px] max-w-[300px] ${isOwnMessage ? 'bg-white/10 border-white/20 text-white' : 'bg-gray-50 border-gray-100 text-gray-800 shadow-inner'}`}>
-                                        <div className="flex items-center gap-2 mb-1.5 opacity-70">
-                                            <Share2 className="w-3.5 h-3.5" />
-                                            <span className="text-[10px] uppercase tracking-widest font-bold">Shared Post</span>
-                                        </div>
-                                        <p className="text-[11px] font-bold mb-1.5 font-serif italic text-brand-burgundy">By {message.sharedPostAuthor}</p>
-                                        {message.sharedPostImage && (
-                                            <img src={message.sharedPostImage} alt="Shared" className="w-full h-28 object-cover rounded-lg mb-2 shadow-sm" />
-                                        )}
-                                        <p className="text-xs line-clamp-2 leading-relaxed opacity-95">{message.sharedPostContent}</p>
-                                    </div>
-                                )}
-
-                                {decryptedImageUrl && !message.isDeleted && (
-                                    <div className="mb-2 max-w-full overflow-hidden rounded-xl shadow-sm border border-black/5">
-                                        <img 
-                                            src={decryptedImageUrl} 
-                                            alt="Message media" 
-                                            className="w-full h-auto max-h-[350px] object-cover cursor-pointer hover:opacity-95 transition-all duration-300 active:scale-[0.98]"
-                                            onClick={() => window.open(decryptedImageUrl, '_blank')}
-                                        />
-                                    </div>
-                                )}
-
-                                {decryptedVideoUrl && !message.isDeleted && (
-                                    <div className="mb-2 max-w-full overflow-hidden rounded-xl shadow-sm border border-black/5">
-                                        <video 
-                                            src={decryptedVideoUrl} 
-                                            controls 
-                                            className="w-full h-auto max-h-[350px] bg-black/5"
-                                        />
-                                    </div>
-                                )}
-
-                                <div className="flex flex-col sm:flex-row items-end justify-between gap-x-4 gap-y-1">
-                                    {decryptedText && (
-                                        <p className={`text-[15px] leading-relaxed whitespace-pre-wrap [overflow-wrap:anywhere] break-words flex-1 ${
-                                            decryptedText.length < 50 ? 'text-lg font-medium tracking-tight' : ''
-                                        }`}>
-                                            {decryptedText}
-                                        </p>
+                                <MoreVertical className="w-4 h-4" />
+                            </button>
+                            {showMenu && (
+                                <div className={`absolute ${isOwnMessage ? 'left-0' : 'right-0'} mt-1 bg-white rounded-xl shadow-xl border border-brand-ebony/10 py-1.5 min-w-[150px] z-50 animate-in zoom-in-95 duration-100`}>
+                                    <button
+                                        onClick={() => {
+                                            onReply?.(message);
+                                            setShowMenu(false);
+                                        }}
+                                        className="w-full flex items-center gap-2.5 px-4 py-2 text-xs font-semibold text-brand-ebony hover:bg-brand-parchment/40 transition-colors"
+                                    >
+                                        <Share2 className="w-4 h-4 rotate-180 opacity-60" />
+                                        Reply
+                                    </button>
+                                    <button
+                                        onClick={handleCopy}
+                                        className="w-full flex items-center gap-2.5 px-4 py-2 text-xs font-semibold text-brand-ebony hover:bg-brand-parchment/40 transition-colors"
+                                    >
+                                        <Share2 className="w-4 h-4 opacity-60" />
+                                        Copy
+                                    </button>
+                                    <button
+                                        onClick={() => {
+                                            onForward?.(message);
+                                            setShowMenu(false);
+                                        }}
+                                        className="w-full flex items-center gap-2.5 px-4 py-2 text-xs font-semibold text-brand-ebony hover:bg-brand-parchment/40 transition-colors"
+                                    >
+                                        <Share2 className="w-4 h-4 opacity-60" />
+                                        Forward
+                                    </button>
+                                    <div className="h-px bg-brand-ebony/5 my-1.5 mx-2" />
+                                    <button
+                                        onClick={() => {
+                                            onUnsend?.(message);
+                                            setShowMenu(false);
+                                        }}
+                                        className="w-full flex items-center gap-2.5 px-4 py-2 text-xs font-bold text-red-600 hover:bg-red-50 transition-colors"
+                                    >
+                                        <Trash2 className="w-4 h-4 opacity-60" />
+                                        {isOwnMessage ? 'Unsend for everyone' : 'Delete for me'}
+                                    </button>
+                                    {isOwnMessage && canAction && (
+                                        <button
+                                            onClick={() => {
+                                                onEdit?.(message);
+                                                setShowMenu(false);
+                                            }}
+                                            className="w-full flex items-center gap-2.5 px-4 py-2 text-xs font-semibold text-brand-ebony hover:bg-brand-parchment/40 transition-colors"
+                                        >
+                                            <Pencil className="w-4 h-4 opacity-60" />
+                                            Edit Message
+                                        </button>
                                     )}
-                                    
-                                    <div className={`flex items-center gap-1.5 shrink-0 select-none pb-0.5 ${isOwnMessage ? 'text-white/60' : 'text-brand-ebony/30'}`}>
-                                        {message.isEdited && <span className="text-[9px] italic font-medium">edited</span>}
-                                        <span className="text-[10px] font-bold tracking-tight uppercase whitespace-nowrap">{timeString}</span>
-                                        {isOwnMessage && (
-                                            <CheckCheck className={`w-3.5 h-3.5 ${message.isRead ? 'text-brand-gold drop-shadow-[0_0_2px_rgba(255,215,0,0.5)]' : 'opacity-40'}`} />
-                                        )}
+                                </div>
+                            )}
+                        </div>
+
+                        <div
+                            className={`px-4 py-2.5 relative shadow-sm max-w-full w-fit transition-all duration-200 ${isOwnMessage
+                                ? 'bg-brand-burgundy text-white rounded-2xl rounded-tr-sm ml-auto select-text'
+                                : 'bg-white border border-brand-ebony/10 text-brand-ebony rounded-2xl rounded-tl-sm select-text'
+                            }`}
+                        >
+                            {decryptedReplyText && (
+                                <div className={`mb-2 p-2 rounded-lg border-l-[3px] text-[10px] leading-relaxed max-w-full ${
+                                    isOwnMessage 
+                                        ? 'bg-black/10 border-white/30 text-white/90' 
+                                        : 'bg-brand-ebony/5 border-brand-burgundy/30 text-brand-ebony/70'
+                                }`}>
+                                    <p className="font-bold mb-0.5 opacity-80">{message.replyToSenderName}</p>
+                                    <p className="line-clamp-2 italic">{decryptedReplyText}</p>
+                                </div>
+                            )}
+
+                            {message.sharedPostId && (
+                                <div className={`mb-2 p-3 rounded-xl border w-full min-w-[220px] max-w-[300px] ${isOwnMessage ? 'bg-white/10 border-white/20 text-white' : 'bg-gray-50 border-gray-100 text-gray-800 shadow-inner'}`}>
+                                    <div className="flex items-center gap-2 mb-1.5 opacity-70">
+                                        <Share2 className="w-3.5 h-3.5" />
+                                        <span className="text-[10px] uppercase tracking-widest font-bold">Shared Post</span>
                                     </div>
+                                    <p className="text-[11px] font-bold mb-1.5 font-serif italic text-brand-burgundy">By {message.sharedPostAuthor}</p>
+                                    {message.sharedPostImage && (
+                                        <img src={message.sharedPostImage} alt="Shared" className="w-full h-28 object-cover rounded-lg mb-2 shadow-sm" />
+                                    )}
+                                    <p className="text-xs line-clamp-2 leading-relaxed opacity-95">{message.sharedPostContent}</p>
+                                </div>
+                            )}
+
+                            {decryptedImageUrl && !message.isDeleted && (
+                                <div className="mb-2 max-w-full overflow-hidden rounded-xl shadow-sm border border-black/5">
+                                    <img 
+                                        src={decryptedImageUrl} 
+                                        alt="Message media" 
+                                        className="w-full h-auto max-h-[350px] object-cover cursor-pointer hover:opacity-95 transition-all duration-300 active:scale-[0.98]"
+                                        onClick={() => window.open(decryptedImageUrl, '_blank')}
+                                    />
+                                </div>
+                            )}
+
+                            {decryptedVideoUrl && !message.isDeleted && (
+                                <div className="mb-2 max-w-full overflow-hidden rounded-xl shadow-sm border border-black/5">
+                                    <video 
+                                        src={decryptedVideoUrl} 
+                                        controls 
+                                        className="w-full h-auto max-h-[350px] bg-black/5"
+                                    />
+                                </div>
+                            )}
+
+                            <div className="flex flex-col sm:flex-row items-end justify-between gap-x-4 gap-y-1">
+                                {decryptedText && (
+                                    <p className={`text-[15px] leading-relaxed whitespace-pre-wrap [overflow-wrap:anywhere] break-words flex-1 ${
+                                        decryptedText.length < 50 ? 'text-lg font-medium tracking-tight' : ''
+                                    }`}>
+                                        {decryptedText}
+                                    </p>
+                                )}
+                                
+                                <div className={`flex items-center gap-1.5 shrink-0 select-none pb-0.5 ${isOwnMessage ? 'text-white/60' : 'text-brand-ebony/30'}`}>
+                                    {message.isEdited && <span className="text-[9px] italic font-medium">edited</span>}
+                                    <span className="text-[10px] font-bold tracking-tight uppercase whitespace-nowrap">{timeString}</span>
+                                    {isOwnMessage && (
+                                        <CheckCheck className={`w-3.5 h-3.5 ${message.isRead ? 'text-brand-gold drop-shadow-[0_0_2px_rgba(255,215,0,0.5)]' : 'opacity-40'}`} />
+                                    )}
                                 </div>
                             </div>
                         </div>
