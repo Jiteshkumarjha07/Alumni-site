@@ -11,9 +11,10 @@ import { EditProfileModal, ProfileFormData } from '@/components/modals/EditProfi
 import { ConfirmDialog } from '@/components/modals/ConfirmDialog';
 import { SharePostModal } from '@/components/modals/SharePostModal';
 import { uploadMedia } from '@/lib/media';
-import { Pencil, LogOut, MapPin, Briefcase, MessageCircle, Users, Settings2, Shield } from 'lucide-react';
+import { Pencil, LogOut, MapPin, Briefcase, MessageCircle, Users, Settings2, Shield, Settings } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { AccountSettingsModal } from '@/components/modals/AccountSettingsModal';
 
 export default function ProfilePage() {
     const { userData, signOut, loading: authLoading } = useAuth();
@@ -29,6 +30,7 @@ export default function ProfilePage() {
     const [loadingConnections, setLoadingConnections] = useState(false);
     const [userGroups, setUserGroups] = useState<Group[]>([]);
     const [loadingGroups, setLoadingGroups] = useState(false);
+    const [showAccountSettings, setShowAccountSettings] = useState(false);
 
     useEffect(() => {
         if (!userData) {
@@ -245,7 +247,15 @@ export default function ProfilePage() {
     return (
         <div className="max-w-4xl mx-auto p-4 pt-8">
             {/* Cover Photo Area */}
-            <div className="bg-gradient-to-r from-brand-burgundy to-[#4a1c20] h-48 rounded-t-xl opacity-90 border-b-4 border-brand-gold/60"></div>
+            <div className="bg-gradient-to-r from-brand-burgundy to-[#4a1c20] h-48 rounded-t-xl opacity-90 border-b-4 border-brand-gold/60 relative">
+                <button
+                    onClick={() => setShowAccountSettings(true)}
+                    className="absolute top-4 right-4 p-2.5 bg-white/15 hover:bg-white/25 backdrop-blur-sm text-white rounded-xl transition-all border border-white/20 shadow-md"
+                    title="Account Settings"
+                >
+                    <Settings className="w-5 h-5" />
+                </button>
+            </div>
 
             {/* Profile Header */}
             <div className="bg-brand-parchment/90 rounded-b-xl shadow-md p-6 -mt-20 relative border border-brand-ebony/10">
@@ -543,6 +553,13 @@ export default function ProfilePage() {
                     currentUserName={userData.name}
                 />
             )}
+            <AccountSettingsModal
+                isOpen={showAccountSettings}
+                onClose={() => setShowAccountSettings(false)}
+                userEmail={userData.email || ''}
+                userId={userData.uid}
+                onAccountDeleted={() => { signOut(); }}
+            />
         </div>
     );
 }
