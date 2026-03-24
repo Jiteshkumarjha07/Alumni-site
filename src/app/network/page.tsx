@@ -151,7 +151,6 @@ export default function NetworkPage() {
                                 <AlumniCard
                                     key={user.uid}
                                     user={user}
-                                    currentUser={userData}
                                     connectionStatus="received"
                                     onConnect={handleConnect}
                                     onCancelRequest={handleCancelRequest}
@@ -196,7 +195,6 @@ export default function NetworkPage() {
                         <AlumniCard
                             key={user.uid}
                             user={user}
-                            currentUser={userData}
                             connectionStatus={getConnectionStatus(user)}
                             onConnect={handleConnect}
                             onCancelRequest={handleCancelRequest}

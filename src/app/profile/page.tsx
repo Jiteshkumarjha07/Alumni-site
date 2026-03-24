@@ -138,7 +138,7 @@ export default function ProfilePage() {
             if (isRemovingPic) {
                 updates.profilePic = `https://placehold.co/100x100/EFEFEFF/003366?text=${formData.name.substring(0, 2).toUpperCase()}`;
             } else if (profilePicFile) {
-                const uploadedUrl = await uploadMedia(profilePicFile, 'profiles');
+                const uploadedUrl = await uploadMedia(profilePicFile);
                 if (uploadedUrl) {
                     updates.profilePic = uploadedUrl;
                 }
@@ -525,7 +525,6 @@ export default function ProfilePage() {
                     onSubmit={handleAddComment}
                     onDelete={handleDeleteComment}
                     comments={posts.find(p => p.id === commentingPost.id)?.comments || []}
-                    postAuthor={commentingPost.authorName}
                     currentUserUid={userData.uid}
                     currentUserName={userData.name}
                 />

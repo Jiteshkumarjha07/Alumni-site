@@ -62,7 +62,7 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
         try {
             let imageUrl: string | undefined = undefined;
             if (imageFile) {
-                imageUrl = await uploadMedia(imageFile, 'posts') || undefined;
+                imageUrl = await uploadMedia(imageFile) || undefined;
             }
 
             await onSubmit(content.trim(), imageUrl);

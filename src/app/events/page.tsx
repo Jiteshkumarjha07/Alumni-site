@@ -42,7 +42,7 @@ export default function EventsPage() {
 
         let imageUrl = '';
         if (formData.imageFile) {
-            const uploadedUrl = await uploadMedia(formData.imageFile, 'events');
+            const uploadedUrl = await uploadMedia(formData.imageFile);
             if (uploadedUrl) {
                 imageUrl = uploadedUrl;
             }

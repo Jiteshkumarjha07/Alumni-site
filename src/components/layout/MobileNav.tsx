@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Home, Users, Briefcase, User, Calendar, MessageSquare } from 'lucide-react';
+import { Home, Users, User, MessageSquare } from 'lucide-react';
 
 const navigation = [
     { name: 'Home', href: '/', icon: Home },

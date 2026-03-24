@@ -9,7 +9,6 @@ interface CommentModalProps {
     onClose: () => void;
     onSubmit: (text: string) => Promise<void>;
     comments: Comment[];
-    postAuthor: string;
     currentUserUid?: string;
     currentUserName?: string;
     onDelete?: (comment: Comment) => void;
@@ -20,7 +19,6 @@ export const CommentModal: React.FC<CommentModalProps> = ({
     onClose,
     onSubmit,
     comments,
-    postAuthor,
     currentUserUid,
     currentUserName,
     onDelete,

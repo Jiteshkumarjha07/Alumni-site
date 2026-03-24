@@ -1,10 +1,11 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Post, User, Chat } from '@/types';
+import { Post, User } from '@/types';
 import { X, Search, Send, Loader2, CheckCircle2 } from 'lucide-react';
 import { collection, query, where, getDocs, addDoc, serverTimestamp, doc, setDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import Image from 'next/image';
 
 interface SharePostModalProps {
     isOpen: boolean;
@@ -20,13 +21,7 @@ export function SharePostModal({ isOpen, onClose, post, currentUser }: SharePost
     const [sharingWith, setSharingWith] = useState<string | null>(null);
     const [sharedStatus, setSharedStatus] = useState<{[key: string]: boolean}>({});
 
-    useEffect(() => {
-        if (isOpen && currentUser.connections && currentUser.connections.length > 0) {
-            fetchConnections();
-        }
-    }, [isOpen, currentUser.connections]);
-
-    const fetchConnections = async () => {
+    const fetchConnections = React.useCallback(async () => {
         setLoading(true);
         try {
             const usersRef = collection(db, 'users');
@@ -41,7 +36,13 @@ export function SharePostModal({ isOpen, onClose, post, currentUser }: SharePost
         } finally {
             setLoading(false);
         }
-    };
+    }, [currentUser.connections]);
+
+    useEffect(() => {
+        if (isOpen && currentUser.connections && currentUser.connections.length > 0) {
+            fetchConnections();
+        }
+    }, [isOpen, currentUser.connections, fetchConnections]);
 
     const handleShare = async (targetUser: User) => {
         if (sharingWith) return;
@@ -152,11 +153,15 @@ export function SharePostModal({ isOpen, onClose, post, currentUser }: SharePost
                         filteredConnections.map((connection) => (
                             <div key={connection.uid} className="flex items-center justify-between p-3 hover:bg-brand-burgundy/5 rounded-2xl transition-all group">
                                 <div className="flex items-center gap-3">
-                                    <img
-                                        src={connection.profilePic || `https://placehold.co/100x100/EFEFEFF/3D2B27?text=${connection.name.substring(0, 1)}`}
-                                        alt={connection.name}
-                                        className="w-10 h-10 rounded-full border border-brand-ebony/5"
-                                    />
+                                    <div className="relative w-10 h-10 rounded-full overflow-hidden border border-brand-ebony/5">
+                                        <Image
+                                            src={connection.profilePic || `https://placehold.co/100x100/EFEFEFF/3D2B27?text=${connection.name.substring(0, 1)}`}
+                                            alt={connection.name}
+                                            fill
+                                            className="object-cover"
+                                            unoptimized
+                                        />
+                                    </div>
                                     <div>
                                         <p className="font-bold text-brand-ebony text-sm">{connection.name}</p>
                                         <p className="text-[10px] text-brand-ebony/50 font-medium">Class of {connection.batch}</p>
@@ -198,7 +203,13 @@ export function SharePostModal({ isOpen, onClose, post, currentUser }: SharePost
                     <div className="flex items-center gap-3 p-3 bg-white/60 rounded-2xl border border-brand-ebony/5">
                         <div className="w-12 h-12 bg-brand-ebony/5 rounded-lg overflow-hidden flex-shrink-0">
                             {post.imageUrl ? (
-                                <img src={post.imageUrl} className="w-full h-full object-cover" />
+                                <Image 
+                                    src={post.imageUrl} 
+                                    alt={post.authorName} 
+                                    fill 
+                                    className="object-cover" 
+                                    unoptimized
+                                />
                             ) : (
                                 <div className="w-full h-full flex items-center justify-center text-brand-ebony/20">
                                     <Send className="w-5 h-5" />

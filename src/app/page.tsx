@@ -289,7 +289,6 @@ export default function HomePage() {
           onSubmit={handleAddComment}
           onDelete={handleDeleteComment}
           comments={commentingPost.comments || []}
-          postAuthor={commentingPost.authorName}
           currentUserUid={userData.uid}
           currentUserName={userData.name}
         />

@@ -52,7 +52,7 @@ export default function SignUpPage() {
         try {
             let profilePicUrl = '';
             if (profilePicFile) {
-                profilePicUrl = await uploadMedia(profilePicFile, 'profiles') || '';
+                profilePicUrl = await uploadMedia(profilePicFile) || '';
             }
 
             await signUp(formData.email, formData.password, {

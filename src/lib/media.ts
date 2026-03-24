@@ -8,7 +8,7 @@ import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
  * @param _path Ignored for ImgBB, kept for interface compatibility
  * @returns The download URL of the uploaded file
  */
-export const uploadMedia = async (file: File, _path?: string): Promise<string | null> => {
+export const uploadMedia = async (file: File): Promise<string | null> => {
     if (!file) return null;
 
     if (!imgbbApiKey || (imgbbApiKey as string) === "YOUR_IMGBB_API_KEY") {

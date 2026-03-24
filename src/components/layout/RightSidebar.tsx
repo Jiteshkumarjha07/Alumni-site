@@ -20,7 +20,7 @@ export function RightSidebar({ isOpen = false, onClose = () => {} }: RightSideba
 
     useEffect(() => {
         if (!userData) {
-            setLoading(false);
+            // No user, no suggestions to fetch
             return;
         }
 
@@ -151,7 +151,7 @@ export function RightSidebar({ isOpen = false, onClose = () => {} }: RightSideba
                             </div>
                         ))
                     ) : (
-                        <p className="text-sm text-brand-ebony/60 italic">You're connected with everyone!</p>
+                        <p className="text-sm text-brand-ebony/60 italic">You&apos;re connected with everyone!</p>
                     )}
                 </div>
             </div>

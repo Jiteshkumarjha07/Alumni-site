@@ -437,7 +437,6 @@ export default function PublicProfilePage() {
                     onSubmit={handleAddComment}
                     onDelete={handleDeleteComment}
                     comments={posts.find(p => p.id === commentingPost.id)?.comments || []}
-                    postAuthor={commentingPost.authorName}
                     currentUserUid={userData?.uid}
                     currentUserName={userData?.name}
                 />
