@@ -1,5 +1,4 @@
 import React from 'react';
-import { GraduationCap } from 'lucide-react';
 
 export function BrandHeader() {
     return (
@@ -7,10 +6,9 @@ export function BrandHeader() {
             {/* The Logo */}
             <div className="flex items-center gap-4 mb-2 group">
                 <div className="relative">
-                    <div className="w-16 h-12 bg-white/50 rounded-lg flex items-center justify-center border border-brand-ebony/10 shadow-sm">
-                        <GraduationCap className="w-10 h-10 text-brand-burgundy" />
+                    <div className="w-16 h-16 bg-white rounded-lg flex items-center justify-center shadow-md overflow-hidden p-1 border border-brand-ebony/5">
+                        <img src="/logo.png" alt="Alumnest Logo" className="w-full h-full object-contain" />
                     </div>
-                    {/* Decorative tassel line if needed, but GraduationCap icon is cleaner */}
                 </div>
                 <h1 className="text-xl font-bold text-brand-ebony tracking-[0.15em] uppercase">
                     Alumnest

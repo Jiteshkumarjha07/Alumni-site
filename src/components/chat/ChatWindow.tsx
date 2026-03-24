@@ -6,7 +6,7 @@ import { collection, query, orderBy, onSnapshot, addDoc, serverTimestamp, setDoc
 import { db } from '@/lib/firebase';
 import { MessageBubble } from './MessageBubble';
 import { ForwardMessageModal } from './ForwardMessageModal';
-import { Send, Loader2, ArrowLeft, X, CheckCheck, Share2, ShieldCheck, Lock, Image as ImageIcon, Video as VideoIcon, Plus, Trash2, Users, PhoneCall, Phone, Video } from 'lucide-react';
+import { Send, Loader2, ArrowLeft, X, CheckCheck, Share2, ShieldCheck, Lock, Image as ImageIcon, Video as VideoIcon, Plus, Trash2, Users, PhoneCall, Phone, Video, Mic } from 'lucide-react';
 import { encryptMessage, getSharedSecret } from '@/lib/encryption';
 import { uploadMedia, uploadVideo } from '@/lib/media';
 
@@ -38,14 +38,6 @@ export function ChatWindow({ chatId, currentUser, otherUser, isGroup = false, gr
     const encryptionSecret = isGroup 
         ? (groupData?.groupSecret || chatId) 
         : (otherUser ? getSharedSecret(currentUser.uid, otherUser.uid) : '');
-
-    // Auto-close call menu if unused
-    useEffect(() => {
-        if (showCallMenu) {
-            const timer = setTimeout(() => setShowCallMenu(false), 4000);
-            return () => clearTimeout(timer);
-        }
-    }, [showCallMenu]);
 
     // Scroll to bottom when messages change
     useEffect(() => {
@@ -345,8 +337,8 @@ export function ChatWindow({ chatId, currentUser, otherUser, isGroup = false, gr
                                 <div className="fixed inset-0 z-10" onClick={() => setShowCallMenu(false)}></div>
                                 <div 
                                     className="absolute right-0 top-full mt-2 w-48 bg-white rounded-xl shadow-lg border border-brand-ebony/10 overflow-hidden z-20 animate-in fade-in slide-in-from-top-2"
-                                    onMouseEnter={() => setShowCallMenu(true)} // Keeps it alive if hovered, though timeout runs.
-                                                    // A proper reset would clear the timeout, but for simplicity we rely on fixed + auto-close.
+                                    onMouseEnter={() => setShowCallMenu(true)}
+                                    onMouseLeave={() => setShowCallMenu(false)} // Instant close on hover out
                                 >
                                     <div className="p-2 space-y-1">
                                         <button 
@@ -494,7 +486,7 @@ export function ChatWindow({ chatId, currentUser, otherUser, isGroup = false, gr
                     ))}
                 </div>
 
-                <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2">
                     <div className="flex gap-1">
                         <button
                             type="button"
@@ -503,6 +495,16 @@ export function ChatWindow({ chatId, currentUser, otherUser, isGroup = false, gr
                             title="Send Image"
                         >
                             <ImageIcon className="w-5 h-5" />
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => {
+                                alert('Voice feature coming soon!');
+                            }}
+                            className="p-3 text-brand-ebony/40 hover:text-brand-burgundy hover:bg-brand-burgundy/5 rounded-2xl transition-all"
+                            title="Send Voice Message"
+                        >
+                            <Mic className="w-5 h-5" />
                         </button>
                         <button
                             type="button"
