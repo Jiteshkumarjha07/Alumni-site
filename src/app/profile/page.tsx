@@ -21,7 +21,6 @@ export default function ProfilePage() {
     const [posts, setPosts] = useState<Post[]>([]);
     const [loading, setLoading] = useState(true);
     const [showEditProfile, setShowEditProfile] = useState(false);
-    const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
     const [updating, setUpdating] = useState(false);
     const [sharingPost, setSharingPost] = useState<Post | null>(null);
     const [commentingPost, setCommentingPost] = useState<Post | null>(null);
@@ -213,11 +212,6 @@ export default function ProfilePage() {
         await updateDoc(postRef, {
             comments: arrayRemove(comment)
         });
-    };
-
-    const handleLogout = async () => {
-        await signOut();
-        window.location.href = '/login';
     };
 
     if (authLoading || loading) {
@@ -481,31 +475,6 @@ export default function ProfilePage() {
                 ) : null}
             </div>
 
-            {/* Settings Section */}
-            <div className="mt-6 bg-brand-parchment/80 border border-brand-ebony/10 rounded-xl shadow-sm overflow-hidden">
-                <div className="flex items-center gap-2 px-5 py-3.5 border-b border-brand-ebony/10 bg-brand-ebony/3">
-                    <Settings2 className="w-4 h-4 text-brand-burgundy" />
-                    <h3 className="text-sm font-bold uppercase tracking-widest text-brand-ebony font-sans">Settings</h3>
-                </div>
-                <div className="divide-y divide-brand-ebony/5">
-                    <button
-                        onClick={() => setShowLogoutConfirm(true)}
-                        className="w-full flex items-center justify-between px-5 py-4 hover:bg-brand-burgundy/5 transition-colors group"
-                    >
-                        <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-full bg-brand-burgundy/10 flex items-center justify-center group-hover:bg-brand-burgundy/20 transition-colors">
-                                <LogOut className="w-4 h-4 text-brand-burgundy" />
-                            </div>
-                            <div className="text-left">
-                                <p className="text-sm font-semibold text-brand-ebony">Secure Logout</p>
-                                <p className="text-xs text-brand-ebony/40 italic">End your current session safely</p>
-                            </div>
-                        </div>
-                        <Shield className="w-4 h-4 text-brand-ebony/20 group-hover:text-brand-burgundy/40 transition-colors" />
-                    </button>
-                </div>
-            </div>
-
             {/* Modals */}
             {updating && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -521,16 +490,6 @@ export default function ProfilePage() {
                 onClose={() => setShowEditProfile(false)}
                 onSubmit={handleUpdateProfile}
                 currentUser={userData}
-            />
-
-            <ConfirmDialog
-                isOpen={showLogoutConfirm}
-                onClose={() => setShowLogoutConfirm(false)}
-                onConfirm={handleLogout}
-                title="Log Out"
-                message="Are you sure you want to log out?"
-                confirmText="Log Out"
-                variant="warning"
             />
 
             {sharingPost && (

@@ -9,7 +9,7 @@ import {
     deleteUser
 } from 'firebase/auth';
 import { doc, updateDoc, deleteDoc } from 'firebase/firestore';
-import { X, Lock, Trash2, PauseCircle, Eye, EyeOff, ChevronRight, AlertTriangle, CheckCircle2 } from 'lucide-react';
+import { X, Lock, Trash2, PauseCircle, Eye, EyeOff, ChevronRight, AlertTriangle, CheckCircle2, LogOut } from 'lucide-react';
 
 interface AccountSettingsModalProps {
     isOpen: boolean;
@@ -229,6 +229,21 @@ export function AccountSettingsModal({ isOpen, onClose, userEmail, userId, onAcc
                                     </div>
                                 </div>
                                 <ChevronRight className="w-4 h-4 text-red-300 group-hover:text-red-500 transition-colors" />
+                            </button>
+                            <button
+                                onClick={() => auth.signOut()}
+                                className="w-full flex items-center justify-between p-4 bg-brand-parchment/50 hover:bg-brand-parchment rounded-xl border border-brand-ebony/10 transition-all group mt-6"
+                            >
+                                <div className="flex items-center gap-3">
+                                    <div className="w-9 h-9 bg-brand-ebony/10 rounded-full flex items-center justify-center group-hover:bg-brand-ebony/20 transition-colors">
+                                        <LogOut className="w-4 h-4 text-brand-ebony" />
+                                    </div>
+                                    <div className="text-left">
+                                        <p className="text-sm font-semibold text-brand-ebony">Log Out</p>
+                                        <p className="text-xs text-brand-ebony/40">End your current session</p>
+                                    </div>
+                                </div>
+                                <ChevronRight className="w-4 h-4 text-brand-ebony/30 group-hover:text-brand-ebony transition-colors" />
                             </button>
                         </div>
                     )}
