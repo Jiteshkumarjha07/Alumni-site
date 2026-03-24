@@ -11,7 +11,7 @@ import { EditProfileModal, ProfileFormData } from '@/components/modals/EditProfi
 import { ConfirmDialog } from '@/components/modals/ConfirmDialog';
 import { SharePostModal } from '@/components/modals/SharePostModal';
 import { uploadMedia } from '@/lib/media';
-import { Pencil, LogOut, MapPin, Briefcase, MessageCircle, Users } from 'lucide-react';
+import { Pencil, LogOut, MapPin, Briefcase, MessageCircle, Users, Settings2, Shield } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 
@@ -471,15 +471,29 @@ export default function ProfilePage() {
                 ) : null}
             </div>
 
-            {/* Logout Section */}
-            <div className="flex gap-4 justify-center py-8 opacity-70 hover:opacity-100 transition-opacity">
-                <button
-                    onClick={() => setShowLogoutConfirm(true)}
-                    className="flex items-center gap-2 px-6 py-2 bg-transparent text-brand-ebony/80 rounded-full hover:bg-brand-ebony/5 transition border border-brand-ebony/20 text-sm font-semibold tracking-wide"
-                >
-                    <LogOut className="w-4 h-4" />
-                    Secure Logout
-                </button>
+            {/* Settings Section */}
+            <div className="mt-6 bg-brand-parchment/80 border border-brand-ebony/10 rounded-xl shadow-sm overflow-hidden">
+                <div className="flex items-center gap-2 px-5 py-3.5 border-b border-brand-ebony/10 bg-brand-ebony/3">
+                    <Settings2 className="w-4 h-4 text-brand-burgundy" />
+                    <h3 className="text-sm font-bold uppercase tracking-widest text-brand-ebony font-sans">Settings</h3>
+                </div>
+                <div className="divide-y divide-brand-ebony/5">
+                    <button
+                        onClick={() => setShowLogoutConfirm(true)}
+                        className="w-full flex items-center justify-between px-5 py-4 hover:bg-brand-burgundy/5 transition-colors group"
+                    >
+                        <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-full bg-brand-burgundy/10 flex items-center justify-center group-hover:bg-brand-burgundy/20 transition-colors">
+                                <LogOut className="w-4 h-4 text-brand-burgundy" />
+                            </div>
+                            <div className="text-left">
+                                <p className="text-sm font-semibold text-brand-ebony">Secure Logout</p>
+                                <p className="text-xs text-brand-ebony/40 italic">End your current session safely</p>
+                            </div>
+                        </div>
+                        <Shield className="w-4 h-4 text-brand-ebony/20 group-hover:text-brand-burgundy/40 transition-colors" />
+                    </button>
+                </div>
             </div>
 
             {/* Modals */}
