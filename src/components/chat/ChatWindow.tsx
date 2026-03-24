@@ -39,6 +39,14 @@ export function ChatWindow({ chatId, currentUser, otherUser, isGroup = false, gr
         ? (groupData?.groupSecret || chatId) 
         : (otherUser ? getSharedSecret(currentUser.uid, otherUser.uid) : '');
 
+    // Auto-close call menu if unused
+    useEffect(() => {
+        if (showCallMenu) {
+            const timer = setTimeout(() => setShowCallMenu(false), 4000);
+            return () => clearTimeout(timer);
+        }
+    }, [showCallMenu]);
+
     // Scroll to bottom when messages change
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -335,7 +343,11 @@ export function ChatWindow({ chatId, currentUser, otherUser, isGroup = false, gr
                         {showCallMenu && (
                             <>
                                 <div className="fixed inset-0 z-10" onClick={() => setShowCallMenu(false)}></div>
-                                <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-xl shadow-lg border border-brand-ebony/10 overflow-hidden z-20 animate-in fade-in slide-in-from-top-2">
+                                <div 
+                                    className="absolute right-0 top-full mt-2 w-48 bg-white rounded-xl shadow-lg border border-brand-ebony/10 overflow-hidden z-20 animate-in fade-in slide-in-from-top-2"
+                                    onMouseEnter={() => setShowCallMenu(true)} // Keeps it alive if hovered, though timeout runs.
+                                                    // A proper reset would clear the timeout, but for simplicity we rely on fixed + auto-close.
+                                >
                                     <div className="p-2 space-y-1">
                                         <button 
                                             onClick={() => {

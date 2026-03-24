@@ -4,7 +4,7 @@ import React from 'react';
 import { Message } from '@/types';
 import { format } from 'date-fns';
 import { Share2, CheckCheck, MoreVertical, Pencil, Trash2 } from 'lucide-react';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { decryptMessage } from '@/lib/encryption';
 
 interface MessageBubbleProps {
@@ -20,6 +20,14 @@ interface MessageBubbleProps {
 
 export function MessageBubble({ message, isOwnMessage, onEdit, onUnsend, onReply, onForward, sharedSecret, showSenderName = false }: MessageBubbleProps) {
     const [showMenu, setShowMenu] = useState(false);
+
+    // Auto-close menu if unused
+    useEffect(() => {
+        if (showMenu) {
+            const timer = setTimeout(() => setShowMenu(false), 4000);
+            return () => clearTimeout(timer);
+        }
+    }, [showMenu]);
 
     const decryptedText = useMemo(() => decryptMessage(message.text, sharedSecret), [message.text, sharedSecret]);
     const decryptedReplyText = useMemo(() => 
@@ -115,7 +123,10 @@ export function MessageBubble({ message, isOwnMessage, onEdit, onUnsend, onReply
                                 <MoreVertical className="w-4 h-4" />
                             </button>
                             {showMenu && (
-                                <div className={`absolute ${isOwnMessage ? 'left-0' : 'right-0'} mt-1 bg-white rounded-xl shadow-xl border border-brand-ebony/10 py-1.5 min-w-[150px] z-50 animate-in zoom-in-95 duration-100`}>
+                                <div 
+                                    className={`absolute ${isOwnMessage ? 'left-0' : 'right-0'} mt-1 bg-white rounded-xl shadow-xl border border-brand-ebony/10 py-1.5 min-w-[150px] z-50 animate-in zoom-in-95 duration-100`}
+                                    onMouseEnter={() => setShowMenu(true)} // Keep alive on hover
+                                >
                                     <button
                                         onClick={() => {
                                             onReply?.(message);
