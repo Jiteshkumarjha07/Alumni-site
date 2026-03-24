@@ -166,7 +166,7 @@ export function ChatList({ currentUser, chats, onSelectChat, onStartChat, onSele
                         placeholder={viewMode === 'chats' ? "Search alumni to chat..." : "Search your groups..."}
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full pl-10 pr-4 py-2 bg-white/60 border border-brand-ebony/10 rounded-xl focus:ring-2 focus:ring-brand-burgundy/20 focus:border-brand-burgundy outline-none transition-all"
+                        className="w-full pl-10 pr-4 py-2 bg-brand-parchment/40 border border-brand-ebony/10 rounded-xl focus:ring-2 focus:ring-brand-burgundy/20 focus:border-brand-burgundy outline-none transition-all placeholder:text-brand-ebony/30"
                     />
                     <Search className="w-5 h-5 text-brand-ebony/30 absolute left-3 top-1/2 -translate-y-1/2" />
                 </div>
@@ -179,7 +179,7 @@ export function ChatList({ currentUser, chats, onSelectChat, onStartChat, onSele
                     <div className="p-2">
                         {isSearching ? (
                             <div className="flex justify-center py-4">
-                                <Loader2 className="w-6 h-6 animate-spin text-blue-600" />
+                                <Loader2 className="w-6 h-6 animate-spin text-brand-burgundy" />
                             </div>
                         ) : searchResults.length > 0 ? (
                             searchResults.map((user) => (
@@ -203,7 +203,7 @@ export function ChatList({ currentUser, chats, onSelectChat, onStartChat, onSele
                                 </button>
                             ))
                         ) : (
-                            <p className="text-center py-4 text-gray-500 text-sm">No alumni found matching "{searchQuery}"</p>
+                            <p className="text-center py-4 text-brand-ebony/40 text-sm italic">No alumni found matching &ldquo;{searchQuery}&rdquo;</p>
                         )}
                     </div>
                 ) : (
@@ -211,9 +211,9 @@ export function ChatList({ currentUser, chats, onSelectChat, onStartChat, onSele
                     <div className="p-2">
                         {viewMode === 'chats' ? (
                             chats.length === 0 ? (
-                                <div className="text-center py-8 text-gray-500">
-                                    <MessageSquare className="w-12 h-12 mx-auto text-gray-300 mb-3" />
-                                    <p>No active conversations.</p>
+                                <div className="text-center py-8 text-brand-ebony/40">
+                                    <MessageSquare className="w-12 h-12 mx-auto text-brand-ebony/20 mb-3" />
+                                    <p className="font-serif italic">No active conversations.</p>
                                     <p className="text-sm">Search above to start chatting!</p>
                                 </div>
                             ) : (
@@ -246,7 +246,7 @@ export function ChatList({ currentUser, chats, onSelectChat, onStartChat, onSele
                                                         {name}
                                                     </p>
                                                     {chat.lastMessageAt && (
-                                                        <span className="text-xs text-gray-400 whitespace-nowrap">
+                                                        <span className="text-xs text-brand-ebony/30 whitespace-nowrap">
                                                             {formatDistanceToNow(chat.lastMessageAt.toDate(), { addSuffix: true })}
                                                         </span>
                                                     )}
@@ -271,9 +271,9 @@ export function ChatList({ currentUser, chats, onSelectChat, onStartChat, onSele
                                     <Loader2 className="w-8 h-8 animate-spin text-brand-burgundy" />
                                 </div>
                             ) : userGroups.length === 0 ? (
-                                <div className="text-center py-8 text-gray-500">
-                                    <Users className="w-12 h-12 mx-auto text-gray-300 mb-3" />
-                                    <p>No groups joined yet.</p>
+                                <div className="text-center py-8 text-brand-ebony/40">
+                                    <Users className="w-12 h-12 mx-auto text-brand-ebony/20 mb-3" />
+                                    <p className="font-serif italic">No groups joined yet.</p>
                                     <p className="text-sm">Create a group to get started!</p>
                                 </div>
                             ) : (
@@ -285,7 +285,7 @@ export function ChatList({ currentUser, chats, onSelectChat, onStartChat, onSele
                                             selectedGroupId === group.id ? 'bg-brand-burgundy/5 border-r-4 border-brand-burgundy' : ''
                                         }`}
                                     >
-                                        <div className="w-12 h-12 bg-pink-100 rounded-full flex items-center justify-center mr-3 flex-shrink-0">
+                                        <div className="w-12 h-12 bg-brand-parchment rounded-full flex items-center justify-center mr-3 flex-shrink-0 border border-brand-burgundy/20">
                                             <Users className="w-6 h-6 text-brand-burgundy" />
                                         </div>
                                         <div className="text-left flex-1 min-w-0">
@@ -294,7 +294,7 @@ export function ChatList({ currentUser, chats, onSelectChat, onStartChat, onSele
                                                     {group.groupName}
                                                 </p>
                                                 {group.lastMessageAt && (
-                                                    <span className="text-xs text-gray-400 whitespace-nowrap">
+                                                    <span className="text-xs text-brand-ebony/30 whitespace-nowrap">
                                                         {formatDistanceToNow(group.lastMessageAt.toDate(), { addSuffix: true })}
                                                     </span>
                                                 )}
