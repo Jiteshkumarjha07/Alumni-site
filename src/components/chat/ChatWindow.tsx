@@ -6,7 +6,7 @@ import { collection, query, orderBy, onSnapshot, addDoc, serverTimestamp, setDoc
 import { db } from '@/lib/firebase';
 import { MessageBubble } from './MessageBubble';
 import { ForwardMessageModal } from './ForwardMessageModal';
-import { Send, Loader2, ArrowLeft, X, CheckCheck, Share2, ShieldCheck, Lock, Image as ImageIcon, Video as VideoIcon, Plus, Trash2, Users } from 'lucide-react';
+import { Send, Loader2, ArrowLeft, X, CheckCheck, Share2, ShieldCheck, Lock, Image as ImageIcon, Video as VideoIcon, Plus, Trash2, Users, PhoneCall, Phone, Video } from 'lucide-react';
 import { encryptMessage, getSharedSecret } from '@/lib/encryption';
 import { uploadMedia, uploadVideo } from '@/lib/media';
 
@@ -30,6 +30,7 @@ export function ChatWindow({ chatId, currentUser, otherUser, isGroup = false, gr
     const [unsendingMessage, setUnsendingMessage] = useState<Message | null>(null);
     const [uploadingMedia, setUploadingMedia] = useState(false);
     const [mediaPreview, setMediaPreview] = useState<{ url: string; type: 'image' | 'video'; file: File } | null>(null);
+    const [showCallMenu, setShowCallMenu] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const videoInputRef = useRef<HTMLInputElement>(null);
@@ -314,9 +315,61 @@ export function ChatWindow({ chatId, currentUser, otherUser, isGroup = false, gr
                         </div>
                     </div>
                 </div>
-                <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-brand-burgundy/5 border border-brand-burgundy/20 rounded-full">
-                    <ShieldCheck className="w-3.5 h-3.5 text-brand-burgundy/70" />
-                    <span className="text-[10px] text-brand-burgundy/70 font-medium">Secured by AlumNest E2EE</span>
+                
+                <div className="flex items-center gap-2">
+                    <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-brand-burgundy/5 border border-brand-burgundy/20 rounded-full">
+                        <ShieldCheck className="w-3.5 h-3.5 text-brand-burgundy/70" />
+                        <span className="text-[10px] text-brand-burgundy/70 font-medium whitespace-nowrap">Secured by AlumNest E2EE</span>
+                    </div>
+
+                    {/* Call Options Popup */}
+                    <div className="relative">
+                        <button 
+                            onClick={() => setShowCallMenu(!showCallMenu)}
+                            className={`p-2 rounded-full transition-colors flex items-center justify-center ${showCallMenu ? 'bg-brand-burgundy text-white' : 'bg-brand-burgundy/10 text-brand-burgundy hover:bg-brand-burgundy/20'}`}
+                            title="Call Options"
+                        >
+                            <Phone className="w-4 h-4 fill-current" />
+                        </button>
+
+                        {showCallMenu && (
+                            <>
+                                <div className="fixed inset-0 z-10" onClick={() => setShowCallMenu(false)}></div>
+                                <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-xl shadow-lg border border-brand-ebony/10 overflow-hidden z-20 animate-in fade-in slide-in-from-top-2">
+                                    <div className="p-2 space-y-1">
+                                        <button 
+                                            onClick={() => {
+                                                setShowCallMenu(false);
+                                                alert('Voice Call feature coming soon!');
+                                            }}
+                                            className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-brand-parchment/50 rounded-lg transition-colors text-left group"
+                                        >
+                                            <div className="w-8 h-8 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center group-hover:bg-blue-100 transition-colors">
+                                                <PhoneCall className="w-4 h-4" />
+                                            </div>
+                                            <div>
+                                                <p className="text-sm font-semibold text-brand-ebony">Voice Call</p>
+                                            </div>
+                                        </button>
+                                        <button 
+                                            onClick={() => {
+                                                setShowCallMenu(false);
+                                                alert('Video Call feature coming soon!');
+                                            }}
+                                            className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-brand-parchment/50 rounded-lg transition-colors text-left group"
+                                        >
+                                            <div className="w-8 h-8 rounded-full bg-purple-50 text-purple-600 flex items-center justify-center group-hover:bg-purple-100 transition-colors">
+                                                <Video className="w-4 h-4" />
+                                            </div>
+                                            <div>
+                                                <p className="text-sm font-semibold text-brand-ebony">Video Call</p>
+                                            </div>
+                                        </button>
+                                    </div>
+                                </div>
+                            </>
+                        )}
+                    </div>
                 </div>
             </div>
 
