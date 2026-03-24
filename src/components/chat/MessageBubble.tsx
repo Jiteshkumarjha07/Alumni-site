@@ -82,7 +82,7 @@ export function MessageBubble({ message, isOwnMessage, onEdit, onUnsend, onReply
 
     return (
         <div className={`flex w-full mb-4 group ${isOwnMessage ? 'justify-end' : 'justify-start'}`}>
-            <div className={`flex max-w-[90%] sm:max-w-[75%] md:max-w-[70%] ${isOwnMessage ? 'flex-row-reverse' : 'flex-row'} items-end gap-1.5 sm:gap-2`}>
+            <div className={`flex max-w-[92%] sm:max-w-[75%] md:max-w-[70%] items-end gap-1.5 sm:gap-2`}>
                 {!isOwnMessage && message.senderProfilePic && (
                     <img
                         src={message.senderProfilePic}
@@ -90,19 +90,19 @@ export function MessageBubble({ message, isOwnMessage, onEdit, onUnsend, onReply
                         className="w-8 h-8 rounded-full flex-shrink-0"
                     />
                 )}
-                <div className="flex flex-col">
+                <div className={`flex flex-col ${isOwnMessage ? 'items-end' : 'items-start'}`}>
                     {showSenderName && !isOwnMessage && (
                         <span className={`text-[10px] font-bold uppercase tracking-widest mb-0.5 ml-1 drop-shadow-sm ${senderColor}`}>
                             {message.senderName}
                         </span>
                     )}
                     {message.isForwarded && (
-                        <div className={`flex items-center gap-1 mb-1 opacity-50 ${isOwnMessage ? 'justify-end' : 'justify-start'}`}>
+                        <div className={`flex items-center gap-1 mb-1 opacity-50`}>
                             <Share2 className="w-2.5 h-2.5" />
                             <span className="text-[9px] uppercase tracking-tighter font-bold italic">Forwarded</span>
                         </div>
                     )}
-                    <div className="relative group">
+                    <div className="relative group max-w-full">
                         {/* More Menu Button - Now more integrated */}
                         <div className={`absolute -top-1 ${isOwnMessage ? '-left-8' : '-right-8'} opacity-0 group-hover:opacity-100 transition-opacity z-10`}>
                             <button
@@ -188,7 +188,7 @@ export function MessageBubble({ message, isOwnMessage, onEdit, onUnsend, onReply
                             )}
 
                             {message.sharedPostId && (
-                                <div className={`mb-2 p-3 rounded-xl border w-full min-w-0 max-w-[300px] ${isOwnMessage ? 'bg-white/10 border-white/20 text-white' : 'bg-gray-50 border-gray-100 text-gray-800 shadow-inner'}`}>
+                                <div className={`mb-2 p-3 rounded-xl border min-w-0 w-full max-w-[280px] ${isOwnMessage ? 'bg-white/10 border-white/20 text-white' : 'bg-gray-50 border-gray-100 text-gray-800 shadow-inner'}`}>
                                     <div className="flex items-center gap-2 mb-1.5 opacity-70">
                                         <Share2 className="w-3.5 h-3.5" />
                                         <span className="text-[10px] uppercase tracking-widest font-bold">Shared Post</span>
