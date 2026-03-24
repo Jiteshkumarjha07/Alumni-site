@@ -82,7 +82,7 @@ export function MessageBubble({ message, isOwnMessage, onEdit, onUnsend, onReply
 
     return (
         <div className={`flex w-full mb-4 group ${isOwnMessage ? 'justify-end' : 'justify-start'}`}>
-            <div className={`flex max-w-[85%] sm:max-w-[75%] md:max-w-[70%] ${isOwnMessage ? 'flex-row-reverse' : 'flex-row'} items-end gap-2`}>
+            <div className={`flex max-w-[90%] sm:max-w-[75%] md:max-w-[70%] ${isOwnMessage ? 'flex-row-reverse' : 'flex-row'} items-end gap-1.5 sm:gap-2`}>
                 {!isOwnMessage && message.senderProfilePic && (
                     <img
                         src={message.senderProfilePic}
@@ -172,7 +172,7 @@ export function MessageBubble({ message, isOwnMessage, onEdit, onUnsend, onReply
 
                         <div
                             className={`px-4 py-2.5 relative shadow-sm max-w-full w-fit transition-all duration-200 ${isOwnMessage
-                                ? 'bg-brand-burgundy text-white rounded-2xl rounded-tr-sm ml-auto select-text'
+                                ? 'bg-brand-burgundy text-white rounded-2xl rounded-tr-sm select-text'
                                 : 'bg-white border border-brand-ebony/10 text-brand-ebony rounded-2xl rounded-tl-sm select-text'
                             }`}
                         >
@@ -188,7 +188,7 @@ export function MessageBubble({ message, isOwnMessage, onEdit, onUnsend, onReply
                             )}
 
                             {message.sharedPostId && (
-                                <div className={`mb-2 p-3 rounded-xl border w-full min-w-[220px] max-w-[300px] ${isOwnMessage ? 'bg-white/10 border-white/20 text-white' : 'bg-gray-50 border-gray-100 text-gray-800 shadow-inner'}`}>
+                                <div className={`mb-2 p-3 rounded-xl border w-full min-w-0 max-w-[300px] ${isOwnMessage ? 'bg-white/10 border-white/20 text-white' : 'bg-gray-50 border-gray-100 text-gray-800 shadow-inner'}`}>
                                     <div className="flex items-center gap-2 mb-1.5 opacity-70">
                                         <Share2 className="w-3.5 h-3.5" />
                                         <span className="text-[10px] uppercase tracking-widest font-bold">Shared Post</span>
@@ -222,7 +222,7 @@ export function MessageBubble({ message, isOwnMessage, onEdit, onUnsend, onReply
                                 </div>
                             )}
 
-                            <div className="flex flex-col sm:flex-row items-end justify-between gap-x-4 gap-y-1">
+                            <div className={`flex flex-col sm:flex-row sm:items-center justify-between gap-x-4 gap-y-1 ${isOwnMessage ? 'items-end' : 'items-start'}`}>
                                 {decryptedText && (
                                     <p className={`text-[15px] leading-relaxed whitespace-pre-wrap [overflow-wrap:anywhere] break-words flex-1 ${
                                         decryptedText.length < 50 ? 'text-lg font-medium tracking-tight' : ''
