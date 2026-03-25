@@ -34,7 +34,7 @@ export function SwipeProvider({ children }: { children: React.ReactNode }) {
                 router.push(tabs[currentIndex - 1]);
             }
         },
-        delta: 50, // Minimum distance to trigger swipe
+        delta: 150, // Minimum distance to trigger swipe
         swipeDuration: 500, // Maximum time for a swipe
         preventScrollOnSwipe: false, // Don't prevent vertical scroll
         trackMouse: false,
