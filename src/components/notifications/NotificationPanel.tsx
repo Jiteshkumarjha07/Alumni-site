@@ -147,12 +147,12 @@ export function NotificationBell() {
 
       {/* Drop-down panel */}
       {open && (
-        <div className="absolute right-0 top-12 z-50 w-[360px] max-h-[520px] flex flex-col bg-[#1e1e2e] border border-white/10 rounded-2xl shadow-2xl overflow-hidden">
+        <div className="absolute right-0 top-12 z-50 w-[calc(100vw-32px)] sm:w-[380px] max-h-[520px] flex flex-col bg-brand-parchment border border-brand-ebony/20 rounded-2xl shadow-2xl overflow-hidden animate-in fade-in slide-in-from-top-2">
           {/* Header */}
-          <div className="flex items-center justify-between px-4 py-3 border-b border-white/10 flex-shrink-0">
+          <div className="flex items-center justify-between px-4 py-3 border-b border-brand-ebony/10 flex-shrink-0 bg-brand-parchment/95 backdrop-blur-md">
             <div className="flex items-center gap-2">
               <Bell className="w-4 h-4 text-brand-burgundy" />
-              <span className="text-white font-bold text-sm">Notifications</span>
+              <span className="text-brand-ebony font-bold text-sm">Notifications</span>
               {unread > 0 && (
                 <span className="bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">{unread}</span>
               )}
@@ -160,13 +160,13 @@ export function NotificationBell() {
             <div className="flex items-center gap-2">
               <button
                 onClick={markAllRead}
-                className="text-xs text-slate-400 hover:text-white flex items-center gap-1 transition-colors"
+                className="text-xs text-brand-ebony/40 hover:text-brand-burgundy flex items-center gap-1 transition-colors"
                 title="Mark all as read"
               >
                 <CheckCheck className="w-3.5 h-3.5" />
                 Mark all read
               </button>
-              <button onClick={() => setOpen(false)} className="text-slate-400 hover:text-white transition-colors">
+              <button onClick={() => setOpen(false)} className="text-brand-ebony/40 hover:text-brand-ebony transition-colors">
                 <X className="w-4 h-4" />
               </button>
             </div>
@@ -184,7 +184,7 @@ export function NotificationBell() {
                 <div
                   key={notif.id}
                   onClick={() => markRead(notif.id)}
-                  className={`flex items-start gap-3 px-4 py-3 border-b border-white/5 hover:bg-white/5 transition-colors cursor-pointer ${
+                  className={`flex items-start gap-3 px-4 py-3 border-b border-brand-ebony/5 hover:bg-brand-burgundy/5 transition-colors cursor-pointer ${
                     !notif.isRead ? 'bg-brand-burgundy/5' : ''
                   }`}
                 >
@@ -200,11 +200,11 @@ export function NotificationBell() {
                   {/* Content */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between gap-2">
-                      <p className="text-sm text-white/90 leading-snug">
-                        <Link href={`/profile/${notif.sourceUserUid}`} className="font-bold hover:text-brand-gold transition-colors" onClick={e => e.stopPropagation()}>
+                      <p className="text-sm text-brand-ebony leading-snug">
+                        <Link href={`/profile/${notif.sourceUserUid}`} className="font-bold hover:text-brand-burgundy transition-colors" onClick={e => e.stopPropagation()}>
                           {notif.sourceUserName}
                         </Link>{' '}
-                        <span className="text-white/60">{notif.message}</span>
+                        <span className="text-brand-ebony/60">{notif.message}</span>
                       </p>
                       <div className="flex items-center gap-1.5 flex-shrink-0 mt-0.5">
                         <NotifIcon type={notif.type} />

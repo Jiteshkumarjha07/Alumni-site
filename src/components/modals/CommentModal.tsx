@@ -207,7 +207,7 @@ export const CommentModal: React.FC<CommentModalProps> = ({
                                         setShowEmojiPicker(false);
                                     }}
                                 ></div>
-                                <div className="absolute left-0 bottom-full mb-2 bg-white rounded-xl shadow-2xl border border-brand-ebony/10 p-2 flex gap-1 z-50 animate-in fade-in zoom-in slide-in-from-bottom-2">
+                                <div className="absolute right-0 sm:right-auto sm:left-0 bottom-full mb-2 bg-white rounded-xl shadow-2xl border border-brand-ebony/10 p-2 flex gap-1 z-50 animate-in fade-in zoom-in slide-in-from-bottom-2">
                                     {['👍', '❤️', '😂', '🔥', '👏'].map(emoji => (
                                         <button
                                             key={emoji}
