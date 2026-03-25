@@ -7,7 +7,8 @@ import { uploadMedia } from '@/lib/media';
 import { Eye, EyeOff, Loader2, Camera, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import { LocationAutocomplete } from '@/components/ui/LocationAutocomplete';
-import { AlumnestLogo } from '@/components/brand/AlumnestLogo';
+
+import { BrandLogo } from '@/components/brand/BrandLogo';
 
 export default function SignUpPage() {
     const { signUp, error, clearError } = useAuth();
@@ -97,10 +98,8 @@ export default function SignUpPage() {
                 <div className="bg-brand-parchment/80 rounded-2xl shadow-xl p-8 border border-brand-ebony/10 backdrop-blur-sm">
                     {/* Header */}
                     <div className="text-center mb-8">
-                        <div className="w-20 h-20 bg-white rounded-2xl flex items-center justify-center mx-auto mb-5 border border-brand-ebony/10 shadow-lg p-2">
-                            <AlumnestLogo size={52} color="var(--color-brand-burgundy, #6B2D2F)" />
-                        </div>
-                        <h1 className="text-3xl font-serif font-bold text-brand-ebony mb-2">Join the Tribe</h1>
+                        <BrandLogo size="lg" className="mx-auto mb-4" />
+                        <h1 className="text-3xl font-serif font-bold text-brand-ebony mb-2">Join Alumni Network</h1>
                         <p className="text-brand-ebony/60">Create your account to connect with fellow alumni</p>
                     </div>
 

@@ -5,7 +5,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { Eye, EyeOff, Loader2, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
-import { AlumnestLogo } from '@/components/brand/AlumnestLogo';
+
+import { BrandLogo } from '@/components/brand/BrandLogo';
 
 export default function LoginPage() {
     const { signIn } = useAuth();
@@ -63,9 +64,7 @@ export default function LoginPage() {
                 <div className="bg-brand-parchment/80 rounded-2xl shadow-xl p-8 border border-brand-ebony/10 backdrop-blur-sm">
                     {/* Header */}
                     <div className="text-center mb-8">
-                        <div className="w-20 h-20 bg-white rounded-2xl flex items-center justify-center mx-auto mb-5 border border-brand-ebony/10 shadow-lg p-2">
-                            <AlumnestLogo size={52} color="var(--color-brand-burgundy, #6B2D2F)" />
-                        </div>
+                        <BrandLogo size="lg" className="mx-auto mb-4" />
                         <h1 className="text-3xl font-serif font-bold text-brand-ebony mb-2">Welcome Back</h1>
                         <p className="text-brand-ebony/60">Sign in to your alumni account</p>
                     </div>

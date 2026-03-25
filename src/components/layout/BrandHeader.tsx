@@ -1,20 +1,11 @@
 import React from 'react';
-import { AlumnestLogo } from '@/components/brand/AlumnestLogo';
+import { BrandLogo } from '../brand/BrandLogo';
 
 export function BrandHeader() {
     return (
         <header className="pt-8 pb-4 flex flex-col items-start text-left relative pointer-events-none w-full">
-            {/* Logo & Brand Name */}
-            <div className="flex items-center gap-4 mb-2 group">
-                <div className="relative">
-                    <div className="w-14 h-14 bg-white rounded-xl flex items-center justify-center shadow-md border border-brand-ebony/5 p-1.5 group-hover:shadow-lg transition-shadow">
-                        <AlumnestLogo size={40} color="var(--color-brand-burgundy, #6B2D2F)" />
-                    </div>
-                </div>
-                <h1 className="text-xl font-bold text-brand-ebony tracking-[0.15em] uppercase">
-                    Alumnest
-                </h1>
-            </div>
+            {/* The Logo */}
+            <BrandLogo size="md" showText tagline className="mb-2" />
 
             <div className="flex items-center gap-1.5 w-full mt-1">
                 <div className="h-[1px] flex-1 bg-gradient-to-r from-transparent via-brand-ebony/20 to-brand-ebony/10" />
