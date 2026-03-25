@@ -3,8 +3,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import {
-  collection, query, where, orderBy, limit,
-  onSnapshot, updateDoc, doc, getDocs, addDoc, arrayUnion, arrayRemove, serverTimestamp
+  collection, query, where,
+  onSnapshot, updateDoc, doc, addDoc, arrayUnion, arrayRemove, serverTimestamp
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { Notification } from '@/types';
@@ -40,14 +40,23 @@ export function NotificationBell() {
 
   useEffect(() => {
     if (!userData?.uid) return;
+    // Simple query — no orderBy/limit so no composite index needed
     const q = query(
       collection(db, 'notifications'),
-      where('userId', '==', userData.uid),
-      orderBy('createdAt', 'desc'),
-      limit(30)
+      where('userId', '==', userData.uid)
     );
     const unsub = onSnapshot(q, (snap) => {
-      setNotifications(snap.docs.map(d => ({ id: d.id, ...d.data() } as Notification)));
+      const list = snap.docs
+        .map(d => ({ id: d.id, ...d.data() } as Notification))
+        .sort((a, b) => {
+          const ta = a.createdAt?.toDate?.()?.getTime?.() ?? 0;
+          const tb = b.createdAt?.toDate?.()?.getTime?.() ?? 0;
+          return tb - ta;
+        })
+        .slice(0, 30);
+      setNotifications(list);
+    }, (err) => {
+      console.error('Notifications query error:', err);
     });
     return () => unsub();
   }, [userData?.uid]);
@@ -124,7 +133,7 @@ export function NotificationBell() {
     <div className="relative" ref={panelRef}>
       {/* Bell button */}
       <button
-        onClick={() => { setOpen(v => !v); if (!open) markAllRead(); }}
+        onClick={() => setOpen(v => !v)}
         className="relative flex items-center justify-center w-10 h-10 rounded-xl bg-brand-burgundy/10 hover:bg-brand-burgundy/20 border border-brand-burgundy/20 text-brand-burgundy transition-all shadow-sm"
         title="Notifications"
       >
