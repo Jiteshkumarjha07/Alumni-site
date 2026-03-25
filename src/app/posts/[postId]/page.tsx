@@ -62,8 +62,8 @@ export default function PostDetailPage() {
             authorName: userData.name,
             text,
             createdAt: new Date(),
-            replyToId: replyToId || undefined,
-            reactions: {}
+            reactions: {},
+            ...(replyToId ? { replyToId } : {})
         };
         await updateDoc(postRef, {
             comments: arrayUnion(newComment)

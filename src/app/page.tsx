@@ -120,8 +120,8 @@ export default function HomePage() {
       authorName: userData.name,
       text,
       createdAt: new Date(),
-      replyToId: replyToId || undefined,
-      reactions: {}
+      reactions: {},
+      ...(replyToId ? { replyToId } : {})
     };
 
     const updatedComments = [...(post.comments || []), newComment];
