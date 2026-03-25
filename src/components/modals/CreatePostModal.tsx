@@ -81,15 +81,15 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
     };
 
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 bg-brand-ebony/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div className="bg-brand-parchment rounded-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-brand-ebony/20">
                 {/* Header */}
-                <div className="flex items-center justify-between p-4 border-b sticky top-0 bg-white z-10">
-                    <h2 className="text-xl font-semibold">Create Post</h2>
+                <div className="flex items-center justify-between p-4 border-b border-brand-ebony/10 sticky top-0 bg-brand-parchment/95 backdrop-blur-md z-10">
+                    <h2 className="text-xl font-serif font-bold text-brand-ebony">Create Post</h2>
                     <button
                         onClick={onClose}
                         disabled={loading}
-                        className="p-2 hover:bg-gray-100 rounded-full transition disabled:opacity-50"
+                        className="p-2 hover:bg-brand-burgundy/10 text-brand-ebony/40 hover:text-brand-burgundy rounded-full transition disabled:opacity-50"
                     >
                         <X className="w-5 h-5" />
                     </button>
@@ -102,9 +102,9 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
                         alt={currentUser.name}
                         className="w-12 h-12 rounded-full object-cover"
                     />
-                    <div>
-                        <p className="font-semibold text-gray-900">{currentUser.name}</p>
-                        <p className="text-sm text-gray-500">Posting to alumni network</p>
+                    <div className="flex flex-col">
+                        <p className="font-bold text-brand-ebony">{currentUser.name}</p>
+                        <p className="text-xs font-medium text-brand-ebony/50 uppercase tracking-widest">Posting to alumni network</p>
                     </div>
                 </div>
 
@@ -114,7 +114,7 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
                         value={content}
                         onChange={(e) => setContent(e.target.value)}
                         placeholder="What's on your mind?"
-                        className="w-full min-h-[120px] p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none text-gray-900 placeholder-gray-400"
+                        className="w-full min-h-[120px] p-4 bg-white/50 border border-brand-ebony/10 rounded-xl focus:ring-2 focus:ring-brand-burgundy focus:border-transparent resize-none text-brand-ebony placeholder-brand-ebony/30 transition-all font-sans"
                         disabled={loading}
                     />
 
@@ -138,9 +138,9 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
 
                     {/* Image Upload Button */}
                     {!imagePreview && (
-                        <label className="mt-3 flex items-center justify-center gap-2 p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition cursor-pointer">
-                            <ImageIcon className="w-5 h-5 text-gray-400" />
-                            <span className="text-sm text-gray-600">Add an image</span>
+                        <label className="mt-3 flex items-center justify-center gap-2 p-6 border-2 border-dashed border-brand-ebony/10 rounded-xl hover:border-brand-burgundy/40 hover:bg-brand-burgundy/5 transition-all cursor-pointer group">
+                            <ImageIcon className="w-5 h-5 text-brand-ebony/30 group-hover:text-brand-burgundy transition-colors" />
+                            <span className="text-sm font-bold text-brand-ebony/60 group-hover:text-brand-burgundy transition-colors">Add an image</span>
                             <input
                                 type="file"
                                 accept="image/*"
@@ -155,23 +155,23 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
                 </div>
 
                 {/* Actions */}
-                <div className="flex justify-end gap-3 p-4 border-t bg-gray-50 sticky bottom-0">
+                <div className="flex items-center justify-end gap-4 p-4 border-t border-brand-ebony/10 bg-brand-parchment/80 sticky bottom-0 backdrop-blur-sm">
                     <button
                         onClick={onClose}
                         disabled={loading}
-                        className="px-6 py-2.5 border border-gray-300 rounded-lg font-semibold hover:bg-white transition disabled:opacity-50"
+                        className="px-6 py-2.5 text-brand-ebony/60 hover:text-brand-ebony font-bold text-sm tracking-wider uppercase hover:bg-brand-ebony/5 rounded-xl transition-all disabled:opacity-50"
                     >
                         Cancel
                     </button>
                     <button
                         onClick={handleSubmit}
                         disabled={loading || (!content.trim() && !imageFile)}
-                        className="px-6 py-2.5 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed min-w-[100px]"
+                        className="px-8 py-2.5 bg-brand-burgundy text-white rounded-xl font-bold text-sm tracking-wider uppercase hover:bg-[#5a2427] transition-all shadow-md shadow-brand-burgundy/20 disabled:opacity-50 disabled:cursor-not-allowed min-w-[120px]"
                     >
                         {loading ? (
                             <span className="flex items-center justify-center gap-2">
                                 <Loader2 className="w-4 h-4 animate-spin" />
-                                Posting...
+                                <span>Posting...</span>
                             </span>
                         ) : (
                             'Post'
