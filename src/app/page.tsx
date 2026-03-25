@@ -14,6 +14,7 @@ import { SharePostModal } from '@/components/modals/SharePostModal';
 import { SignedOutView } from '@/components/auth/SignedOutView';
 import { PenSquare, Camera, Image as ImageIcon, Paperclip, Users, Menu } from 'lucide-react';
 import { RightSidebar } from '@/components/layout/RightSidebar';
+import { NotificationBell } from '@/components/notifications/NotificationPanel';
 import Link from 'next/link';
 
 export default function HomePage() {
@@ -222,9 +223,7 @@ export default function HomePage() {
                <Menu className="w-5 h-5" />
                <span className="hidden sm:inline tracking-wider uppercase text-xs sm:ml-2">Discover</span>
             </button>
-            <div className="hidden sm:block text-[10px] font-bold text-brand-gold uppercase tracking-[0.3em] bg-brand-gold/5 px-4 py-1.5 rounded-full border border-brand-gold/20 shadow-inner">
-              Premium Alumni Network
-            </div>
+            <NotificationBell />
           </div>
         </div>
 
