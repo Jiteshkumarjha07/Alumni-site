@@ -7,6 +7,7 @@ export const mockUsers: User[] = [
     {
         uid: '1',
         name: 'Alex Johnson',
+        nameLowercase: 'alex johnson',
         email: 'alex@example.com',
         batch: 2018,
         profilePic: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400&h=400&fit=crop',
@@ -21,6 +22,7 @@ export const mockUsers: User[] = [
     {
         uid: '2',
         name: 'Sarah Williams',
+        nameLowercase: 'sarah williams',
         email: 'sarah@example.com',
         batch: 2020,
         profilePic: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400&h=400&fit=crop',
@@ -35,6 +37,7 @@ export const mockUsers: User[] = [
     {
         uid: '3',
         name: 'David Chen',
+        nameLowercase: 'david chen',
         email: 'david@example.com',
         batch: 2015,
         profilePic: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&h=400&fit=crop',

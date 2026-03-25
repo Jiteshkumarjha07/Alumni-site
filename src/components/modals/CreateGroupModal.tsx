@@ -29,7 +29,10 @@ export function CreateGroupModal({ isOpen, onClose, currentUser, onGroupCreated 
             setIsSearching(true);
             try {
                 const usersRef = collection(db, 'users');
-                const q = query(usersRef, where('name', '>=', searchQuery), where('name', '<=', searchQuery + '\uf8ff'));
+                const q = query(usersRef, 
+                    where('nameLowercase', '>=', searchQuery.toLowerCase()), 
+                    where('nameLowercase', '<=', searchQuery.toLowerCase() + '\uf8ff')
+                );
                 const querySnapshot = await getDocs(q);
 
                 const results: User[] = [];

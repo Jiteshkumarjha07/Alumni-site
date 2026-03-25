@@ -83,7 +83,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                 // Listen to user document changes
                 unsubscribeUser = onSnapshot(doc(db, 'users', firebaseUser.uid), (docSnapshot) => {
                     if (docSnapshot.exists()) {
-                        setUserData({ uid: firebaseUser.uid, ...docSnapshot.data() } as User);
+                        const data = docSnapshot.data() as User;
+                        setUserData({ ...data });
+
+                        // Passive sync for case-insensitive search
+                        if (data.name && !data.nameLowercase) {
+                            updateDoc(doc(db, 'users', firebaseUser.uid), {
+                                nameLowercase: data.name.toLowerCase()
+                            }).catch(err => console.error('Passive sync error:', err));
+                        }
                     } else {
                         setUserData(null);
                     }
@@ -141,6 +149,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                 uid: credential.user.uid,
                 email,
                 ...userInfo,
+                nameLowercase: userInfo.name?.toLowerCase() || '',
                 connections: [],
                 pendingRequests: [],
                 sentRequests: [],

@@ -16,6 +16,7 @@ export interface Notification {
 export interface User {
   uid: string;
   name: string;
+  nameLowercase: string;
   email: string;
   batch: number;
   profession: string;

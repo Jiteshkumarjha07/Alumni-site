@@ -41,8 +41,8 @@ export function ChatList({ currentUser, chats, onSelectChat, onStartChat, onSele
             try {
                 const usersRef = collection(db, 'users');
                 const q = query(usersRef, 
-                    where('name', '>=', searchQuery), 
-                    where('name', '<=', searchQuery + '\uf8ff')
+                    where('nameLowercase', '>=', searchQuery.toLowerCase()), 
+                    where('nameLowercase', '<=', searchQuery.toLowerCase() + '\uf8ff')
                 );
                 const querySnapshot = await getDocs(q);
 
