@@ -126,8 +126,8 @@ export function ForwardMessageModal({ isOpen, onClose, message, currentUser, ori
     );
 
     return (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-brand-ebony/40 backdrop-blur-sm">
-            <div className="bg-white rounded-3xl w-full max-w-md shadow-2xl border border-brand-ebony/10 overflow-hidden">
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-brand-cream/60 backdrop-blur-sm">
+            <div className="bg-brand-parchment rounded-3xl w-full max-w-md shadow-2xl border border-brand-ebony/10 overflow-hidden">
                 <div className="p-6 border-b border-brand-ebony/5 flex items-center justify-between">
                     <div>
                         <h2 className="text-xl font-serif font-bold text-brand-ebony">Forward Message</h2>
@@ -141,7 +141,7 @@ export function ForwardMessageModal({ isOpen, onClose, message, currentUser, ori
                     </button>
                 </div>
 
-                <div className="p-4 bg-brand-parchment/30">
+                <div className="p-4 bg-brand-cream/30">
                     <div className="relative">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-brand-ebony/30" />
                         <input
@@ -149,7 +149,7 @@ export function ForwardMessageModal({ isOpen, onClose, message, currentUser, ori
                             placeholder="Search connections..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            className="w-full pl-10 pr-4 py-2 bg-white border border-brand-ebony/10 rounded-xl text-sm focus:ring-2 focus:ring-brand-burgundy/20 outline-none transition-all"
+                            className="w-full pl-10 pr-4 py-2 bg-brand-cream border border-brand-ebony/10 rounded-xl text-sm focus:ring-2 focus:ring-brand-burgundy/20 outline-none transition-all text-brand-ebony"
                         />
                     </div>
                 </div>
@@ -165,7 +165,7 @@ export function ForwardMessageModal({ isOpen, onClose, message, currentUser, ori
                             <div key={connection.uid} className="flex items-center justify-between p-3 hover:bg-brand-burgundy/5 rounded-2xl transition-all group">
                                 <div className="flex items-center gap-3">
                                     <img
-                                        src={connection.profilePic || `https://placehold.co/100x100/EFEFEFF/3D2B27?text=${connection.name.substring(0, 1)}`}
+                                        src={connection.profilePic || `https://placehold.co/100x100/1e293b/f8fafc?text=${connection.name.substring(0, 1)}`}
                                         alt={connection.name}
                                         className="w-10 h-10 rounded-full border border-brand-ebony/5"
                                     />
@@ -179,8 +179,8 @@ export function ForwardMessageModal({ isOpen, onClose, message, currentUser, ori
                                     disabled={forwardStatus[connection.uid] || forwardingWith === connection.uid}
                                     className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all flex items-center gap-1.5 ${
                                         forwardStatus[connection.uid]
-                                            ? 'bg-green-100 text-green-700'
-                                            : 'bg-brand-burgundy text-white hover:bg-[#5a2427] shadow-sm'
+                                            ? 'bg-green-600/10 text-green-600'
+                                            : 'bg-brand-burgundy text-white hover:opacity-90 shadow-sm'
                                     } disabled:opacity-70`}
                                 >
                                     {forwardingWith === connection.uid ? (
@@ -206,8 +206,8 @@ export function ForwardMessageModal({ isOpen, onClose, message, currentUser, ori
                     )}
                 </div>
 
-                <div className="p-6 bg-brand-parchment/20 border-t border-brand-ebony/5">
-                    <div className="flex flex-col p-3 bg-white/60 rounded-2xl border border-brand-ebony/5">
+                <div className="p-6 bg-brand-cream/20 border-t border-brand-ebony/5">
+                    <div className="flex flex-col p-3 bg-brand-cream/60 rounded-2xl border border-brand-ebony/5">
                         <p className="text-[10px] font-bold text-brand-burgundy uppercase tracking-widest mb-1 opacity-70 italic">Forwarding Message</p>
                         <p className="text-xs text-brand-ebony/70 line-clamp-2 italic">"{decryptedOriginalText}"</p>
                     </div>

@@ -27,6 +27,8 @@ export interface User {
   sentRequests?: string[];
   groups?: string[];
   isAdmin?: boolean;
+  isOnline?: boolean;
+  lastSeen?: Timestamp;
 }
 
 export interface Post {

@@ -124,7 +124,7 @@ export function ChatList({ currentUser, chats, onSelectChat, onStartChat, onSele
                         </button>
 
                         {isActionsPopupOpen && (
-                            <div className="absolute right-0 top-12 w-56 bg-white rounded-2xl shadow-2xl border border-brand-ebony/5 z-[80] overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+                            <div className="absolute right-0 top-12 w-56 bg-brand-cream rounded-2xl shadow-2xl border border-brand-ebony/10 z-[80] overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
                                 <div className="p-2 space-y-1">
                                     <button 
                                         onClick={() => {
@@ -160,7 +160,7 @@ export function ChatList({ currentUser, chats, onSelectChat, onStartChat, onSele
                         onClick={() => onViewModeChange('chats')}
                         className={`flex-1 flex items-center justify-center gap-2 py-3 sm:py-2 text-xs font-bold uppercase tracking-wider rounded-lg transition-all ${
                             viewMode === 'chats' 
-                                ? 'bg-white text-brand-burgundy shadow-sm' 
+                                ? 'bg-brand-cream text-brand-burgundy shadow-sm border border-brand-ebony/5' 
                                 : 'text-brand-ebony/40 hover:text-brand-ebony/60'
                         }`}
                     >
@@ -171,7 +171,7 @@ export function ChatList({ currentUser, chats, onSelectChat, onStartChat, onSele
                         onClick={() => onViewModeChange('groups')}
                         className={`flex-1 flex items-center justify-center gap-2 py-3 sm:py-2 text-xs font-bold uppercase tracking-wider rounded-lg transition-all ${
                             viewMode === 'groups' 
-                                ? 'bg-white text-brand-burgundy shadow-sm' 
+                                ? 'bg-brand-cream text-brand-burgundy shadow-sm border border-brand-ebony/5' 
                                 : 'text-brand-ebony/40 hover:text-brand-ebony/60'
                         }`}
                     >
@@ -215,7 +215,7 @@ export function ChatList({ currentUser, chats, onSelectChat, onStartChat, onSele
                                     <img
                                         src={user.profilePic || `https://placehold.co/100x100/EFEFEFF/3D2B27?text=${user.name.substring(0, 1)}`}
                                         alt={user.name}
-                                        className="w-12 h-12 rounded-full object-cover mr-3 border-2 border-white shadow-sm"
+                                        className="w-12 h-12 rounded-full object-cover mr-3 border-2 border-brand-ebony/20 shadow-sm"
                                     />
                                     <div className="text-left flex-1 min-w-0">
                                         <p className="font-serif font-bold text-brand-ebony">{user.name}</p>
@@ -243,7 +243,7 @@ export function ChatList({ currentUser, chats, onSelectChat, onStartChat, onSele
                                     const otherUserDetails = otherUserId ? chat.participantDetails?.[otherUserId] : null;
 
                                     const name = otherUserDetails?.name || 'Unknown User';
-                                    const profilePic = otherUserDetails?.profilePic || `https://placehold.co/100x100/EFEFEFF/003366?text=${name.substring(0, 1)}`;
+                                    const profilePic = otherUserDetails?.profilePic || `https://placehold.co/100x100/1e293b/f8fafc?text=${name.substring(0, 1)}`;
                                     const unreadCount = chat.unreadCount?.[currentUser.uid] || 0;
 
                                     return (
@@ -251,17 +251,17 @@ export function ChatList({ currentUser, chats, onSelectChat, onStartChat, onSele
                                             key={chat.id}
                                             onClick={() => onSelectChat(chat.id)}
                                             className={`w-full flex items-center p-3 rounded-xl transition-all mb-1 cursor-pointer group relative ${
-                                                selectedChatId === chat.id ? 'bg-brand-burgundy/5 border-r-4 border-brand-burgundy' : 'hover:bg-brand-burgundy/5'
+                                                selectedChatId === chat.id ? 'bg-brand-burgundy/10 border-r-4 border-brand-burgundy' : 'hover:bg-brand-burgundy/5'
                                             }`}
                                         >
                                             <div className="relative flex-shrink-0">
                                                 <img
                                                     src={profilePic}
                                                     alt={name}
-                                                    className="w-12 h-12 rounded-full object-cover mr-3 border-2 border-white shadow-sm"
+                                                    className="w-12 h-12 rounded-full object-cover mr-3 border-2 border-brand-ebony/20 shadow-sm"
                                                 />
                                                 {unreadCount > 0 && (
-                                                    <div className="absolute -top-1 -right-1 bg-brand-burgundy text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center border-2 border-white">
+                                                    <div className="absolute -top-1 -right-1 bg-brand-burgundy text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center border-2 border-brand-cream">
                                                         {unreadCount > 9 ? '9+' : unreadCount}
                                                     </div>
                                                 )}
@@ -286,7 +286,7 @@ export function ChatList({ currentUser, chats, onSelectChat, onStartChat, onSele
                                             <button
                                                 onClick={(e) => handleDeleteChat(e, chat.id)}
                                                 disabled={isDeleting === chat.id}
-                                                className="absolute right-2 top-1/2 -translate-y-1/2 p-2 text-brand-ebony/40 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity bg-white/90 rounded-full shadow-sm"
+                                                className="absolute right-2 top-1/2 -translate-y-1/2 p-2 text-brand-ebony/40 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity bg-brand-cream/90 rounded-full shadow-sm"
                                                 title="Delete conversation"
                                             >
                                                 {isDeleting === chat.id ? (

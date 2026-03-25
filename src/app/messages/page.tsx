@@ -162,8 +162,8 @@ function MessagesClient() {
     if (!userData) return null; // Wait for redirect
 
     return (
-        <div className="h-[calc(100vh-4rem)] bg-white w-full max-w-6xl mx-auto md:p-4 p-0 overflow-x-hidden">
-            <div className="flex bg-white md:rounded-xl shadow-sm border overflow-hidden h-full w-full max-w-full">
+        <div className="h-[calc(100vh-4rem)] bg-transparent w-full max-w-6xl mx-auto md:p-4 p-0 overflow-x-hidden">
+            <div className="flex bg-brand-cream md:rounded-xl shadow-sm border border-brand-ebony/10 overflow-hidden h-full w-full max-w-full">
 
                 {/* Left Pane: Chat List */}
                 <div className={`md:w-1/3 w-full max-w-full border-r border-brand-ebony/10 flex-shrink-0 ${(selectedChatId || selectedGroupId) ? 'hidden md:flex flex-col' : 'flex flex-col'}`}>

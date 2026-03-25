@@ -8,7 +8,7 @@ import {
     createUserWithEmailAndPassword,
     signOut as firebaseSignOut
 } from 'firebase/auth';
-import { doc, setDoc, onSnapshot } from 'firebase/firestore';
+import { doc, setDoc, onSnapshot, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 import { User } from '@/types';
 
@@ -44,49 +44,57 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
-        const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+        let unsubscribeUser: (() => void) | null = null;
+
+        const unsubscribeAuth = onAuthStateChanged(auth, async (firebaseUser) => {
             if (firebaseUser) {
                 setUser(firebaseUser);
 
-                // Listen to user document changes
-                const userDocRef = doc(db, 'users', firebaseUser.uid);
-                const unsubscribeUser = onSnapshot(
-                    userDocRef,
-                    (docSnapshot) => {
-                        if (docSnapshot.exists()) {
-                            setUserData({ uid: firebaseUser.uid, ...docSnapshot.data() } as User);
-                            setLoading(false);
-                        } else {
-                            console.warn('User document does not exist for UID:', firebaseUser.uid);
-                            // Do not setUser(null) here, as it might cause a loop
-                            // Just set userData to null and let the UI handle the "Incomplete Setup" state
-                            setUserData(null);
-                            setLoading(false);
-                        }
-                    },
-                    (err) => {
-                        console.error('Error fetching user data snapshot:', err);
-                        // If we get a permission-denied error, it's likely because the doc hasn't been created yet
-                        // or the rules are too strict.
-                        if (err.code === 'permission-denied') {
-                            console.warn('Permission denied for user doc. This is expected if the doc is being created.');
-                            // Don't set error state yet, give it a moment
-                        } else {
-                            setError('Failed to load user profile');
-                        }
-                        setLoading(false);
-                    }
-                );
+                // Update isOnline status
+                const setStatus = async (online: boolean) => {
+                    await updateDoc(doc(db, 'users', firebaseUser.uid), {
+                        isOnline: online,
+                        lastSeen: serverTimestamp()
+                    }).catch(console.error);
+                };
 
-                return () => unsubscribeUser();
+                setStatus(true);
+
+                // Listen to user document changes
+                unsubscribeUser = onSnapshot(doc(db, 'users', firebaseUser.uid), (docSnapshot) => {
+                    if (docSnapshot.exists()) {
+                        setUserData({ uid: firebaseUser.uid, ...docSnapshot.data() } as User);
+                    } else {
+                        setUserData(null);
+                    }
+                    setLoading(false);
+                }, (err) => {
+                    console.error('Error fetching user data snapshot:', err);
+                    setLoading(false);
+                });
             } else {
                 setUser(null);
                 setUserData(null);
                 setLoading(false);
+                if (unsubscribeUser) {
+                    unsubscribeUser();
+                    unsubscribeUser = null;
+                }
             }
         });
 
-        return () => unsubscribe();
+        return () => {
+            unsubscribeAuth();
+            if (unsubscribeUser) unsubscribeUser();
+            // Note: We can't easily set offline here because the user might just be refreshing the tab
+            // and we don't have the UID reliably without auth.currentUser.
+            if (auth.currentUser) {
+                updateDoc(doc(db, 'users', auth.currentUser.uid), {
+                    isOnline: false,
+                    lastSeen: serverTimestamp()
+                }).catch(console.error);
+            }
+        };
     }, []);
 
     const signIn = async (email: string, password: string) => {

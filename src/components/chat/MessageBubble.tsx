@@ -173,7 +173,7 @@ export function MessageBubble({ message, isOwnMessage, onEdit, onUnsend, onReply
                         <div
                             className={`px-4 py-2.5 relative shadow-sm max-w-[calc(100vw-5rem)] md:max-w-full w-fit transition-all duration-200 ${isOwnMessage
                                 ? 'bg-brand-burgundy text-white rounded-2xl rounded-tr-sm select-text'
-                                : 'bg-white border border-brand-ebony/10 text-brand-ebony rounded-2xl rounded-tl-sm select-text'
+                                : 'bg-brand-parchment border border-brand-ebony/10 text-brand-ebony rounded-2xl rounded-tl-sm select-text'
                             }`}
                         >
                             {decryptedReplyText && (
@@ -189,7 +189,7 @@ export function MessageBubble({ message, isOwnMessage, onEdit, onUnsend, onReply
 
                             {message.sharedPostId && (
                                 <Link href={`/posts/${message.sharedPostId}`} className="block focus:outline-none mb-2">
-                                    <div className={`p-3 rounded-xl border min-w-0 w-full max-w-[280px] hover:shadow-md transition-all ${isOwnMessage ? 'bg-white/10 border-white/20 text-white' : 'bg-gray-50 border-gray-100 text-gray-800 shadow-inner'}`}>
+                                    <div className={`p-3 rounded-xl border min-w-0 w-full max-w-[280px] hover:shadow-md transition-all ${isOwnMessage ? 'bg-white/10 border-white/20 text-white' : 'bg-brand-parchment/30 border-brand-ebony/10 text-brand-ebony shadow-inner'}`}>
                                         <div className="flex items-center gap-2 mb-1.5 opacity-70">
                                             <Share2 className="w-3.5 h-3.5" />
                                             <span className="text-[10px] uppercase tracking-widest font-bold">Shared Post</span>
@@ -227,7 +227,7 @@ export function MessageBubble({ message, isOwnMessage, onEdit, onUnsend, onReply
                             <div className={`flex flex-col sm:flex-row sm:items-end justify-between gap-x-4 gap-y-1 ${isOwnMessage ? 'items-end' : 'items-start'}`}>
                                 <div className="flex-1 min-w-0">
                                     {decryptedText && (
-                                        <p className={`text-[15px] leading-relaxed whitespace-pre-wrap [overflow-wrap:anywhere] break-words ${
+                                        <p className={`text-[15px] leading-relaxed whitespace-pre-wrap [overflow-wrap:anywhere] break-words text-brand-ebony ${
                                             decryptedText.length < 50 && !decryptedImageUrl && !decryptedVideoUrl && !message.sharedPostId ? 'text-lg font-medium tracking-tight' : ''
                                         }`}>
                                             {decryptedText}

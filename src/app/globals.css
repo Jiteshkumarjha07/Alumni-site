@@ -22,11 +22,11 @@
 }
 
 .dark {
-  --brand-burgundy: #a04247;
-  --brand-gold: #d4b595;
-  --brand-cream: #1a1514;
-  --brand-parchment: #26201e;
-  --brand-ebony: #f2eae4;
+  --brand-burgundy: #4f46e5;
+  --brand-gold: #64748b;
+  --brand-cream: #020617;     /* Slate 950 */
+  --brand-parchment: #1e293b;  /* Slate 800 - Better contrast against 950 */
+  --brand-ebony: #f8fafc;     /* Slate 50 */
 }
 
 @layer base {
@@ -38,7 +38,16 @@
       radial-gradient(at 100% 0%, hsla(28, 24%, 90%, 1) 0, transparent 50%),
       url("https://www.transparenttextures.com/patterns/linen.png");
     color: var(--color-brand-ebony);
+    transition: background-color 0.3s ease, color 0.3s ease;
     min-height: 100vh;
+  }
+
+  .dark body {
+    background-image:
+      radial-gradient(at 0% 0%, rgba(79, 70, 229, 0.1) 0, transparent 50%),
+      radial-gradient(at 50% 0%, rgba(15, 23, 42, 0.2) 0, transparent 50%),
+      radial-gradient(at 100% 0%, rgba(79, 70, 229, 0.1) 0, transparent 50%),
+      url("https://www.transparenttextures.com/patterns/linen.png");
   }
 
   h1,

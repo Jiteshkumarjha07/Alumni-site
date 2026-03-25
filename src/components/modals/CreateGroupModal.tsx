@@ -99,9 +99,9 @@ export function CreateGroupModal({ isOpen, onClose, currentUser, onGroupCreated 
 
     return (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
-            <div className="bg-white rounded-3xl w-full max-w-md overflow-hidden shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+            <div className="bg-brand-cream rounded-3xl w-full max-w-md overflow-hidden shadow-2xl animate-in fade-in zoom-in-95 duration-200 border border-brand-ebony/10">
                 {/* Header */}
-                <div className="p-6 border-b border-gray-100 flex items-center justify-between bg-brand-parchment/10">
+                <div className="p-6 border-b border-brand-ebony/10 flex items-center justify-between bg-brand-parchment/10">
                     <div className="flex items-center gap-3">
                         <div className="p-2 bg-brand-burgundy/10 rounded-xl">
                             <Users className="w-5 h-5 text-brand-burgundy" />
@@ -109,7 +109,7 @@ export function CreateGroupModal({ isOpen, onClose, currentUser, onGroupCreated 
                         <h2 className="text-xl font-serif font-bold text-brand-ebony">Create New Group</h2>
                     </div>
                     <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
-                        <X className="w-5 h-5 text-gray-400" />
+                        <X className="w-5 h-5 text-brand-ebony/30" />
                     </button>
                 </div>
 
@@ -162,7 +162,7 @@ export function CreateGroupModal({ isOpen, onClose, currentUser, onGroupCreated 
                                                 <img 
                                                     src={user.profilePic || `https://placehold.co/100x100/EFEFEFF/3D2B27?text=${user.name.substring(0, 1)}`} 
                                                     alt={user.name} 
-                                                    className="w-10 h-10 rounded-full object-cover border border-white"
+                                                    className="w-10 h-10 rounded-full object-cover border border-brand-ebony/20"
                                                 />
                                                 <div>
                                                     <p className="text-sm font-serif font-bold text-brand-ebony">{user.name}</p>
@@ -179,7 +179,7 @@ export function CreateGroupModal({ isOpen, onClose, currentUser, onGroupCreated 
                                         </button>
                                     ))
                                 ) : (
-                                    <p className="text-center py-4 text-xs text-gray-400">No results found</p>
+                                    <p className="text-center py-4 text-xs text-brand-ebony/30">No results found</p>
                                 )
                             ) : selectedMembers.length > 0 ? (
                                 <div className="flex flex-wrap gap-2">
@@ -193,14 +193,14 @@ export function CreateGroupModal({ isOpen, onClose, currentUser, onGroupCreated 
                                     ))}
                                 </div>
                             ) : (
-                                <p className="text-center py-4 text-xs text-gray-400 italic">Search users to add them to the group</p>
+                                <p className="text-center py-4 text-xs text-brand-ebony/30 italic">Search users to add them to the group</p>
                             )}
                         </div>
                     </div>
                 </div>
 
                 {/* Footer */}
-                <div className="p-6 bg-brand-parchment/5 border-t border-gray-100 flex gap-3">
+                <div className="p-6 bg-brand-parchment/5 border-t border-brand-ebony/10 flex gap-3">
                     <button
                         onClick={onClose}
                         className="flex-1 py-3 text-sm font-medium text-brand-ebony/60 hover:text-brand-ebony transition-colors"

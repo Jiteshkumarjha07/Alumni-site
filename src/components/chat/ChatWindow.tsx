@@ -40,6 +40,23 @@ export function ChatWindow({ chatId, currentUser, otherUser, isGroup = false, gr
         ? (groupData?.groupSecret || chatId) 
         : (otherUser ? getSharedSecret(currentUser.uid, otherUser.uid) : '');
 
+    const [otherUserStatus, setOtherUserStatus] = useState<{ isOnline: boolean; lastSeen?: any } | null>(null);
+
+    // Listen to other user's status
+    useEffect(() => {
+        if (isGroup || !otherUser?.uid) return;
+        const unsubscribe = onSnapshot(doc(db, 'users', otherUser.uid), (docSnapshot) => {
+            if (docSnapshot.exists()) {
+                const data = docSnapshot.data();
+                setOtherUserStatus({
+                    isOnline: data.isOnline || false,
+                    lastSeen: data.lastSeen
+                });
+            }
+        });
+        return () => unsubscribe();
+    }, [otherUser?.uid, isGroup]);
+
     // Scroll to bottom
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -273,15 +290,14 @@ export function ChatWindow({ chatId, currentUser, otherUser, isGroup = false, gr
     }
 
     const title = isGroup ? groupData?.groupName : otherUser?.name;
-    const subtitle = isGroup ? `${groupData?.members.length} Members` : 'End-to-End Encrypted';
     const profilePic = isGroup 
         ? null 
-        : (otherUser?.profilePic || `https://placehold.co/100x100/EFEFEFF/3D2B27?text=${otherUser?.name.substring(0, 1)}`);
+        : (otherUser?.profilePic || `https://placehold.co/100x100/1e293b/f8fafc?text=${otherUser?.name.substring(0, 1)}`);
 
     return (
-        <div className="flex-1 flex flex-col h-full bg-[#f8f9fa] relative overflow-hidden" style={{backgroundImage: 'url(https://www.transparenttextures.com/patterns/linen.png)'}}>
+        <div className="flex-1 flex flex-col h-full bg-brand-cream relative overflow-hidden" style={{backgroundImage: 'url(https://www.transparenttextures.com/patterns/linen.png)'}}>
             {/* Chat Header */}
-            <div className="flex items-center justify-between p-4 bg-brand-parchment/90 border-b border-brand-ebony/10 shadow-sm z-20 backdrop-blur-md sticky top-0">
+            <div className="flex items-center justify-between p-4 bg-brand-cream/95 border-b border-brand-ebony/5 shadow-sm z-20 backdrop-blur-md sticky top-0">
                 <div className="flex items-center">
                     {onBack && (
                         <button onClick={onBack} className="md:hidden mr-3 text-brand-ebony hover:text-brand-burgundy transition-colors">
@@ -293,22 +309,29 @@ export function ChatWindow({ chatId, currentUser, otherUser, isGroup = false, gr
                             <Users className="w-5 h-5 text-brand-burgundy" />
                         </div>
                     ) : (
-                        <img
-                            src={profilePic!}
-                            alt={title!}
-                            className="w-10 h-10 rounded-full mr-3 object-cover border border-white shadow-sm ring-1 ring-brand-ebony/5"
-                        />
+                        <div className="relative">
+                            <img
+                                src={profilePic!}
+                                alt={title!}
+                                className="w-10 h-10 rounded-full mr-3 object-cover border border-brand-ebony/10 shadow-sm"
+                            />
+                            {otherUserStatus?.isOnline && (
+                                <div className="absolute bottom-0 right-2.5 w-3 h-3 bg-green-500 rounded-full border-2 border-brand-cream shadow-sm"></div>
+                            )}
+                        </div>
                     )}
                     <div>
                         <h3 className="font-serif font-bold text-brand-ebony text-lg leading-tight">{title}</h3>
                         <div className="flex items-center gap-1 mt-0.5">
                             {isGroup ? (
-                                <span className="text-[10px] text-brand-ebony/50 font-bold uppercase tracking-wider">{subtitle}</span>
+                                <span className="text-[10px] text-brand-ebony/50 font-bold uppercase tracking-wider">{groupData?.members.length} Members</span>
                             ) : (
-                                <>
-                                    <Lock className="w-2.5 h-2.5 text-green-600" />
-                                    <span className="text-[9px] text-green-600 font-bold uppercase tracking-widest">{subtitle}</span>
-                                </>
+                                <div className="flex items-center gap-1.5">
+                                    <div className={`w-1.5 h-1.5 rounded-full ${otherUserStatus?.isOnline ? 'bg-green-500' : 'bg-brand-ebony/30'}`}></div>
+                                    <span className={`text-[10px] font-bold uppercase tracking-widest ${otherUserStatus?.isOnline ? 'text-green-600/80' : 'text-brand-ebony/40'}`}>
+                                        {otherUserStatus?.isOnline ? 'Online' : 'Offline'}
+                                    </span>
+                                </div>
                             )}
                         </div>
                     </div>
@@ -323,7 +346,7 @@ export function ChatWindow({ chatId, currentUser, otherUser, isGroup = false, gr
                     <div className="relative">
                         <button 
                             onClick={() => setShowCallMenu(!showCallMenu)}
-                            className={`p-2.5 rounded-full transition-all flex items-center justify-center shadow-sm ${showCallMenu ? 'bg-brand-burgundy text-white' : 'bg-white text-brand-burgundy hover:bg-brand-burgundy/10 border border-brand-burgundy/20'}`}
+                            className={`p-2.5 rounded-full transition-all flex items-center justify-center shadow-sm ${showCallMenu ? 'bg-brand-burgundy text-white' : 'bg-brand-cream text-brand-burgundy hover:bg-brand-burgundy/10 border border-brand-burgundy/20'}`}
                         >
                             <Phone className="w-4 h-4 fill-current" />
                         </button>
@@ -332,7 +355,7 @@ export function ChatWindow({ chatId, currentUser, otherUser, isGroup = false, gr
                             <>
                                 <div className="fixed inset-0 z-10" onClick={() => setShowCallMenu(false)}></div>
                                 <div 
-                                    className="absolute right-0 top-full mt-2 w-48 bg-white rounded-2xl shadow-xl border border-brand-ebony/10 overflow-hidden z-20 animate-in fade-in slide-in-from-top-2 duration-200"
+                                    className="absolute right-0 top-full mt-2 w-48 bg-brand-cream rounded-2xl shadow-xl border border-brand-ebony/10 overflow-hidden z-20 animate-in fade-in slide-in-from-top-2 duration-200"
                                 >
                                     <div className="p-2 space-y-1">
                                         <button 
@@ -362,7 +385,7 @@ export function ChatWindow({ chatId, currentUser, otherUser, isGroup = false, gr
             </div>
 
             {/* Messages Area */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-4 scrollbar-hide bg-[#f0f2f5]/30">
+            <div className="flex-1 overflow-y-auto p-4 space-y-4 scrollbar-hide bg-brand-cream/20">
                 {loading ? (
                     <div className="flex justify-center items-center h-full">
                         <Loader2 className="w-8 h-8 animate-spin text-brand-burgundy opacity-50" />
@@ -373,17 +396,17 @@ export function ChatWindow({ chatId, currentUser, otherUser, isGroup = false, gr
                             <img
                                 src={profilePic!}
                                 alt={title!}
-                                className="w-24 h-24 rounded-full object-cover shadow-lg opacity-60 ring-4 ring-white"
+                                className="w-24 h-24 rounded-full object-cover shadow-lg opacity-60 ring-4 ring-brand-ebony/10"
                             />
                         )}
                         {isGroup && (
-                            <div className="w-24 h-24 bg-brand-burgundy/10 rounded-full flex items-center justify-center ring-4 ring-white shadow-lg">
+                            <div className="w-24 h-24 bg-brand-burgundy/10 rounded-full flex items-center justify-center ring-4 ring-brand-ebony/10 shadow-lg">
                                 <Users className="w-10 h-10 text-brand-burgundy/40" />
                             </div>
                         )}
                         <div>
                             <p className="text-lg font-serif italic text-brand-ebony/60 mb-2">This is the start of your journey with <strong className="text-brand-burgundy">{title}</strong>.</p>
-                            <div className="flex items-center justify-center gap-2 px-4 py-2 bg-white/60 rounded-2xl border border-brand-burgundy/10 shadow-sm backdrop-blur-sm">
+                            <div className="flex items-center justify-center gap-2 px-4 py-2 bg-brand-parchment rounded-2xl border border-brand-burgundy/10 shadow-sm backdrop-blur-sm">
                                 <Lock className="w-3 h-3 text-green-600" />
                                 <p className="text-[10px] text-brand-ebony/60 italic uppercase tracking-tighter">Messages are end-to-end encrypted</p>
                             </div>
@@ -410,7 +433,7 @@ export function ChatWindow({ chatId, currentUser, otherUser, isGroup = false, gr
             {/* Input Area */}
             <div className="p-4 pb-8 sm:pb-4 bg-brand-parchment/90 border-t border-brand-ebony/10 backdrop-blur-md relative z-20">
                 {editingMessage && (
-                    <div className="flex items-center justify-between mb-2 px-4 py-2 bg-brand-burgundy/5 rounded-xl border border-brand-burgundy/20 animate-in slide-in-from-bottom-2 duration-200">
+                    <div className="flex items-center justify-between mb-2 px-4 py-2 bg-brand-burgundy/10 rounded-xl border border-brand-burgundy/20 animate-in slide-in-from-bottom-2 duration-200">
                         <div className="flex items-center gap-2">
                             <CheckCheck className="w-3.5 h-3.5 text-brand-burgundy" />
                             <p className="text-xs text-brand-burgundy font-bold italic uppercase tracking-wider">Editing message...</p>
@@ -437,9 +460,9 @@ export function ChatWindow({ chatId, currentUser, otherUser, isGroup = false, gr
                 {mediaPreview && (
                     <div className="mb-3 relative group w-fit animate-in zoom-in-95 duration-200">
                         {mediaPreview.type === 'image' ? (
-                            <img src={mediaPreview.url} alt="Preview" className="h-32 w-auto rounded-xl border-2 border-white object-cover shadow-lg ring-1 ring-brand-ebony/5" />
+                            <img src={mediaPreview.url} alt="Preview" className="h-32 w-auto rounded-xl border-2 border-brand-ebony/20 object-cover shadow-lg ring-1 ring-brand-ebony/5" />
                         ) : (
-                            <video src={mediaPreview.url} className="h-32 w-auto rounded-xl border-2 border-white shadow-lg ring-1 ring-brand-ebony/5" muted />
+                            <video src={mediaPreview.url} className="h-32 w-auto rounded-xl border-2 border-brand-ebony/20 shadow-lg ring-1 ring-brand-ebony/5" muted />
                         )}
                         <button 
                             onClick={() => setMediaPreview(null)}
@@ -484,7 +507,7 @@ export function ChatWindow({ chatId, currentUser, otherUser, isGroup = false, gr
                                 value={newMessage}
                                 onChange={(e) => setNewMessage(e.target.value)}
                                 placeholder={editingMessage ? "Edit message..." : (replyingToMessage ? "Type a reply..." : "Type a message...")}
-                                className="w-full px-5 py-3.5 bg-white border border-brand-ebony/10 rounded-2xl focus:ring-2 focus:ring-brand-burgundy/20 focus:border-brand-burgundy outline-none transition-all placeholder:text-brand-ebony/30 shadow-inner text-sm"
+                                className="w-full px-5 py-3.5 bg-brand-cream border border-brand-ebony/10 rounded-2xl focus:ring-2 focus:ring-brand-burgundy/20 focus:border-brand-burgundy outline-none transition-all placeholder:text-brand-ebony/30 text-brand-ebony shadow-inner text-sm"
                                 disabled={sending}
                             />
                         </div>

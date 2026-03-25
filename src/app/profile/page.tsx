@@ -14,7 +14,7 @@ import { SharePostModal } from '@/components/modals/SharePostModal';
 import { ChangePasswordModal } from '@/components/modals/ChangePasswordModal';
 import { SignedOutView } from '@/components/auth/SignedOutView';
 import { uploadMedia } from '@/lib/media';
-import { Pencil, LogOut, MapPin, Briefcase, Settings, MoreVertical, ShieldAlert, Lock, Trash2, Loader2, Menu, MessageCircle, Heart, Users, Settings2, Shield } from 'lucide-react';
+import { Pencil, LogOut, MapPin, Briefcase, Settings, MoreVertical, ShieldAlert, Lock, Trash2, Loader2, MessageCircle, Heart, Users, Settings2, Shield } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { AccountSettingsModal } from '@/components/modals/AccountSettingsModal';
@@ -33,7 +33,6 @@ export default function ProfilePage() {
     const [userGroups, setUserGroups] = useState<Group[]>([]);
     const [loadingGroups, setLoadingGroups] = useState(false);
     const [showAccountSettings, setShowAccountSettings] = useState(false);
-    const [showSettings, setShowSettings] = useState(false);
     const [showChangePassword, setShowChangePassword] = useState(false);
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
     const [deleting, setDeleting] = useState(false);
@@ -145,7 +144,7 @@ export default function ProfilePage() {
 
             // Handle profile picture
             if (isRemovingPic) {
-                updates.profilePic = `https://placehold.co/100x100/EFEFEFF/003366?text=${formData.name.substring(0, 2).toUpperCase()}`;
+                updates.profilePic = `https://placehold.co/100x100/1e293b/f8fafc?text=${formData.name.substring(0, 2).toUpperCase()}`;
             } else if (profilePicFile) {
                 const uploadedUrl = await uploadMedia(profilePicFile);
                 if (uploadedUrl) {
@@ -290,7 +289,7 @@ export default function ProfilePage() {
             <div className="bg-gradient-to-r from-brand-burgundy to-[#4a1c20] h-32 sm:h-40 md:h-48 rounded-t-xl opacity-90 border-b-4 border-brand-gold/60 relative">
                 <button
                     onClick={() => setShowAccountSettings(true)}
-                    className="absolute top-4 right-4 p-2.5 bg-white/15 hover:bg-white/25 backdrop-blur-sm text-white rounded-xl transition-all border border-white/20 shadow-md sm:block hidden"
+                    className="absolute top-4 right-4 p-2.5 bg-white/15 hover:bg-white/25 backdrop-blur-sm text-white rounded-xl transition-all border border-white/20 shadow-md"
                     title="Account Settings"
                 >
                     <Settings className="w-5 h-5" />
@@ -299,62 +298,17 @@ export default function ProfilePage() {
 
             {/* Profile Header */}
             <div className="bg-brand-parchment/90 rounded-b-xl shadow-md p-4 sm:p-6 -mt-12 sm:-mt-16 md:-mt-20 relative border border-brand-ebony/10 z-10">
-                {/* Account Settings Menu (Top Right of Header) */}
-                <div className="absolute top-2 right-2 sm:top-4 sm:right-4 z-[60]">
-                    <div className="relative">
-                        <button
-                            onClick={() => setShowSettings(!showSettings)}
-                            className="p-2 text-brand-ebony/40 hover:text-brand-burgundy hover:bg-brand-burgundy/5 rounded-full transition-all"
-                            title="Account Settings"
-                        >
-                            <Menu className="w-6 h-6" />
-                        </button>
 
-                        {showSettings && (
-                            <div className="absolute right-0 mt-2 w-56 bg-white rounded-2xl shadow-2xl py-2 z-[70] border border-gray-100 animate-in fade-in slide-in-from-top-2 duration-200">
-                                <div className="px-4 py-2 border-b border-gray-50 mb-1">
-                                    <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Account Settings</p>
-                                </div>
-                                
-                                <button
-                                    onClick={() => { setShowChangePassword(true); setShowSettings(false); }}
-                                    className="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-brand-burgundy/5 flex items-center gap-3 transition-colors"
-                                >
-                                    <Lock className="w-4 h-4 text-brand-burgundy/60" />
-                                    <span className="font-semibold">Change Password</span>
-                                </button>
-                                
-                                <button
-                                    onClick={() => { setShowLogoutConfirm(true); setShowSettings(false); }}
-                                    className="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-brand-burgundy/5 flex items-center gap-3 transition-colors"
-                                >
-                                    <LogOut className="w-4 h-4 text-brand-burgundy/60" />
-                                    <span className="font-semibold">Logout</span>
-                                </button>
-
-                                <div className="border-t border-gray-50 mt-1 pt-1">
-                                    <button
-                                        onClick={() => { setShowDeleteConfirm(true); setShowSettings(false); }}
-                                        className="w-full text-left px-4 py-3 text-sm text-red-600 hover:bg-red-50 flex items-center gap-3 transition-colors"
-                                    >
-                                        <ShieldAlert className="w-4 h-4 text-red-500/60" />
-                                        <span className="font-semibold">Delete Account</span>
-                                    </button>
-                                </div>
-                            </div>
-                        )}
-                    </div>
-                </div>
 
                 <div className="flex flex-col md:flex-row items-center md:items-end gap-6">
                     {/* Profile Picture */}
                     <div className="relative">
                         <Image
-                            src={userData.profilePic || `https://placehold.co/150x150/EFEFEFF/003366?text=${userData.name.substring(0, 1)}`}
+                            src={userData.profilePic || `https://placehold.co/150x150/1e293b/f8fafc?text=${userData.name.substring(0, 1)}`}
                             alt={userData.name}
                             width={128}
                             height={128}
-                            className="w-24 h-24 sm:w-32 sm:h-32 rounded-full border-4 border-brand-cream shadow-lg object-cover bg-white"
+                            className="w-24 h-24 sm:w-32 sm:h-32 rounded-full border-4 border-brand-cream shadow-lg object-cover bg-brand-cream"
                             unoptimized
                         />
                     </div>
