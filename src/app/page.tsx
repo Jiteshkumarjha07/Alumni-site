@@ -107,18 +107,21 @@ export default function HomePage() {
     }
   };
 
-  const handleAddComment = async (text: string) => {
+  const handleAddComment = async (text: string, replyToId?: string) => {
     if (!userData || !commentingPost) return;
 
     const postRef = doc(db, 'posts', commentingPost.id);
     const post = posts.find((p) => p.id === commentingPost.id);
     if (!post) return;
 
-    const newComment = {
+    const newComment: AppComment = {
+      id: Math.random().toString(36).substr(2, 9),
       authorUid: userData.uid,
       authorName: userData.name,
       text,
       createdAt: new Date(),
+      replyToId: replyToId || null,
+      reactions: {}
     };
 
     const updatedComments = [...(post.comments || []), newComment];
@@ -131,7 +134,7 @@ export default function HomePage() {
         sourceUserUid: userData.uid,
         sourceUserName: userData.name,
         sourceUserProfilePic: userData.profilePic || '',
-        message: `commented on your post: "${text.substring(0, 30)}${
+        message: `${userData.name} commented on your post: "${text.substring(0, 30)}${
           text.length > 30 ? '...' : ''
         }"`,
         link: `/posts/${commentingPost.id}`,
@@ -139,6 +142,36 @@ export default function HomePage() {
         isRead: false,
       });
     }
+  };
+
+  const handleReactComment = async (comment: AppComment, emoji: string) => {
+    if (!userData || !commentingPost) return;
+
+    const postRef = doc(db, 'posts', commentingPost.id);
+    const post = posts.find((p) => p.id === commentingPost.id);
+    if (!post) return;
+
+    const updatedComments = (post.comments || []).map(c => {
+      // Small check: new comments might not have IDs if they were legacy, but we use text/author as fallback if no ID
+      const isMatch = c.id ? c.id === comment.id : (c.text === comment.text && c.authorUid === comment.authorUid);
+      
+      if (isMatch) {
+        const reactions = { ...(c.reactions || {}) };
+        const uids = [...(reactions[emoji] || [])];
+        
+        if (uids.includes(userData.uid)) {
+          reactions[emoji] = uids.filter(id => id !== userData.uid);
+          if (reactions[emoji].length === 0) delete reactions[emoji];
+        } else {
+          reactions[emoji] = [...uids, userData.uid];
+        }
+        
+        return { ...c, reactions };
+      }
+      return c;
+    });
+
+    await updateDoc(postRef, { comments: updatedComments });
   };
 
   const handleDeleteComment = async (comment: AppComment) => {
@@ -279,6 +312,7 @@ export default function HomePage() {
           onClose={() => setCommentingPost(null)}
           onSubmit={handleAddComment}
           onDelete={handleDeleteComment}
+          onReact={handleReactComment}
           comments={posts.find(p => p.id === commentingPost.id)?.comments || []}
           postAuthor={commentingPost.authorName}
           currentUserUid={userData.uid}

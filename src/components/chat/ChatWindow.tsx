@@ -567,7 +567,9 @@ export function ChatWindow({ chatId, currentUser, otherUser, isGroup = false, gr
                             >
                                 {unsendingMessage.senderId === currentUser.uid ? 'Unsend for me' : 'Delete for me'}
                             </button>
-                            {unsendingMessage.senderId === currentUser.uid && (
+                            {unsendingMessage.senderId === currentUser.uid && !unsendingMessage.isDeleted && (
+                                Math.floor((Date.now() - (unsendingMessage.createdAt?.toMillis() || 0)) / 60000) < 10
+                            ) && (
                                 <button 
                                     onClick={() => handleUnsendMessage(unsendingMessage, 'everyone')}
                                     className="w-full py-3 px-4 bg-brand-burgundy hover:bg-[#5a2427] text-white rounded-xl font-bold transition-colors flex items-center justify-center gap-2 shadow-md shadow-brand-burgundy/20"

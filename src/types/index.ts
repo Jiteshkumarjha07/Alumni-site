@@ -45,10 +45,13 @@ export interface Post {
 }
 
 export interface Comment {
+  id: string;
   authorUid: string;
   authorName: string;
   text: string;
   createdAt: Date | Timestamp;
+  replyToId?: string;
+  reactions?: Record<string, string[]>; // emoji -> array of user uids
 }
 
 export interface Job {

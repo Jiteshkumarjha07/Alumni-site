@@ -53,17 +53,45 @@ export default function PostDetailPage() {
         });
     };
 
-    const handleAddComment = async (text: string) => {
+    const handleAddComment = async (text: string, replyToId?: string) => {
         if (!userData || !post) return;
         const postRef = doc(db, 'posts', post.id);
-        const newComment = {
+        const newComment: AppComment = {
+            id: Math.random().toString(36).substr(2, 9),
             authorUid: userData.uid,
             authorName: userData.name,
             text,
-            createdAt: new Date()
+            createdAt: new Date(),
+            replyToId: replyToId || null,
+            reactions: {}
         };
         await updateDoc(postRef, {
             comments: arrayUnion(newComment)
+        });
+    };
+
+    const handleReactComment = async (comment: AppComment, emoji: string) => {
+        if (!userData || !post) return;
+        const postRef = doc(db, 'posts', post.id);
+        
+        const updatedComments = (post.comments || []).map(c => {
+            const isMatch = c.id ? c.id === comment.id : (c.text === comment.text && c.authorUid === comment.authorUid);
+            if (isMatch) {
+                const reactions = { ...(c.reactions || {}) };
+                const uids = [...(reactions[emoji] || [])];
+                if (uids.includes(userData.uid)) {
+                    reactions[emoji] = uids.filter(id => id !== userData.uid);
+                    if (reactions[emoji].length === 0) delete reactions[emoji];
+                } else {
+                    reactions[emoji] = [...uids, userData.uid];
+                }
+                return { ...c, reactions };
+            }
+            return c;
+        });
+
+        await updateDoc(postRef, {
+            comments: updatedComments
         });
     };
 
@@ -124,9 +152,11 @@ export default function PostDetailPage() {
                     onClose={() => setIsCommenting(false)}
                     onSubmit={handleAddComment}
                     onDelete={handleDeleteComment}
+                    onReact={handleReactComment}
                     comments={post.comments || []}
                     postAuthor={post.authorName}
                     currentUserUid={userData!.uid}
+                    currentUserName={userData!.name}
                 />
             )}
 

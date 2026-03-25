@@ -154,7 +154,7 @@ export function MessageBubble({ message, isOwnMessage, onEdit, onUnsend, onReply
                                             className="w-full flex items-center gap-2.5 px-4 py-2 text-xs font-bold text-red-500 hover:bg-red-500/10 transition-colors"
                                         >
                                             <Trash2 className="w-4 h-4 opacity-60" />
-                                            {isOwnMessage ? 'Unsend for everyone' : 'Delete for me'}
+                                            {isOwnMessage ? (canAction ? 'Unsend' : 'Delete for me') : 'Delete for me'}
                                         </button>
                                         {isOwnMessage && canAction && (
                                             <button
