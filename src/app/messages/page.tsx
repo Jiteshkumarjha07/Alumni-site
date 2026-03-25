@@ -162,14 +162,14 @@ function MessagesClient() {
     if (!userData) return null; // Wait for redirect
 
     return (
-        <div className="h-[calc(100vh-4rem)] bg-white max-w-6xl mx-auto md:p-4 p-0">
-            <div className="flex bg-white md:rounded-xl shadow-sm border overflow-hidden h-full">
+        <div className="h-[calc(100vh-4rem)] bg-white w-full max-w-6xl mx-auto md:p-4 p-0 overflow-x-hidden">
+            <div className="flex bg-white md:rounded-xl shadow-sm border overflow-hidden h-full w-full max-w-full">
 
                 {/* Left Pane: Chat List */}
-                <div className={`md:w-1/3 w-full border-r ${(selectedChatId || selectedGroupId) ? 'hidden md:block' : 'block'}`}>
+                <div className={`md:w-1/3 w-full max-w-full border-r border-brand-ebony/10 flex-shrink-0 ${(selectedChatId || selectedGroupId) ? 'hidden md:flex flex-col' : 'flex flex-col'}`}>
                     {loadingChats ? (
                         <div className="flex h-full items-center justify-center">
-                            <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+                            <Loader2 className="w-8 h-8 animate-spin text-brand-burgundy" />
                         </div>
                     ) : (
                         <ChatList
@@ -186,7 +186,8 @@ function MessagesClient() {
                     )}
                 </div>
 
-                <div className={`flex-1 overflow-hidden ${(!selectedChatId && !selectedGroupId) ? 'hidden md:flex' : 'flex'}`}>
+                {/* Right Pane: Chat Window */}
+                <div className={`flex-1 flex flex-col min-w-0 w-full max-w-full overflow-hidden ${(!selectedChatId && !selectedGroupId) ? 'hidden md:flex' : 'flex'}`}>
                     <ChatWindow
                         chatId={selectedChatId || selectedGroupId || ''}
                         currentUser={userData}

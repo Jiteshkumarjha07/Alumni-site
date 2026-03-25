@@ -171,13 +171,13 @@ export function MessageBubble({ message, isOwnMessage, onEdit, onUnsend, onReply
                         </div>
 
                         <div
-                            className={`px-4 py-2.5 relative shadow-sm max-w-full w-fit transition-all duration-200 ${isOwnMessage
+                            className={`px-4 py-2.5 relative shadow-sm max-w-[calc(100vw-5rem)] md:max-w-full w-fit transition-all duration-200 ${isOwnMessage
                                 ? 'bg-brand-burgundy text-white rounded-2xl rounded-tr-sm select-text'
                                 : 'bg-white border border-brand-ebony/10 text-brand-ebony rounded-2xl rounded-tl-sm select-text'
                             }`}
                         >
                             {decryptedReplyText && (
-                                <div className={`mb-2 p-2 rounded-lg border-l-[3px] text-[10px] leading-relaxed max-w-full ${
+                                <div className={`mb-2 p-2 rounded-lg border-l-[3px] text-[10px] leading-relaxed max-w-full overflow-hidden ${
                                     isOwnMessage 
                                         ? 'bg-black/10 border-white/30 text-white/90' 
                                         : 'bg-brand-ebony/5 border-brand-burgundy/30 text-brand-ebony/70'
