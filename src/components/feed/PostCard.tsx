@@ -2,7 +2,7 @@
 
 import { Post, User } from '@/types';
 import { Heart, MessageCircle, Share2, MoreHorizontal, Pencil, Trash2 } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 
 interface PostCardProps {
@@ -25,8 +25,28 @@ export const PostCard: React.FC<PostCardProps> = ({
     onShare,
 }) => {
     const [showMenu, setShowMenu] = useState(false);
+    const menuRef = useRef<HTMLDivElement>(null);
     const isLiked = post.likes?.includes(currentUser.uid) || false;
     const isOwnPost = post.authorUid === currentUser.uid;
+
+    // Handle outside click to close menu
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+                setShowMenu(false);
+            }
+        };
+
+        if (showMenu) {
+            document.addEventListener('mousedown', handleClickOutside);
+        } else {
+            document.removeEventListener('mousedown', handleClickOutside);
+        }
+
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, [showMenu]);
 
     const formatTimestamp = (timestamp: unknown) => {
         if (!timestamp) return 'Just now';
@@ -63,7 +83,7 @@ export const PostCard: React.FC<PostCardProps> = ({
                 </Link>
 
                 {isOwnPost && (
-                    <div className="relative">
+                    <div className="relative" ref={menuRef}>
                         <button
                             onClick={() => setShowMenu(!showMenu)}
                             className="p-2 hover:bg-brand-ebony/5 rounded-full transition"
