@@ -1,13 +1,14 @@
 import React from 'react';
+import { AlumnestLogo } from '@/components/brand/AlumnestLogo';
 
 export function BrandHeader() {
     return (
         <header className="pt-8 pb-4 flex flex-col items-start text-left relative pointer-events-none w-full">
-            {/* The Logo */}
+            {/* Logo & Brand Name */}
             <div className="flex items-center gap-4 mb-2 group">
                 <div className="relative">
-                    <div className="w-16 h-16 bg-white rounded-lg flex items-center justify-center shadow-md overflow-hidden p-1 border border-brand-ebony/5">
-                        <img src="/logo.png" alt="Alumnest Logo" className="w-full h-full object-contain" />
+                    <div className="w-14 h-14 bg-white rounded-xl flex items-center justify-center shadow-md border border-brand-ebony/5 p-1.5 group-hover:shadow-lg transition-shadow">
+                        <AlumnestLogo size={40} color="var(--color-brand-burgundy, #6B2D2F)" />
                     </div>
                 </div>
                 <h1 className="text-xl font-bold text-brand-ebony tracking-[0.15em] uppercase">
