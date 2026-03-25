@@ -158,13 +158,17 @@ export default function HomePage() {
       
       if (isMatch) {
         const reactions = { ...(c.reactions || {}) };
-        const uids = [...(reactions[emoji] || [])];
+        const hasReactedWithThis = reactions[emoji]?.includes(userData.uid);
         
-        if (uids.includes(userData.uid)) {
-          reactions[emoji] = uids.filter(id => id !== userData.uid);
-          if (reactions[emoji].length === 0) delete reactions[emoji];
-        } else {
-          reactions[emoji] = [...uids, userData.uid];
+        // Remove user from ALL existing reactions in this comment
+        Object.keys(reactions).forEach(key => {
+          reactions[key] = (reactions[key] || []).filter(id => id !== userData.uid);
+          if (reactions[key].length === 0) delete reactions[key];
+        });
+
+        if (!hasReactedWithThis) {
+          // Add to the new emoji
+          reactions[emoji] = [...(reactions[emoji] || []), userData.uid];
         }
         
         return { ...c, reactions };

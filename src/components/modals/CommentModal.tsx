@@ -33,6 +33,10 @@ export const CommentModal: React.FC<CommentModalProps> = ({
     const [displayComments, setDisplayComments] = useState<AppComment[]>(comments);
     const [replyingTo, setReplyingTo] = useState<AppComment | null>(null);
     const [showEmojiPickerFor, setShowEmojiPickerFor] = useState<string | null>(null);
+    
+    // Mobile dismissal states
+    const [touchStart, setTouchStart] = useState<number | null>(null);
+    const [touchTranslate, setTouchTranslate] = useState(0);
 
     const highlightMentions = (text: string) => {
         const parts = text.split(/(@\w+)/g);
@@ -50,7 +54,47 @@ export const CommentModal: React.FC<CommentModalProps> = ({
         setDisplayComments(comments);
     }, [comments]);
 
+    // Back button support
+    useEffect(() => {
+        if (isOpen) {
+            window.history.pushState({ modal: 'comments' }, '');
+            
+            const handlePopState = () => {
+                onClose();
+            };
+
+            window.addEventListener('popstate', handlePopState);
+            return () => {
+                window.removeEventListener('popstate', handlePopState);
+                if (window.history.state?.modal === 'comments') {
+                    window.history.back();
+                }
+            };
+        }
+    }, [isOpen, onClose]);
+
     if (!isOpen) return null;
+
+    const handleTouchStart = (e: React.TouchEvent) => {
+        setTouchStart(e.targetTouches[0].clientY);
+    };
+
+    const handleTouchMove = (e: React.TouchEvent) => {
+        if (touchStart === null) return;
+        const currentY = e.targetTouches[0].clientY;
+        const diff = currentY - touchStart;
+        if (diff > 0) {
+            setTouchTranslate(diff);
+        }
+    };
+
+    const handleTouchEnd = () => {
+        if (touchTranslate > 150) {
+            onClose();
+        }
+        setTouchStart(null);
+        setTouchTranslate(0);
+    };
 
     const handleSubmit = async () => {
         if (!commentText.trim() || !currentUserUid) return;
@@ -231,8 +275,22 @@ export const CommentModal: React.FC<CommentModalProps> = ({
     );
 
     return (
-        <div className="fixed inset-0 bg-brand-ebony/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-            <div className="bg-brand-parchment rounded-2xl max-w-2xl w-full max-h-[80vh] flex flex-col border border-brand-ebony/10 shadow-2xl">
+        <div 
+            className="fixed inset-0 bg-brand-ebony/60 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-0 sm:p-4 transition-all duration-300"
+            onClick={(e) => e.target === e.currentTarget && onClose()}
+        >
+            <div 
+                className="bg-brand-parchment rounded-t-3xl sm:rounded-2xl max-w-2xl w-full max-h-[92vh] sm:max-h-[80vh] flex flex-col border border-brand-ebony/10 shadow-2xl transition-transform duration-200 ease-out"
+                style={{ transform: `translateY(${touchTranslate}px)` }}
+                onTouchStart={handleTouchStart}
+                onTouchMove={handleTouchMove}
+                onTouchEnd={handleTouchEnd}
+            >
+                {/* Mobile Drag Handle */}
+                <div className="w-full flex justify-center pt-3 pb-1 sm:hidden">
+                    <div className="w-12 h-1.5 bg-brand-ebony/10 rounded-full" />
+                </div>
+
                 {/* Header */}
                 <div className="flex items-center justify-between p-4 border-b border-brand-ebony/10">
                     <h2 className="text-xl font-serif font-bold text-brand-ebony">Comments</h2>
