@@ -72,20 +72,20 @@ export function RightSidebar({ isOpen = false, onClose = () => {} }: RightSideba
 
     return (
         <>
-            {/* Mobile Backdrop */}
+            {/* Backdrop for all screen sizes */}
             {isOpen && (
                 <div 
-                    className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40 lg:hidden transition-opacity"
+                    className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40 transition-opacity"
                     onClick={onClose}
                 />
             )}
             
-            <div className={`w-80 fixed right-0 top-0 h-full p-6 overflow-y-auto border-l border-brand-ebony/10 bg-brand-parchment/95 lg:bg-brand-parchment/40 backdrop-blur-xl z-50 transition-transform duration-300 ${isOpen ? 'translate-x-0 shadow-2xl lg:shadow-md' : 'translate-x-full lg:translate-x-0 lg:static'}`}>
+            <div className={`w-80 fixed right-0 top-0 h-full p-6 overflow-y-auto border-l border-brand-ebony/10 bg-brand-parchment/95 backdrop-blur-xl z-50 transition-transform duration-300 ${isOpen ? 'translate-x-0 shadow-2xl' : 'translate-x-full'}`}>
                 
-                {/* Close Button (Mobile Only) */}
+                {/* Close Button */}
                 <button 
                     onClick={onClose}
-                    className="absolute top-4 right-4 p-2 text-brand-ebony/50 hover:text-brand-burgundy hover:bg-brand-burgundy/10 rounded-full transition-colors z-10 lg:hidden"
+                    className="absolute top-4 right-4 p-2 text-brand-ebony/50 hover:text-brand-burgundy hover:bg-brand-burgundy/10 rounded-full transition-colors z-10"
                 >
                     <X className="w-5 h-5" />
                 </button>

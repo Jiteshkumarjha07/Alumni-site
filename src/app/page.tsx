@@ -12,7 +12,7 @@ import { CommentModal } from '@/components/modals/CommentModal';
 import { ConfirmDialog } from '@/components/modals/ConfirmDialog';
 import { SharePostModal } from '@/components/modals/SharePostModal';
 import { SignedOutView } from '@/components/auth/SignedOutView';
-import { PenSquare, Camera, Image as ImageIcon, Paperclip, Users } from 'lucide-react';
+import { PenSquare, Camera, Image as ImageIcon, Paperclip, Users, Menu } from 'lucide-react';
 import { RightSidebar } from '@/components/layout/RightSidebar';
 import Link from 'next/link';
 
@@ -142,7 +142,7 @@ export default function HomePage() {
   }
 
   return (
-    <div className={`min-h-screen transition-all duration-300 ${isRightSidebarOpen ? 'lg:pr-80' : ''}`}>
+    <div className="min-h-screen transition-all duration-300">
       <div className="max-w-2xl mx-auto p-4 pt-8">
         {/* Feed Header */}
         <div className="flex flex-wrap items-center justify-between mb-8 gap-4">
@@ -153,10 +153,11 @@ export default function HomePage() {
           <div className="flex items-center gap-3">
             <button
                onClick={() => setIsRightSidebarOpen(true)}
-               className="lg:hidden flex items-center gap-2 px-4 py-2 bg-brand-burgundy/10 text-brand-burgundy rounded-full text-sm font-bold hover:bg-brand-burgundy/20 transition-all border border-brand-burgundy/20 shadow-sm"
+               className="flex items-center justify-center p-2 sm:px-4 sm:py-2 bg-brand-burgundy/10 text-brand-burgundy rounded-xl sm:rounded-full text-sm font-bold hover:bg-brand-burgundy/20 transition-all border border-brand-burgundy/20 shadow-sm"
+               title="Suggestions & Trending"
             >
-               <Users className="w-4 h-4" />
-               <span className="hidden sm:inline tracking-wider uppercase text-xs">Suggestions</span>
+               <Menu className="w-5 h-5" />
+               <span className="hidden sm:inline tracking-wider uppercase text-xs sm:ml-2">Discover</span>
             </button>
             <div className="hidden sm:block text-[10px] font-bold text-brand-gold uppercase tracking-[0.3em] bg-brand-gold/5 px-4 py-1.5 rounded-full border border-brand-gold/20 shadow-inner">
               Premium Alumni Network
