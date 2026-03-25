@@ -74,6 +74,15 @@ export interface Message {
   isRead?: boolean;
   readAt?: Timestamp;
   readBy?: string[]; // Array of UIDs who have read this message
+  isEdited?: boolean;
+  isDeleted?: boolean;
+  isForwarded?: boolean;
+  replyToId?: string;
+  replyToText?: string;
+  replyToSenderName?: string;
+  imageUrl?: string;
+  videoUrl?: string;
+  hiddenBy?: string[];
   sharedPostId?: string;
   sharedPostContent?: string;
   sharedPostAuthor?: string;
@@ -95,6 +104,9 @@ export interface Group {
   admins: string[];
   createdAt: Timestamp;
   groupSecret: string;
+  lastMessage?: string;
+  lastMessageAt?: Timestamp;
+  lastSenderName?: string;
 }
 
 export interface Chat {

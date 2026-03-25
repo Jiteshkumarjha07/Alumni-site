@@ -1,16 +1,14 @@
 'use client';
 
 import Link from 'next/link';
-import { Home, Users, Briefcase, User, Calendar, MessageSquare, Settings } from 'lucide-react';
-
+import { Home, Users, User, MessageSquare, Settings } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 
 const navigation = [
     { name: 'Home', href: '/', icon: Home },
     { name: 'Messages', href: '/messages', icon: MessageSquare },
+    { name: 'Groups', href: '/messages?view=groups', icon: Users },
     { name: 'Network', href: '/network', icon: Users },
-    { name: 'Jobs', href: '/jobs', icon: Briefcase },
-    { name: 'Events', href: '/events', icon: Calendar },
     { name: 'Profile', href: '/profile', icon: User },
     { name: 'Settings', href: '/settings', icon: Settings },
 ];

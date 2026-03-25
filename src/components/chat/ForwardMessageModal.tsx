@@ -1,32 +1,42 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Post, User } from '@/types';
-import { X, Search, Send, Loader2, CheckCircle2 } from 'lucide-react';
+import { Message, User } from '@/types';
+import { X, Search, Send, Loader2, CheckCircle2, Lock } from 'lucide-react';
 import { collection, query, where, getDocs, addDoc, serverTimestamp, doc, setDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import Image from 'next/image';
+import { encryptMessage, decryptMessage, getSharedSecret } from '@/lib/encryption';
 
-interface SharePostModalProps {
+interface ForwardMessageModalProps {
     isOpen: boolean;
     onClose: () => void;
-    post: Post;
+    message: Message;
     currentUser: User;
+    originSharedSecret: string;
 }
 
-export function SharePostModal({ isOpen, onClose, post, currentUser }: SharePostModalProps) {
+export function ForwardMessageModal({ isOpen, onClose, message, currentUser, originSharedSecret }: ForwardMessageModalProps) {
     const [searchQuery, setSearchQuery] = useState('');
     const [connections, setConnections] = useState<User[]>([]);
     const [loading, setLoading] = useState(false);
-    const [sharingWith, setSharingWith] = useState<string | null>(null);
-    const [sharedStatus, setSharedStatus] = useState<{[key: string]: boolean}>({});
+    const [forwardingWith, setForwardingWith] = useState<string | null>(null);
+    const [forwardStatus, setForwardStatus] = useState<{[key: string]: boolean}>({});
 
-    const fetchConnections = React.useCallback(async () => {
+    const decryptedOriginalText = React.useMemo(() => 
+        decryptMessage(message.text, originSharedSecret)
+    , [message.text, originSharedSecret]);
+
+    useEffect(() => {
+        if (isOpen && currentUser.connections && currentUser.connections.length > 0) {
+            fetchConnections();
+        }
+    }, [isOpen, currentUser.connections]);
+
+    const fetchConnections = async () => {
         setLoading(true);
         try {
             const usersRef = collection(db, 'users');
-            // Firestore 'in' query is limited to 10 items, but for now we'll just fetch all and filter or do batch
-            // For simplicity in this prototype, we'll fetch connections by their UIDs
+            // For now, fetch matching connection details (up to 10 for prototype simplicity)
             const q = query(usersRef, where('uid', 'in', currentUser.connections!.slice(0, 10)));
             const snapshot = await getDocs(q);
             const fetchedConnections = snapshot.docs.map(doc => doc.data() as User);
@@ -36,19 +46,16 @@ export function SharePostModal({ isOpen, onClose, post, currentUser }: SharePost
         } finally {
             setLoading(false);
         }
-    }, [currentUser.connections]);
+    };
 
-    useEffect(() => {
-        if (isOpen && currentUser.connections && currentUser.connections.length > 0) {
-            fetchConnections();
-        }
-    }, [isOpen, currentUser.connections, fetchConnections]);
-
-    const handleShare = async (targetUser: User) => {
-        if (sharingWith) return;
-        setSharingWith(targetUser.uid);
+    const handleForward = async (targetUser: User) => {
+        if (forwardingWith) return;
+        setForwardingWith(targetUser.uid);
 
         try {
+            const targetSharedSecret = getSharedSecret(currentUser.uid, targetUser.uid);
+            const encryptedForTarget = encryptMessage(decryptedOriginalText, targetSharedSecret);
+
             // 1. Find or create chat
             const chatsRef = collection(db, 'chats');
             const q = query(chatsRef, where('participants', 'array-contains', currentUser.uid));
@@ -68,7 +75,11 @@ export function SharePostModal({ isOpen, onClose, post, currentUser }: SharePost
                 chatId = combinedId;
                 await setDoc(doc(db, 'chats', chatId), {
                     participants: [currentUser.uid, targetUser.uid],
-                    lastMessage: `Shared a post by ${post.authorName}`,
+                    lastMessage: decryptedOriginalText, // Plaintext preview? 
+                    // To follow the ChatWindow logic, we could encrypt this too, but let's be consistent.
+                    // If we want total E2EE, lastMessage should also be encrypted.
+                    // But then ChatList needs to calculate secrets for everyone.
+                    // For now, let's keep it consistent with what I did in ChatWindow (plaintext lastMessage).
                     lastMessageAt: serverTimestamp(),
                     participantDetails: {
                         [currentUser.uid]: {
@@ -83,31 +94,28 @@ export function SharePostModal({ isOpen, onClose, post, currentUser }: SharePost
                 });
             }
 
-            // 2. Send message with shared post data
+            // 2. Send forwarded message
             await addDoc(collection(db, 'chats', chatId, 'messages'), {
-                text: `Check out this post by ${post.authorName}`,
+                text: encryptedForTarget,
                 senderId: currentUser.uid,
                 senderName: currentUser.name,
                 senderProfilePic: currentUser.profilePic || null,
                 createdAt: serverTimestamp(),
                 isRead: false,
-                sharedPostId: post.id,
-                sharedPostContent: post.content,
-                sharedPostAuthor: post.authorName,
-                sharedPostImage: post.imageUrl || null
+                isForwarded: true
             });
 
             // 3. Update chat last message
             await setDoc(doc(db, 'chats', chatId), {
-                lastMessage: `Shared a post by ${post.authorName}`,
+                lastMessage: decryptedOriginalText,
                 lastMessageAt: serverTimestamp()
             }, { merge: true });
 
-            setSharedStatus(prev => ({ ...prev, [targetUser.uid]: true }));
+            setForwardStatus(prev => ({ ...prev, [targetUser.uid]: true }));
         } catch (error) {
-            console.error('Error sharing post:', error);
+            console.error('Error forwarding message:', error);
         } finally {
-            setSharingWith(null);
+            setForwardingWith(null);
         }
     };
 
@@ -118,19 +126,22 @@ export function SharePostModal({ isOpen, onClose, post, currentUser }: SharePost
     );
 
     return (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-brand-ebony/60 backdrop-blur-sm">
-            <div className="bg-brand-parchment rounded-3xl w-full max-w-md shadow-2xl border border-brand-ebony/10 overflow-hidden">
-                <div className="p-6 border-b border-brand-ebony/10 flex items-center justify-between bg-brand-ebony/5">
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-brand-ebony/40 backdrop-blur-sm">
+            <div className="bg-white rounded-3xl w-full max-w-md shadow-2xl border border-brand-ebony/10 overflow-hidden">
+                <div className="p-6 border-b border-brand-ebony/5 flex items-center justify-between">
                     <div>
-                        <h2 className="text-xl font-serif font-bold text-brand-ebony leading-none">Share Post</h2>
-                        <p className="text-[10px] text-brand-ebony/50 font-bold uppercase tracking-widest mt-1">Select connection</p>
+                        <h2 className="text-xl font-serif font-bold text-brand-ebony">Forward Message</h2>
+                        <div className="flex items-center gap-1 mt-1">
+                            <Lock className="w-3 h-3 text-green-600" />
+                            <p className="text-[10px] text-green-600 font-bold uppercase tracking-widest">End-to-End Encrypted</p>
+                        </div>
                     </div>
                     <button onClick={onClose} className="p-2 hover:bg-brand-burgundy/5 rounded-full transition-colors text-brand-ebony/40 hover:text-brand-burgundy">
                         <X className="w-5 h-5" />
                     </button>
                 </div>
 
-                <div className="p-4 bg-brand-ebony/5 border-b border-brand-ebony/5">
+                <div className="p-4 bg-brand-parchment/30">
                     <div className="relative">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-brand-ebony/30" />
                         <input
@@ -138,7 +149,7 @@ export function SharePostModal({ isOpen, onClose, post, currentUser }: SharePost
                             placeholder="Search connections..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            className="w-full pl-10 pr-4 py-2.5 bg-brand-parchment border border-brand-ebony/10 rounded-xl text-sm focus:ring-2 focus:ring-brand-burgundy/20 outline-none transition-all text-brand-ebony"
+                            className="w-full pl-10 pr-4 py-2 bg-white border border-brand-ebony/10 rounded-xl text-sm focus:ring-2 focus:ring-brand-burgundy/20 outline-none transition-all"
                         />
                     </div>
                 </div>
@@ -153,40 +164,36 @@ export function SharePostModal({ isOpen, onClose, post, currentUser }: SharePost
                         filteredConnections.map((connection) => (
                             <div key={connection.uid} className="flex items-center justify-between p-3 hover:bg-brand-burgundy/5 rounded-2xl transition-all group">
                                 <div className="flex items-center gap-3">
-                                    <div className="relative w-10 h-10 rounded-full overflow-hidden border border-brand-ebony/5">
-                                        <Image
-                                            src={connection.profilePic || `https://placehold.co/100x100/EFEFEFF/3D2B27?text=${connection.name.substring(0, 1)}`}
-                                            alt={connection.name}
-                                            fill
-                                            className="object-cover"
-                                            unoptimized
-                                        />
-                                    </div>
+                                    <img
+                                        src={connection.profilePic || `https://placehold.co/100x100/EFEFEFF/3D2B27?text=${connection.name.substring(0, 1)}`}
+                                        alt={connection.name}
+                                        className="w-10 h-10 rounded-full border border-brand-ebony/5"
+                                    />
                                     <div>
                                         <p className="font-bold text-brand-ebony text-sm">{connection.name}</p>
                                         <p className="text-[10px] text-brand-ebony/50 font-medium">Class of {connection.batch}</p>
                                     </div>
                                 </div>
                                 <button
-                                    onClick={() => handleShare(connection)}
-                                    disabled={sharedStatus[connection.uid] || sharingWith === connection.uid}
+                                    onClick={() => handleForward(connection)}
+                                    disabled={forwardStatus[connection.uid] || forwardingWith === connection.uid}
                                     className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all flex items-center gap-1.5 ${
-                                        sharedStatus[connection.uid]
+                                        forwardStatus[connection.uid]
                                             ? 'bg-green-100 text-green-700'
                                             : 'bg-brand-burgundy text-white hover:bg-[#5a2427] shadow-sm'
                                     } disabled:opacity-70`}
                                 >
-                                    {sharingWith === connection.uid ? (
+                                    {forwardingWith === connection.uid ? (
                                         <Loader2 className="w-3 h-3 animate-spin" />
-                                    ) : sharedStatus[connection.uid] ? (
+                                    ) : forwardStatus[connection.uid] ? (
                                         <>
                                             <CheckCircle2 className="w-3 h-3" />
-                                            Shared
+                                            Forwarded
                                         </>
                                     ) : (
                                         <>
                                             <Send className="w-3 h-3" />
-                                            Share
+                                            Forward
                                         </>
                                     )}
                                 </button>
@@ -199,27 +206,10 @@ export function SharePostModal({ isOpen, onClose, post, currentUser }: SharePost
                     )}
                 </div>
 
-                <div className="p-6 bg-brand-ebony/5 border-t border-brand-ebony/10">
-                    <div className="flex items-center gap-3 p-3 bg-brand-parchment/60 rounded-2xl border border-brand-ebony/10">
-                        <div className="w-12 h-12 bg-brand-ebony/10 rounded-lg overflow-hidden flex-shrink-0">
-                            {post.imageUrl ? (
-                                <Image 
-                                    src={post.imageUrl} 
-                                    alt={post.authorName} 
-                                    fill 
-                                    className="object-cover" 
-                                    unoptimized
-                                />
-                            ) : (
-                                <div className="w-full h-full flex items-center justify-center text-brand-ebony/20">
-                                    <Send className="w-5 h-5" />
-                                </div>
-                            )}
-                        </div>
-                        <div className="overflow-hidden">
-                            <p className="text-[10px] font-bold text-brand-burgundy uppercase tracking-widest mb-0.5 leading-tight">Sharing Post by {post.authorName}</p>
-                            <p className="text-xs text-brand-ebony/70 line-clamp-1 italic font-serif">{post.content}</p>
-                        </div>
+                <div className="p-6 bg-brand-parchment/20 border-t border-brand-ebony/5">
+                    <div className="flex flex-col p-3 bg-white/60 rounded-2xl border border-brand-ebony/5">
+                        <p className="text-[10px] font-bold text-brand-burgundy uppercase tracking-widest mb-1 opacity-70 italic">Forwarding Message</p>
+                        <p className="text-xs text-brand-ebony/70 line-clamp-2 italic">"{decryptedOriginalText}"</p>
                     </div>
                 </div>
             </div>

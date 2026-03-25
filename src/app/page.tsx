@@ -12,7 +12,8 @@ import { CommentModal } from '@/components/modals/CommentModal';
 import { ConfirmDialog } from '@/components/modals/ConfirmDialog';
 import { SharePostModal } from '@/components/modals/SharePostModal';
 import { SignedOutView } from '@/components/auth/SignedOutView';
-import { PenSquare, Camera, Image as ImageIcon, Paperclip } from 'lucide-react';
+import { PenSquare, Camera, Image as ImageIcon, Paperclip, Users } from 'lucide-react';
+import { RightSidebar } from '@/components/layout/RightSidebar';
 import Link from 'next/link';
 
 export default function HomePage() {
@@ -24,6 +25,7 @@ export default function HomePage() {
   const [commentingPost, setCommentingPost] = useState<Post | null>(null);
   const [deletingPostId, setDeletingPostId] = useState<string | null>(null);
   const [sharingPost, setSharingPost] = useState<Post | null>(null);
+  const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(false);
 
   // Fetch posts from Firebase
   useEffect(() => {
@@ -37,14 +39,20 @@ export default function HomePage() {
       orderBy('createdAt', 'desc')
     );
 
-    const unsubscribe = onSnapshot(postsQuery, (snapshot) => {
-      const fetchedPosts = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      })) as Post[];
-      setPosts(fetchedPosts);
-      setLoading(false);
-    });
+    const unsubscribe = onSnapshot(postsQuery, 
+      (snapshot) => {
+        const fetchedPosts = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        })) as Post[];
+        setPosts(fetchedPosts);
+        setLoading(false);
+      },
+      (error) => {
+        console.error('Error fetching posts:', error);
+        setLoading(false); // Still stop loading even on error
+      }
+    );
 
     return () => unsubscribe();
   }, [userData]);
@@ -103,20 +111,20 @@ export default function HomePage() {
         await updateDoc(postRef, { comments: updatedComments });
     };
 
-    const handleDeleteComment = async (comment: AppComment) => {
-        if (!userData || !commentingPost) return;
+  const handleDeleteComment = async (comment: AppComment) => {
+    if (!userData || !commentingPost) return;
 
-        const postRef = doc(db, 'posts', commentingPost.id);
-        await updateDoc(postRef, {
-            comments: arrayRemove(comment)
-        });
-    };
+    const postRef = doc(db, 'posts', commentingPost.id);
+    await updateDoc(postRef, {
+      comments: arrayRemove(comment)
+    });
+  };
 
-    const handleDeletePost = async () => {
-        if (!deletingPostId) return;
-        await deleteDoc(doc(db, 'posts', deletingPostId));
-        setDeletingPostId(null);
-    };
+  const handleDeletePost = async () => {
+    if (!deletingPostId) return;
+    await deleteDoc(doc(db, 'posts', deletingPostId));
+    setDeletingPostId(null);
+  };
 
   if (authLoading || loading) {
     return (
@@ -134,75 +142,88 @@ export default function HomePage() {
   }
 
   return (
-    <div className="max-w-2xl mx-auto py-8">
-      {/* Feed Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-8 gap-4">
-        <div className="flex items-center gap-3">
-          <div className="h-10 w-1 bg-brand-burgundy rounded-full" />
-          <h1 className="text-2xl sm:text-3xl font-serif font-bold text-brand-ebony tracking-tight">The Feed</h1>
-        </div>
-        <div className="text-[10px] font-bold text-brand-gold uppercase tracking-[0.3em] bg-brand-gold/5 px-4 py-1.5 rounded-full border border-brand-gold/20 shadow-inner">
-          Premium Alumnest Network
-        </div>
-      </div>
-
-      {/* Create Post Button Area */}
-      <div className="bg-brand-parchment/40 rounded-2xl border border-brand-ebony/10 p-5 mb-8 shadow-sm backdrop-blur-sm group hover:border-brand-burgundy/20 transition-all duration-300">
-        <div className="flex items-start gap-4 mb-4">
-          <img
-            src={userData.profilePic || `https://placehold.co/100x100/EFEFEFF/3D2B27?text=${userData.name.substring(0, 1)}`}
-            alt={userData.name}
-            className="w-12 h-12 rounded-full border-2 border-white shadow-sm"
-          />
-          <button
-            onClick={() => setShowCreatePost(true)}
-            className="flex-1 text-left px-5 py-3 bg-white/60 hover:bg-white border border-brand-ebony/10 rounded-xl text-brand-ebony/40 transition-all font-medium group-hover:shadow-inner"
-          >
-            Share something with your fellow alumni...
-          </button>
-        </div>
-        <div className="flex items-center justify-between pt-4 border-t border-brand-ebony/5">
-          <div className="flex gap-2">
-            <button onClick={() => setShowCreatePost(true)} className="p-2.5 text-brand-ebony/30 hover:text-brand-burgundy hover:bg-brand-burgundy/5 rounded-xl transition-all">
-              <Camera className="w-5 h-5" />
-            </button>
-            <button onClick={() => setShowCreatePost(true)} className="p-2.5 text-brand-ebony/30 hover:text-brand-burgundy hover:bg-brand-burgundy/5 rounded-xl transition-all">
-              <ImageIcon className="w-5 h-5" />
-            </button>
-            <button onClick={() => setShowCreatePost(true)} className="p-2.5 text-brand-ebony/30 hover:text-brand-burgundy hover:bg-brand-burgundy/5 rounded-xl transition-all">
-              <Paperclip className="w-5 h-5" />
-            </button>
+    <div className={`min-h-screen transition-all duration-300 ${isRightSidebarOpen ? 'lg:pr-80' : ''}`}>
+      <div className="max-w-2xl mx-auto p-4 pt-8">
+        {/* Feed Header */}
+        <div className="flex flex-wrap items-center justify-between mb-8 gap-4">
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-1 bg-brand-burgundy rounded-full" />
+            <h1 className="text-3xl font-serif font-bold text-brand-ebony tracking-tight">The Feed</h1>
           </div>
-          <button
-            onClick={() => setShowCreatePost(true)}
-            className="px-8 py-2 bg-brand-burgundy text-white rounded-xl font-bold hover:bg-[#5a2427] transition-all shadow-md shadow-brand-burgundy/20 hover:shadow-lg active:scale-95"
-          >
-            Post
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+               onClick={() => setIsRightSidebarOpen(true)}
+               className="lg:hidden flex items-center gap-2 px-4 py-2 bg-brand-burgundy/10 text-brand-burgundy rounded-full text-sm font-bold hover:bg-brand-burgundy/20 transition-all border border-brand-burgundy/20 shadow-sm"
+            >
+               <Users className="w-4 h-4" />
+               <span className="hidden sm:inline tracking-wider uppercase text-xs">Suggestions</span>
+            </button>
+            <div className="hidden sm:block text-[10px] font-bold text-brand-gold uppercase tracking-[0.3em] bg-brand-gold/5 px-4 py-1.5 rounded-full border border-brand-gold/20 shadow-inner">
+              Premium Alumni Network
+            </div>
+          </div>
         </div>
-      </div>
 
-      {/* Posts Feed */}
-      <div className="space-y-4">
-        {posts.length > 0 ? (
-          posts.map(post => (
-            <PostCard
-              key={post.id}
-              post={post}
-              currentUser={userData}
-              onLike={(isLiked) => handleLikePost(post.id, isLiked)}
-              onComment={() => setCommentingPost(post)}
-              onEdit={() => setEditingPost(post)}
-              onDelete={() => setDeletingPostId(post.id)}
-              onShare={() => setSharingPost(post)}
+        {/* Create Post Button Area */}
+        <div className="bg-brand-parchment/40 rounded-2xl border border-brand-ebony/10 p-5 mb-8 shadow-sm backdrop-blur-sm group hover:border-brand-burgundy/20 transition-all duration-300">
+          <div className="flex items-start gap-4 mb-4">
+            <img
+              src={userData.profilePic || `https://placehold.co/100x100/EFEFEFF/3D2B27?text=${userData.name.substring(0, 1)}`}
+              alt={userData.name}
+              className="w-12 h-12 rounded-full border-2 border-white shadow-sm"
             />
-          ))
-        ) : (
-          <div className="bg-white rounded-xl shadow-sm p-8 text-center">
-            <p className="text-gray-500">No posts yet. Be the first to share something!</p>
+            <button
+              onClick={() => setShowCreatePost(true)}
+              className="flex-1 text-left px-5 py-3 bg-white/60 hover:bg-white border border-brand-ebony/10 rounded-xl text-brand-ebony/40 transition-all font-medium group-hover:shadow-inner"
+            >
+              Share something with your fellow alumni...
+            </button>
           </div>
-        )}
+          <div className="flex items-center justify-between pt-4 border-t border-brand-ebony/5">
+            <div className="flex gap-2">
+              <button onClick={() => setShowCreatePost(true)} className="p-2.5 text-brand-ebony/30 hover:text-brand-burgundy hover:bg-brand-burgundy/5 rounded-xl transition-all">
+                <Camera className="w-5 h-5" />
+              </button>
+              <button onClick={() => setShowCreatePost(true)} className="p-2.5 text-brand-ebony/30 hover:text-brand-burgundy hover:bg-brand-burgundy/5 rounded-xl transition-all">
+                <ImageIcon className="w-5 h-5" />
+              </button>
+              <button onClick={() => setShowCreatePost(true)} className="p-2.5 text-brand-ebony/30 hover:text-brand-burgundy hover:bg-brand-burgundy/5 rounded-xl transition-all">
+                <Paperclip className="w-5 h-5" />
+              </button>
+            </div>
+            <button
+              onClick={() => setShowCreatePost(true)}
+              className="px-8 py-2 bg-brand-burgundy text-white rounded-xl font-bold hover:bg-[#5a2427] transition-all shadow-md shadow-brand-burgundy/20 hover:shadow-lg active:scale-95"
+            >
+              Post
+            </button>
+          </div>
+        </div>
+
+        {/* Posts Feed */}
+        <div className="space-y-4">
+          {posts.length > 0 ? (
+            posts.map(post => (
+              <PostCard
+                key={post.id}
+                post={post}
+                currentUser={userData}
+                onLike={(isLiked) => handleLikePost(post.id, isLiked)}
+                onComment={() => setCommentingPost(post)}
+                onEdit={() => setEditingPost(post)}
+                onDelete={() => setDeletingPostId(post.id)}
+                onShare={() => setSharingPost(post)}
+              />
+            ))
+          ) : (
+            <div className="bg-white rounded-xl shadow-sm p-8 text-center">
+              <p className="text-gray-500">No posts yet. Be the first to share something!</p>
+            </div>
+          )}
+        </div>
       </div>
+
+      <RightSidebar isOpen={isRightSidebarOpen} onClose={() => setIsRightSidebarOpen(false)} />
 
       {/* Modals */}
       <CreatePostModal
@@ -230,6 +251,7 @@ export default function HomePage() {
           comments={posts.find(p => p.id === commentingPost.id)?.comments || []}
           postAuthor={commentingPost.authorName}
           currentUserUid={userData.uid}
+          currentUserName={userData.name}
         />
       )}
 

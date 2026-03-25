@@ -3,6 +3,7 @@
 import { Post, User } from '@/types';
 import { Heart, MessageCircle, Share2, MoreHorizontal, Pencil, Trash2 } from 'lucide-react';
 import { useState } from 'react';
+import Link from 'next/link';
 
 interface PostCardProps {
     post: Post;
@@ -47,19 +48,19 @@ export const PostCard: React.FC<PostCardProps> = ({
         <div className="bg-brand-parchment/60 rounded-2xl shadow-sm border border-brand-ebony/10 p-5 transition-all hover:shadow-md backdrop-blur-sm">
             {/* Header */}
             <div className="flex items-start justify-between mb-3">
-                <div className="flex items-center gap-3">
+                <Link href={`/profile/${post.authorUid}`} className="flex items-center gap-3 hover:opacity-80 transition cursor-pointer group">
                     <img
                         src={post.authorProfilePic || `https://placehold.co/40x40/EFEFEFF/003366?text=${post.authorName.substring(0, 1)}`}
                         alt={post.authorName}
                         className="w-10 h-10 rounded-full"
                     />
                     <div className="flex flex-col">
-                        <h3 className="font-serif font-bold text-lg text-brand-ebony leading-none mb-1">{post.authorName}</h3>
+                        <h3 className="font-serif font-bold text-lg text-brand-ebony leading-none mb-1 group-hover:text-brand-burgundy transition-colors">{post.authorName}</h3>
                         <p className="text-xs font-medium text-brand-ebony/50 uppercase tracking-widest">
                             Class of {post.authorBatch} • {formatTimestamp(post.createdAt)}
                         </p>
                     </div>
-                </div>
+                </Link>
 
                 {isOwnPost && (
                     <div className="relative">

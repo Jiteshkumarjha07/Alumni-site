@@ -1,4 +1,6 @@
 import { imgbbApiKey } from './firebase-config';
+import { storage } from './firebase';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 /**
  * Uploads a file to ImgBB and returns the download URL
@@ -6,7 +8,7 @@ import { imgbbApiKey } from './firebase-config';
  * @param _path Ignored for ImgBB, kept for interface compatibility
  * @returns The download URL of the uploaded file
  */
-export const uploadMedia = async (file: File, _path?: string): Promise<string | null> => {
+export const uploadMedia = async (file: File): Promise<string | null> => {
     if (!file) return null;
 
     if (!imgbbApiKey || (imgbbApiKey as string) === "YOUR_IMGBB_API_KEY") {
@@ -31,6 +33,26 @@ export const uploadMedia = async (file: File, _path?: string): Promise<string | 
         }
     } catch (error) {
         console.error("ImgBB Upload Error:", error);
+        throw error;
+    }
+};
+
+/**
+ * Uploads a video to Firebase Storage and returns the download URL
+ * @param file The video file to upload
+ * @param path The storage path (e.g., 'chats/videos')
+ * @returns The download URL of the uploaded video
+ */
+export const uploadVideo = async (file: File, path: string = 'videos'): Promise<string | null> => {
+    if (!file) return null;
+
+    try {
+        const storageRef = ref(storage, `${path}/${Date.now()}_${file.name}`);
+        const snapshot = await uploadBytes(storageRef, file);
+        const downloadURL = await getDownloadURL(snapshot.ref);
+        return downloadURL;
+    } catch (error) {
+        console.error("Firebase Storage Upload Error:", error);
         throw error;
     }
 };

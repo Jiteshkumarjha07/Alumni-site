@@ -8,7 +8,7 @@ import {
     createUserWithEmailAndPassword,
     signOut as firebaseSignOut
 } from 'firebase/auth';
-import { doc, getDoc, setDoc, onSnapshot } from 'firebase/firestore';
+import { doc, setDoc, onSnapshot } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 import { User } from '@/types';
 

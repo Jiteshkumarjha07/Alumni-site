@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { City, ICity } from 'country-state-city';
-import { Search, MapPin } from 'lucide-react';
+import { MapPin } from 'lucide-react';
 
 interface LocationAutocompleteProps {
     value: string;
@@ -9,70 +9,41 @@ interface LocationAutocompleteProps {
 
 export function LocationAutocomplete({ value, onChange }: LocationAutocompleteProps) {
     const [query, setQuery] = useState(value);
-    const [isOpen, setIsOpen] = useState(false);
-    const [results, setResults] = useState<ICity[]>([]);
-    const [allCities, setAllCities] = useState<ICity[]>([]);
+    const [isFocused, setIsFocused] = useState(false);
+    const [isManuallyClosed, setIsManuallyClosed] = useState(false);
+    const [allCities] = useState(() => City.getAllCities());
     const wrapperRef = useRef<HTMLDivElement>(null);
 
-    // Initial load of all cities
-    useEffect(() => {
-        // country-state-city returns ~140,000 cities globally.
-        // We fetch them once when the component mounts.
-        const loadCities = async () => {
-            const cities = City.getAllCities();
-            setAllCities(cities);
-        };
-        loadCities();
-    }, []);
-
-    // Filter cities based on query
-    useEffect(() => {
-        if (!query.trim()) {
-            setResults([]);
-            return;
-        }
-
-        // Only search if the string typed doesn't exactly match the currently selected value.
-        // This prevents the dropdown from staying open and searching if the user selects an option.
-        if (query !== value) {
-            const searchStr = query.toLowerCase();
-            const filtered = allCities
-                .filter(city => city.name.toLowerCase().startsWith(searchStr))
-                .slice(0, 100); // Limit to top 100 to prevent browser freeze when rendering DOM
-            setResults(filtered);
-            setIsOpen(true);
-        } else {
-            setIsOpen(false);
-        }
+    // Filter cities based on query using useMemo
+    const results = useMemo(() => {
+        if (!query.trim() || query === value) return [];
+        
+        const searchStr = query.toLowerCase();
+        return allCities
+            .filter(city => city.name.toLowerCase().startsWith(searchStr))
+            .slice(0, 100);
     }, [query, allCities, value]);
 
-    // Update internal query if external value changes (e.g. form reset)
-    useEffect(() => {
-        if (value !== query) {
-            setQuery(value);
-        }
-    }, [value]);
+    // Derived state for dropdown visibility
+    const isOpen = isFocused && !isManuallyClosed && results.length > 0;
 
     // Handle clicking outside to close
     useEffect(() => {
         function handleClickOutside(event: MouseEvent) {
             if (wrapperRef.current && !wrapperRef.current.contains(event.target as Node)) {
-                setIsOpen(false);
-                // If they clicked away without selecting, we can arguably reset to the last selected value
-                // or keep their partial typing. We'll keep their typing but close the dropdown.
+                setIsFocused(false);
             }
         }
         document.addEventListener("mousedown", handleClickOutside);
         return () => document.removeEventListener("mousedown", handleClickOutside);
-    }, [wrapperRef]);
+    }, []);
 
 
     const handleSelect = (city: ICity) => {
-        // Format: "City, StateCode, CountryCode"
         const locationString = `${city.name}, ${city.stateCode}, ${city.countryCode}`;
         setQuery(locationString);
         onChange(locationString);
-        setIsOpen(false);
+        setIsManuallyClosed(true);
     };
 
     return (
@@ -83,14 +54,16 @@ export function LocationAutocomplete({ value, onChange }: LocationAutocompletePr
                     placeholder="Search cities (e.g., Jamshedpur)..."
                     value={query}
                     onChange={(e) => {
-                        setQuery(e.target.value);
-                        // If user clears the input, clear the parent state too
-                        if (e.target.value === '') {
+                        const newQuery = e.target.value;
+                        setQuery(newQuery);
+                        setIsManuallyClosed(false);
+                        if (newQuery === '') {
                             onChange('');
                         }
                     }}
                     onFocus={() => {
-                        if (query.trim() && results.length > 0) setIsOpen(true);
+                        setIsFocused(true);
+                        setIsManuallyClosed(false);
                     }}
                     className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition text-gray-900 placeholder:text-gray-400"
                     required
@@ -100,7 +73,7 @@ export function LocationAutocomplete({ value, onChange }: LocationAutocompletePr
             </div>
 
             {/* Dropdown Menu */}
-            {isOpen && results.length > 0 && (
+            {isOpen && (
                 <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
                     {results.map((city, index) => (
                         <button
@@ -118,9 +91,9 @@ export function LocationAutocomplete({ value, onChange }: LocationAutocompletePr
                 </div>
             )}
 
-            {isOpen && query.trim() && results.length === 0 && (
+            {isFocused && query.trim() && results.length === 0 && query !== value && (
                 <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg p-4 text-center text-gray-500 italic">
-                    No cities found matching "{query}"
+                    No cities found matching &quot;{query}&quot;
                 </div>
             )}
         </div>

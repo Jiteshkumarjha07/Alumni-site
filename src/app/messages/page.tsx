@@ -6,9 +6,10 @@ import { ChatList } from '@/components/chat/ChatList';
 import { ChatWindow } from '@/components/chat/ChatWindow';
 import { collection, query, where, onSnapshot } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import { Chat, User } from '@/types';
-import { Loader2 } from 'lucide-react';
+import { Chat, User, Group } from '@/types';
+import { Loader2, Users, ArrowLeft } from 'lucide-react';
 import { useSearchParams, useRouter } from 'next/navigation';
+import { doc, getDoc } from 'firebase/firestore';
 
 import { Suspense } from 'react';
 
@@ -28,18 +29,32 @@ function MessagesClient() {
 
     // State for the currently active chat
     const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
+    const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
     const [selectedUser, setSelectedUser] = useState<{ name: string; profilePic: string; uid: string } | null>(null);
+    const [selectedGroupData, setSelectedGroupData] = useState<Group | null>(null);
+    const [viewMode, setViewMode] = useState<'chats' | 'groups'>('chats');
 
     // Helper to generate a consistent chat ID between two users
     const getChatId = (uid1: string, uid2: string) => {
         return uid1 < uid2 ? `${uid1}_${uid2}` : `${uid2}_${uid1}`;
     };
 
+    // Handle view mode from URL
+    useEffect(() => {
+        const view = searchParams.get('view');
+        if (view === 'groups') {
+            setViewMode('groups');
+        } else if (view === 'chats') {
+            setViewMode('chats');
+        }
+    }, [searchParams]);
+
     const handleStartChat = (otherUser: User) => {
         if (!userData?.uid) return;
 
         const chatId = getChatId(userData.uid, otherUser.uid);
         setSelectedChatId(chatId);
+        setSelectedGroupId(null);
         setSelectedUser({
             uid: otherUser.uid,
             name: otherUser.name,
@@ -49,6 +64,7 @@ function MessagesClient() {
 
     const handleSelectChat = (chatId: string) => {
         setSelectedChatId(chatId);
+        setSelectedGroupId(null);
 
         // Find the other user's info from the chat document
         const chat = chats.find(c => c.id === chatId);
@@ -61,6 +77,22 @@ function MessagesClient() {
                     profilePic: chat.participantDetails[otherUid].profilePic,
                 });
             }
+        }
+    };
+
+    const handleSelectGroup = async (groupId: string) => {
+        setSelectedChatId(null);
+        setSelectedUser(null);
+        setSelectedGroupId(groupId);
+        
+        // Fetch group data
+        try {
+            const groupDoc = await getDoc(doc(db, 'groups', groupId));
+            if (groupDoc.exists()) {
+                setSelectedGroupData({ id: groupDoc.id, ...groupDoc.data() } as Group);
+            }
+        } catch (error) {
+            console.error("Error fetching group data:", error);
         }
     };
 
@@ -134,7 +166,7 @@ function MessagesClient() {
             <div className="flex bg-white md:rounded-xl shadow-sm border overflow-hidden h-full">
 
                 {/* Left Pane: Chat List */}
-                <div className={`md:w-1/3 w-full border-r ${selectedChatId ? 'hidden md:block' : 'block'}`}>
+                <div className={`md:w-1/3 w-full border-r ${(selectedChatId || selectedGroupId) ? 'hidden md:block' : 'block'}`}>
                     {loadingChats ? (
                         <div className="flex h-full items-center justify-center">
                             <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
@@ -145,20 +177,27 @@ function MessagesClient() {
                             chats={chats}
                             onSelectChat={handleSelectChat}
                             onStartChat={handleStartChat}
+                            onSelectGroup={handleSelectGroup}
                             selectedChatId={selectedChatId}
+                            selectedGroupId={selectedGroupId}
+                            viewMode={viewMode}
+                            onViewModeChange={setViewMode}
                         />
                     )}
                 </div>
 
-                {/* Right Pane: Active Chat Window */}
-                <div className={`flex-1 overflow-hidden ${!selectedChatId ? 'hidden md:flex' : 'flex'}`}>
+                <div className={`flex-1 overflow-hidden ${(!selectedChatId && !selectedGroupId) ? 'hidden md:flex' : 'flex'}`}>
                     <ChatWindow
-                        chatId={selectedChatId || ''}
+                        chatId={selectedChatId || selectedGroupId || ''}
                         currentUser={userData}
                         otherUser={selectedUser}
+                        isGroup={!!selectedGroupId}
+                        groupData={selectedGroupData}
                         onBack={() => {
                             setSelectedChatId(null);
+                            setSelectedGroupId(null);
                             setSelectedUser(null);
+                            setSelectedGroupData(null);
                         }}
                     />
                 </div>

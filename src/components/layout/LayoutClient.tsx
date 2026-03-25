@@ -2,11 +2,11 @@
 
 import React from 'react';
 import { SwipeProvider } from '@/components/layout/SwipeProvider';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, Variants } from 'framer-motion';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 
-const variants = {
+const variants: Variants = {
     initial: (direction: number) => ({
         x: direction > 0 ? '100%' : direction < 0 ? '-100%' : 0,
         opacity: 0
@@ -27,7 +27,7 @@ const variants = {
             opacity: { duration: 0.2 }
         }
     })
-} as any;
+};
 
 export function LayoutClient({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();

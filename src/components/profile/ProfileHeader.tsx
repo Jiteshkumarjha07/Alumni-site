@@ -1,5 +1,5 @@
 import Image from 'next/image';
-import { MapPin, Link as LinkIcon, Calendar, Mail, FileText } from 'lucide-react';
+import { MapPin, Link as LinkIcon, Calendar } from 'lucide-react';
 import { User } from '@/types';
 
 interface ProfileHeaderProps {
