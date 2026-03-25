@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { User, Message, Group } from '@/types';
 import { collection, query, orderBy, onSnapshot, addDoc, serverTimestamp, setDoc, doc, updateDoc, arrayUnion } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
@@ -41,6 +41,20 @@ export function ChatWindow({ chatId, currentUser, otherUser, isGroup = false, gr
         : (otherUser ? getSharedSecret(currentUser.uid, otherUser.uid) : '');
 
     const [otherUserStatus, setOtherUserStatus] = useState<{ isOnline: boolean; lastSeen?: any } | null>(null);
+
+    const isUserOnline = useMemo(() => {
+        if (!otherUserStatus) return false;
+        if (!otherUserStatus.isOnline) return false;
+        if (!otherUserStatus.lastSeen) return false;
+        
+        try {
+            const lastSeenMillis = otherUserStatus.lastSeen.toMillis();
+            const now = Date.now();
+            return (now - lastSeenMillis) < 60000; // 60 second threshold
+        } catch (e) {
+            return otherUserStatus.isOnline;
+        }
+    }, [otherUserStatus]);
 
     // Listen to other user's status
     useEffect(() => {
@@ -315,7 +329,7 @@ export function ChatWindow({ chatId, currentUser, otherUser, isGroup = false, gr
                                 alt={title!}
                                 className="w-10 h-10 rounded-full mr-3 object-cover border border-brand-ebony/10 shadow-sm"
                             />
-                            {otherUserStatus?.isOnline && (
+                            {isUserOnline && (
                                 <div className="absolute bottom-0 right-2.5 w-3 h-3 bg-green-500 rounded-full border-2 border-brand-cream shadow-sm"></div>
                             )}
                         </div>
@@ -327,9 +341,9 @@ export function ChatWindow({ chatId, currentUser, otherUser, isGroup = false, gr
                                 <span className="text-[10px] text-brand-ebony/50 font-bold uppercase tracking-wider">{groupData?.members.length} Members</span>
                             ) : (
                                 <div className="flex items-center gap-1.5">
-                                    <div className={`w-1.5 h-1.5 rounded-full ${otherUserStatus?.isOnline ? 'bg-green-500' : 'bg-brand-ebony/30'}`}></div>
-                                    <span className={`text-[10px] font-bold uppercase tracking-widest ${otherUserStatus?.isOnline ? 'text-green-600/80' : 'text-brand-ebony/40'}`}>
-                                        {otherUserStatus?.isOnline ? 'Online' : 'Offline'}
+                                    <div className={`w-1.5 h-1.5 rounded-full ${isUserOnline ? 'bg-green-500' : 'bg-brand-ebony/30'}`}></div>
+                                    <span className={`text-[10px] font-bold uppercase tracking-widest ${isUserOnline ? 'text-green-600/80' : 'text-brand-ebony/40'}`}>
+                                        {isUserOnline ? 'Online' : 'Offline'}
                                     </span>
                                 </div>
                             )}

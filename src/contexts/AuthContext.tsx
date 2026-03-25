@@ -45,20 +45,40 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     useEffect(() => {
         let unsubscribeUser: (() => void) | null = null;
+        let presenceInterval: NodeJS.Timeout | undefined;
 
         const unsubscribeAuth = onAuthStateChanged(auth, async (firebaseUser) => {
-            if (firebaseUser) {
-                setUser(firebaseUser);
-
-                // Update isOnline status
-                const setStatus = async (online: boolean) => {
+            const updatePresence = async (online: boolean) => {
+                if (!firebaseUser?.uid) return;
+                try {
                     await updateDoc(doc(db, 'users', firebaseUser.uid), {
                         isOnline: online,
                         lastSeen: serverTimestamp()
-                    }).catch(console.error);
-                };
+                    });
+                } catch (err) {
+                    console.error('Error updating presence:', err);
+                }
+            };
 
-                setStatus(true);
+            if (firebaseUser) {
+                setUser(firebaseUser);
+                updatePresence(true);
+
+                // Heartbeat to keep lastSeen fresh
+                presenceInterval = setInterval(() => {
+                    if (document.visibilityState === 'visible') {
+                        updatePresence(true);
+                    }
+                }, 30000);
+
+                // Handle tab close
+                const handleUnload = () => {
+                    updateDoc(doc(db, 'users', firebaseUser.uid), {
+                        isOnline: false,
+                        lastSeen: serverTimestamp()
+                    });
+                };
+                window.addEventListener('beforeunload', handleUnload);
 
                 // Listen to user document changes
                 unsubscribeUser = onSnapshot(doc(db, 'users', firebaseUser.uid), (docSnapshot) => {
@@ -72,6 +92,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                     console.error('Error fetching user data snapshot:', err);
                     setLoading(false);
                 });
+
+                return () => {
+                    clearInterval(presenceInterval);
+                    window.removeEventListener('beforeunload', handleUnload);
+                };
             } else {
                 setUser(null);
                 setUserData(null);
@@ -86,14 +111,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         return () => {
             unsubscribeAuth();
             if (unsubscribeUser) unsubscribeUser();
-            // Note: We can't easily set offline here because the user might just be refreshing the tab
-            // and we don't have the UID reliably without auth.currentUser.
-            if (auth.currentUser) {
-                updateDoc(doc(db, 'users', auth.currentUser.uid), {
-                    isOnline: false,
-                    lastSeen: serverTimestamp()
-                }).catch(console.error);
-            }
+            if (presenceInterval) clearInterval(presenceInterval);
         };
     }, []);
 
@@ -160,6 +178,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     const signOut = async () => {
         try {
+            if (userData?.uid) {
+                await updateDoc(doc(db, 'users', userData.uid), {
+                    isOnline: false,
+                    lastSeen: serverTimestamp()
+                });
+            }
             await firebaseSignOut(auth);
         } catch (err: unknown) {
             console.error('Sign out error:', err);

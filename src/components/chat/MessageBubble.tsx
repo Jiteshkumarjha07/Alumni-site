@@ -111,13 +111,13 @@ export function MessageBubble({ message, isOwnMessage, onEdit, onUnsend, onReply
 
                     <div className="relative group max-w-full">
                         {/* More Menu Button */}
-                        <div className={`absolute -top-1 ${isOwnMessage ? '-left-8' : '-right-8'} opacity-0 group-hover:opacity-100 transition-opacity z-10 hidden sm:block`}>
-                            <button
+                        <div className={`absolute -top-1 ${isOwnMessage ? '-left-8' : '-right-8'} transition-opacity z-10 sm:opacity-0 sm:group-hover:opacity-100`}>
+                             <button
                                 onClick={(e) => {
                                     e.stopPropagation();
                                     setShowMenu(!showMenu);
                                 }}
-                                className="p-1.5 rounded-full hover:bg-brand-ebony/5 text-brand-ebony/30 transition-colors"
+                                className="p-1.5 rounded-full hover:bg-white/10 text-brand-ebony/40 sm:text-brand-ebony/30 transition-colors"
                             >
                                 <MoreVertical className="w-4 h-4" />
                             </button>
@@ -125,33 +125,33 @@ export function MessageBubble({ message, isOwnMessage, onEdit, onUnsend, onReply
                                 <>
                                     <div className="fixed inset-0 z-40" onClick={() => setShowMenu(false)}></div>
                                     <div 
-                                        className={`absolute ${isOwnMessage ? 'left-0' : 'right-0'} mt-1 bg-white rounded-xl shadow-xl border border-brand-ebony/10 py-1.5 min-w-[150px] z-50 animate-in zoom-in-95 duration-100`}
+                                        className={`absolute ${isOwnMessage ? 'left-0' : 'right-0'} mt-1 bg-slate-900 rounded-xl shadow-2xl border border-slate-700 py-1.5 min-w-[150px] z-50 animate-in zoom-in-95 duration-100`}
                                     >
                                         <button
                                             onClick={() => { onReply?.(message); setShowMenu(false); }}
-                                            className="w-full flex items-center gap-2.5 px-4 py-2 text-xs font-semibold text-brand-ebony hover:bg-brand-parchment/40 transition-colors"
+                                            className="w-full flex items-center gap-2.5 px-4 py-2 text-xs font-semibold text-slate-100 hover:bg-white/10 transition-colors"
                                         >
                                             <Paperclip className="w-4 h-4 rotate-180 opacity-60" />
                                             Reply
                                         </button>
                                         <button
                                             onClick={handleCopy}
-                                            className="w-full flex items-center gap-2.5 px-4 py-2 text-xs font-semibold text-brand-ebony hover:bg-brand-parchment/40 transition-colors"
+                                            className="w-full flex items-center gap-2.5 px-4 py-2 text-xs font-semibold text-slate-100 hover:bg-white/10 transition-colors"
                                         >
                                             <Share2 className="w-4 h-4 opacity-60" />
                                             Copy
                                         </button>
                                         <button
                                             onClick={() => { onForward?.(message); setShowMenu(false); }}
-                                            className="w-full flex items-center gap-2.5 px-4 py-2 text-xs font-semibold text-brand-ebony hover:bg-brand-parchment/40 transition-colors"
+                                            className="w-full flex items-center gap-2.5 px-4 py-2 text-xs font-semibold text-slate-100 hover:bg-white/10 transition-colors"
                                         >
                                             <Share2 className="w-4 h-4 opacity-60" />
                                             Forward
                                         </button>
-                                        <div className="h-px bg-brand-ebony/5 my-1.5 mx-2" />
+                                        <div className="h-px bg-slate-700 my-1.5 mx-2" />
                                         <button
                                             onClick={() => { onUnsend?.(message); setShowMenu(false); }}
-                                            className="w-full flex items-center gap-2.5 px-4 py-2 text-xs font-bold text-red-600 hover:bg-red-50 transition-colors"
+                                            className="w-full flex items-center gap-2.5 px-4 py-2 text-xs font-bold text-red-500 hover:bg-red-500/10 transition-colors"
                                         >
                                             <Trash2 className="w-4 h-4 opacity-60" />
                                             {isOwnMessage ? 'Unsend for everyone' : 'Delete for me'}
@@ -159,7 +159,7 @@ export function MessageBubble({ message, isOwnMessage, onEdit, onUnsend, onReply
                                         {isOwnMessage && canAction && (
                                             <button
                                                 onClick={() => { onEdit?.(message); setShowMenu(false); }}
-                                                className="w-full flex items-center gap-2.5 px-4 py-2 text-xs font-semibold text-brand-ebony hover:bg-brand-parchment/40 transition-colors"
+                                                className="w-full flex items-center gap-2.5 px-4 py-2 text-xs font-semibold text-slate-100 hover:bg-white/10 transition-colors"
                                             >
                                                 <Pencil className="w-4 h-4 opacity-60" />
                                                 Edit Message
