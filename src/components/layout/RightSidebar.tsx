@@ -1,13 +1,13 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { UserPlus, TrendingUp, X, Bell } from 'lucide-react';
+import { UserPlus, X } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
-import { collection, query, onSnapshot, updateDoc, arrayUnion, arrayRemove, doc, where, orderBy, limit, getDoc, addDoc } from 'firebase/firestore';
+import { collection, query, onSnapshot, updateDoc, arrayUnion, arrayRemove, doc, addDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import { User, Notification } from '@/types';
+import { User } from '@/types';
 
 interface RightSidebarProps {
     isOpen?: boolean;
@@ -17,7 +17,6 @@ interface RightSidebarProps {
 export function RightSidebar({ isOpen = false, onClose = () => {} }: RightSidebarProps) {
     const { userData } = useAuth();
     const [suggestions, setSuggestions] = useState<User[]>([]);
-    const [notifications, setNotifications] = useState<Notification[]>([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -55,28 +54,6 @@ export function RightSidebar({ isOpen = false, onClose = () => {} }: RightSideba
         return () => unsubscribe();
     }, [userData]);
 
-    // Fetch Notifications
-    useEffect(() => {
-        if (!userData) return;
-
-        const notifQuery = query(
-            collection(db, 'notifications'),
-            where('userId', '==', userData.uid),
-            orderBy('createdAt', 'desc'),
-            limit(20)
-        );
-
-        const unsubscribe = onSnapshot(notifQuery, async (snapshot) => {
-            const fetchedList = snapshot.docs.map(doc => ({
-                id: doc.id,
-                ...doc.data()
-            } as Notification));
-            
-            setNotifications(fetchedList);
-        });
-
-        return () => unsubscribe();
-    }, [userData]);
 
     const handleConnect = async (recipientId: string) => {
         if (!userData) return;
@@ -105,73 +82,6 @@ export function RightSidebar({ isOpen = false, onClose = () => {} }: RightSideba
         }
     };
 
-    const handleAcceptRequest = async (notif: Notification) => {
-        if (!userData) return;
-        const requesterId = notif.sourceUserUid;
-
-        try {
-            // Add to connections for both users
-            const currentUserRef = doc(db, 'users', userData.uid);
-            const requesterRef = doc(db, 'users', requesterId);
-
-            await updateDoc(currentUserRef, {
-                pendingRequests: arrayRemove(requesterId),
-                connections: arrayUnion(requesterId)
-            });
-
-            await updateDoc(requesterRef, {
-                sentRequests: arrayRemove(userData.uid),
-                connections: arrayUnion(userData.uid)
-            });
-
-            // Delete the connection request notification
-            await updateDoc(doc(db, 'notifications', notif.id), {
-                type: 'connection_accepted',
-                message: 'You are now connected.',
-                isRead: true
-            });
-            
-            // Send back an accepted notification
-            await addDoc(collection(db, 'notifications'), {
-                userId: requesterId,
-                type: 'connection_accepted',
-                sourceUserUid: userData.uid,
-                sourceUserName: userData.name,
-                sourceUserProfilePic: userData.profilePic || '',
-                message: 'accepted your connection request',
-                createdAt: new Date(),
-                isRead: false
-            });
-
-        } catch (error) {
-            console.error('Error accepting request:', error);
-        }
-    };
-
-    const handleIgnoreRequest = async (notif: Notification) => {
-        if (!userData) return;
-        const requesterId = notif.sourceUserUid;
-
-        try {
-            const currentUserRef = doc(db, 'users', userData.uid);
-            await updateDoc(currentUserRef, {
-                pendingRequests: arrayRemove(requesterId)
-            });
-
-            const requesterRef = doc(db, 'users', requesterId);
-            await updateDoc(requesterRef, {
-                sentRequests: arrayRemove(userData.uid)
-            });
-
-            // Remove or mark as read the notification
-            await updateDoc(doc(db, 'notifications', notif.id), {
-                isRead: true,
-                message: 'Request ignored'
-            });
-        } catch (error) {
-            console.error('Error ignoring request:', error);
-        }
-    };
 
     return (
         <>
@@ -251,47 +161,6 @@ export function RightSidebar({ isOpen = false, onClose = () => {} }: RightSideba
                                     ))
                                 ) : (
                                     <p className="text-sm text-brand-ebony/60 italic">You&apos;re connected with everyone!</p>
-                                )}
-                            </div>
-                        </div>
-
-                        {/* Notifications */}
-                        <div>
-                            <h2 className="text-brand-ebony font-serif font-bold text-lg mb-5 flex items-center">
-                                <Bell className="h-5 w-5 mr-2 text-brand-burgundy" />
-                                Notifications
-                            </h2>
-                            <div className="space-y-4">
-                                {notifications.length > 0 ? (
-                                    notifications.map((notif: any) => (
-                                        <div key={notif.id} className="flex gap-3 p-3 rounded-xl bg-white/50 border border-brand-ebony/5 shadow-sm hover:border-brand-burgundy/20 transition-all cursor-pointer">
-                                            <Link href={`/profile/${notif.sourceUserUid}`} className="relative h-10 w-10 flex-shrink-0 rounded-full overflow-hidden border border-brand-ebony/10">
-                                                <Image
-                                                    src={notif.sourceUserProfilePic || `https://placehold.co/100x100/EFEFEFF/3D2B27?text=${notif.sourceUserName.substring(0, 1)}`}
-                                                    alt={notif.sourceUserName}
-                                                    fill
-                                                    className="object-cover"
-                                                    unoptimized
-                                                />
-                                            </Link>
-                                            <div className="flex-1 min-w-0">
-                                                <p className="text-sm text-brand-ebony">
-                                                    <span className="font-bold hover:text-brand-burgundy transition-colors">{notif.sourceUserName}</span> {notif.message}
-                                                </p>
-                                                {notif.type === 'connection_request' && (
-                                                    <div className="flex gap-2 mt-2">
-                                                        <button className="text-xs font-bold text-white bg-brand-burgundy hover:bg-[#5a2427] px-3 py-1 rounded-full transition-colors">Accept</button>
-                                                        <button className="text-xs font-bold text-brand-ebony/60 hover:bg-brand-ebony/10 px-3 py-1 rounded-full transition-colors">Ignore</button>
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </div>
-                                    ))
-                                ) : (
-                                    <div className="text-center p-6 bg-brand-ebony/5 rounded-xl border border-brand-ebony/10">
-                                        <Bell className="w-8 h-8 mx-auto text-brand-ebony/20 mb-2" />
-                                        <p className="text-sm text-brand-ebony/60">No new notifications</p>
-                                    </div>
                                 )}
                             </div>
                         </div>
