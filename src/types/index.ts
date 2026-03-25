@@ -1,5 +1,18 @@
 import { Timestamp } from 'firebase/firestore';
 
+export interface Notification {
+  id: string;
+  userId: string;
+  type: 'like' | 'comment' | 'connection_request' | 'connection_accepted';
+  sourceUserUid: string;
+  sourceUserName: string;
+  sourceUserProfilePic?: string;
+  message: string;
+  link?: string;
+  createdAt: Timestamp;
+  isRead: boolean;
+}
+
 export interface User {
   uid: string;
   name: string;

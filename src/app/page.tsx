@@ -82,34 +82,64 @@ export default function HomePage() {
     if (!userData) return;
 
     const postRef = doc(db, 'posts', postId);
-    const post = posts.find(p => p.id === postId);
+    const post = posts.find((p) => p.id === postId);
     if (!post) return;
 
     const likes = post.likes || [];
     const updatedLikes = isLiked
-      ? likes.filter(uid => uid !== userData.uid)
+      ? likes.filter((uid) => uid !== userData.uid)
       : [...likes, userData.uid];
 
     await updateDoc(postRef, { likes: updatedLikes });
+
+    if (!isLiked && post.authorUid !== userData.uid) {
+      await addDoc(collection(db, 'notifications'), {
+        userId: post.authorUid,
+        type: 'like',
+        sourceUserUid: userData.uid,
+        sourceUserName: userData.name,
+        sourceUserProfilePic: userData.profilePic || '',
+        message: 'liked your post.',
+        link: `/posts/${postId}`,
+        createdAt: serverTimestamp(),
+        isRead: false,
+      });
+    }
   };
 
-    const handleAddComment = async (text: string) => {
-        if (!userData || !commentingPost) return;
+  const handleAddComment = async (text: string) => {
+    if (!userData || !commentingPost) return;
 
-        const postRef = doc(db, 'posts', commentingPost.id);
-        const post = posts.find(p => p.id === commentingPost.id);
-        if (!post) return;
+    const postRef = doc(db, 'posts', commentingPost.id);
+    const post = posts.find((p) => p.id === commentingPost.id);
+    if (!post) return;
 
-        const newComment = {
-            authorUid: userData.uid,
-            authorName: userData.name,
-            text,
-            createdAt: new Date()
-        };
-
-        const updatedComments = [...(post.comments || []), newComment];
-        await updateDoc(postRef, { comments: updatedComments });
+    const newComment = {
+      authorUid: userData.uid,
+      authorName: userData.name,
+      text,
+      createdAt: new Date(),
     };
+
+    const updatedComments = [...(post.comments || []), newComment];
+    await updateDoc(postRef, { comments: updatedComments });
+
+    if (commentingPost.authorUid !== userData.uid) {
+      await addDoc(collection(db, 'notifications'), {
+        userId: commentingPost.authorUid,
+        type: 'comment',
+        sourceUserUid: userData.uid,
+        sourceUserName: userData.name,
+        sourceUserProfilePic: userData.profilePic || '',
+        message: `commented on your post: "${text.substring(0, 30)}${
+          text.length > 30 ? '...' : ''
+        }"`,
+        link: `/posts/${commentingPost.id}`,
+        createdAt: serverTimestamp(),
+        isRead: false,
+      });
+    }
+  };
 
   const handleDeleteComment = async (comment: AppComment) => {
     if (!userData || !commentingPost) return;
