@@ -135,15 +135,6 @@ export const PostCard: React.FC<PostCardProps> = ({
                 />
             )}
 
-            {/* Stats */}
-            <div className="flex items-center gap-6 text-xs font-bold text-brand-ebony/40 mb-4 pt-3 uppercase tracking-widest">
-                <span className="flex items-center gap-1.5 transition-colors hover:text-brand-burgundy/60 cursor-pointer">
-                    <Heart className="w-4 h-4" /> {post.likes?.length || 0} Likes
-                </span>
-                <span className="flex items-center gap-1.5 transition-colors hover:text-brand-burgundy/60 cursor-pointer">
-                    <MessageCircle className="w-4 h-4" /> {post.comments?.length || 0} Comments
-                </span>
-            </div>
 
             {/* Actions */}
             <div className="flex items-center gap-3 pt-3 border-t border-brand-ebony/10">
@@ -155,7 +146,7 @@ export const PostCard: React.FC<PostCardProps> = ({
                         }`}
                 >
                     <Heart className={`w-4 h-4 ${isLiked ? 'fill-current' : ''}`} />
-                    <span>{isLiked ? 'Liked' : 'Like'}</span>
+                    <span>{isLiked ? 'Liked' : 'Like'} <span className="text-[10px] opacity-70 ml-0.5">{post.likes?.length || 0}</span></span>
                 </button>
 
                 <button
@@ -163,7 +154,7 @@ export const PostCard: React.FC<PostCardProps> = ({
                     className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-brand-ebony/60 hover:bg-brand-burgundy/5 hover:text-brand-burgundy transition font-semibold text-sm"
                 >
                     <MessageCircle className="w-4 h-4" />
-                    <span>Comment</span>
+                    <span>Comment <span className="text-[10px] opacity-70 ml-0.5">{post.comments?.length || 0}</span></span>
                 </button>
 
                 <button

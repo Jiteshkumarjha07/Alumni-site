@@ -76,6 +76,11 @@ export const CommentModal: React.FC<CommentModalProps> = ({
     if (!isOpen) return null;
 
     const handleTouchStart = (e: React.TouchEvent) => {
+        const scrollContainer = document.getElementById('comments-scroll-container');
+        if (scrollContainer && scrollContainer.scrollTop > 0) {
+            setTouchStart(null);
+            return;
+        }
         setTouchStart(e.targetTouches[0].clientY);
     };
 
@@ -85,15 +90,18 @@ export const CommentModal: React.FC<CommentModalProps> = ({
         const diff = currentY - touchStart;
         if (diff > 0) {
             setTouchTranslate(diff);
+            // Disable body scroll while swiping
+            document.body.style.overflow = 'hidden';
         }
     };
 
     const handleTouchEnd = () => {
-        if (touchTranslate > 150) {
+        if (touchTranslate > 80) {
             onClose();
         }
         setTouchStart(null);
         setTouchTranslate(0);
+        document.body.style.overflow = '';
     };
 
     const handleSubmit = async () => {
@@ -276,11 +284,11 @@ export const CommentModal: React.FC<CommentModalProps> = ({
 
     return (
         <div 
-            className="fixed inset-0 bg-brand-ebony/60 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-0 sm:p-4 transition-all duration-300"
+            className="fixed inset-0 bg-brand-ebony/60 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-0 sm:p-4 overscroll-none"
             onClick={(e) => e.target === e.currentTarget && onClose()}
         >
             <div 
-                className="bg-brand-parchment rounded-t-3xl sm:rounded-2xl max-w-2xl w-full max-h-[92vh] sm:max-h-[80vh] flex flex-col border border-brand-ebony/10 shadow-2xl transition-transform duration-200 ease-out"
+                className={`bg-brand-parchment rounded-t-3xl sm:rounded-2xl max-w-2xl w-full max-h-[92vh] sm:max-h-[80vh] flex flex-col border border-brand-ebony/10 shadow-2xl ${touchTranslate > 0 ? '' : 'transition-transform duration-200'}`}
                 style={{ transform: `translateY(${touchTranslate}px)` }}
                 onTouchStart={handleTouchStart}
                 onTouchMove={handleTouchMove}
@@ -303,7 +311,7 @@ export const CommentModal: React.FC<CommentModalProps> = ({
                 </div>
 
                 {/* Comments List */}
-                <div className="flex-1 overflow-y-auto p-4 space-y-6">
+                <div id="comments-scroll-container" className="flex-1 overflow-y-auto p-4 space-y-6 overscroll-contain">
                     {displayComments.length > 0 ? (
                         // Grouping comments by parent (flat list with nesting logic)
                         displayComments
