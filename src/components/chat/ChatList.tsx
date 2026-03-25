@@ -40,17 +40,18 @@ export function ChatList({ currentUser, chats, onSelectChat, onStartChat, onSele
             setIsSearching(true);
             try {
                 const usersRef = collection(db, 'users');
-                const q = query(usersRef, 
-                    where('nameLowercase', '>=', searchQuery.toLowerCase()), 
-                    where('nameLowercase', '<=', searchQuery.toLowerCase() + '\uf8ff')
-                );
-                const querySnapshot = await getDocs(q);
+                const querySnapshot = await getDocs(usersRef);
+                const term = searchQuery.toLowerCase();
 
                 const results: User[] = [];
-                querySnapshot.forEach((doc) => {
-                    const user = doc.data() as User;
-                    if (user.uid !== currentUser.uid) {
-                        results.push({ ...user, uid: doc.id });
+                querySnapshot.forEach((docSnap) => {
+                    const user = { ...docSnap.data(), uid: docSnap.id } as User;
+                    if (
+                        user.uid !== currentUser.uid &&
+                        (user.name?.toLowerCase().includes(term) ||
+                         user.profession?.toLowerCase().includes(term))
+                    ) {
+                        results.push(user);
                     }
                 });
                 setSearchResults(results);
