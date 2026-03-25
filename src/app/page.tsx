@@ -120,7 +120,7 @@ export default function HomePage() {
       authorName: userData.name,
       text,
       createdAt: new Date(),
-      replyToId: replyToId || null,
+      replyToId: replyToId || undefined,
       reactions: {}
     };
 

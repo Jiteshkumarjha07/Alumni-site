@@ -22,6 +22,7 @@ export const CommentModal: React.FC<CommentModalProps> = ({
     onClose,
     onSubmit,
     onDelete,
+    onReact,
     comments,
     postAuthor,
     currentUserUid,

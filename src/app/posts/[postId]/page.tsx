@@ -62,7 +62,7 @@ export default function PostDetailPage() {
             authorName: userData.name,
             text,
             createdAt: new Date(),
-            replyToId: replyToId || null,
+            replyToId: replyToId || undefined,
             reactions: {}
         };
         await updateDoc(postRef, {
