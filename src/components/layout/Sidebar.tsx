@@ -34,8 +34,8 @@ export function Sidebar() {
                         <Link
                             key={item.name}
                             href={item.href}
-                            className={`flex items-center justify-between px-4 py-3 rounded-full transition-all duration-200 group ${isActive
-                                ? 'bg-brand-parchment text-brand-ebony shadow-sm font-semibold'
+                            className={`flex items-center justify-between px-4 py-3 rounded-full transition-all duration-300 group ${isActive
+                                ? 'bg-brand-burgundy/10 text-brand-burgundy shadow-[0_0_15px_rgba(90,36,39,0.2)] ring-1 ring-brand-burgundy/30 font-bold'
                                 : 'text-brand-ebony/80 hover:bg-brand-burgundy/5 hover:text-brand-ebony'
                                 }`}
                         >

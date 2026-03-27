@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { X, Send, Trash2, Loader2, Reply, Smile, Heart } from 'lucide-react';
 import { Comment as AppComment } from '@/types';
 import { formatDistanceToNow } from 'date-fns';
@@ -54,13 +54,18 @@ export const CommentModal: React.FC<CommentModalProps> = ({
         setDisplayComments(comments);
     }, [comments]);
 
+    const onCloseRef = useRef(onClose);
+    useEffect(() => {
+        onCloseRef.current = onClose;
+    }, [onClose]);
+
     // Back button support
     useEffect(() => {
         if (isOpen) {
             window.history.pushState({ modal: 'comments' }, '');
             
             const handlePopState = () => {
-                onClose();
+                onCloseRef.current();
             };
 
             window.addEventListener('popstate', handlePopState);
@@ -71,7 +76,7 @@ export const CommentModal: React.FC<CommentModalProps> = ({
                 }
             };
         }
-    }, [isOpen, onClose]);
+    }, [isOpen]);
 
     if (!isOpen) return null;
 
