@@ -6,6 +6,9 @@ import { motion, AnimatePresence, Variants } from 'framer-motion';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { GlobalMessaging } from '@/components/chat/GlobalMessaging';
+import { MessagingProvider } from '@/contexts/MessagingContext';
+import { Sidebar } from './Sidebar';
+import { MobileNav } from './MobileNav';
 
 const variants: Variants = {
     initial: (direction: number) => ({
@@ -63,7 +66,10 @@ export function LayoutClient({ children }: { children: React.ReactNode }) {
     return (
         <SwipeProvider>
             {userData && <GlobalMessaging />}
-            <main className={`min-h-screen transition-all duration-300 ${userData ? 'md:pl-64' : ''} ${isMobile ? 'pb-24' : 'pb-8'}`}>
+            <MessagingProvider>
+                <div className="flex flex-col min-h-screen">
+                    <Sidebar />
+                    <main className={`min-h-screen transition-all duration-300 ${userData ? 'md:pl-64' : ''} ${isMobile ? 'pb-24' : 'pb-8'}`}>
                 <div className="mx-auto w-full px-4 sm:px-6 md:px-8 lg:px-12 max-w-screen-2xl">
                     {isMobile ? (
                         <AnimatePresence initial={false} custom={direction} mode="wait">
@@ -86,6 +92,9 @@ export function LayoutClient({ children }: { children: React.ReactNode }) {
                     )}
                 </div>
             </main>
-        </SwipeProvider>
+            <MobileNav />
+        </div>
+    </MessagingProvider>
+</SwipeProvider>
     );
 }

@@ -109,19 +109,19 @@ export function ChatWindow({ chatId, currentUser, otherUser, isGroup = false, gr
             setMessages(visibleMessages);
             setLoading(false);
 
-            // Mark unread messages as read
-            const unreadMessages = fetchedMessages.filter(
-                msg => msg.senderId !== currentUser.uid && (!msg.readBy || !msg.readBy.includes(currentUser.uid))
+            // Mark unread/undelivered messages as read and delivered
+            const messagesToUpdate = fetchedMessages.filter(
+                msg => msg.senderId !== currentUser.uid && (!msg.isRead || !msg.isDelivered)
             );
 
-            if (unreadMessages.length > 0) {
-                unreadMessages.forEach(async (msg) => {
+            if (messagesToUpdate.length > 0) {
+                messagesToUpdate.forEach(async (msg) => {
                     const msgRef = doc(db, collectionPath, chatId, 'messages', msg.id);
                     await updateDoc(msgRef, {
                         readBy: arrayUnion(currentUser.uid),
                         isRead: true,
                         isDelivered: true
-                    });
+                    }).catch(console.error);
                 });
 
                 // Reset unread count in parent doc (for private chats)
@@ -131,20 +131,6 @@ export function ChatWindow({ chatId, currentUser, otherUser, isGroup = false, gr
                         [`unreadCount.${currentUser.uid}`]: 0
                     }).catch(console.error);
                 }
-            }
-
-            // Mark undelivered messages as delivered (even if not read yet)
-            const undeliveredMessages = fetchedMessages.filter(
-                msg => msg.senderId !== currentUser.uid && !msg.isDelivered && (!msg.readBy || !msg.readBy.includes(currentUser.uid))
-            );
-
-            if (undeliveredMessages.length > 0) {
-                undeliveredMessages.forEach(async (msg) => {
-                    const msgRef = doc(db, collectionPath, chatId, 'messages', msg.id);
-                    await updateDoc(msgRef, {
-                        isDelivered: true
-                    });
-                });
             }
         }, (error) => {
             console.error('Error fetching messages:', error);

@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { Home, Users, Briefcase, User, Calendar, Settings, MessageSquare } from 'lucide-react';
 import { BrandHeader } from './BrandHeader';
 import { useAuth } from '@/contexts/AuthContext';
+import { useMessaging } from '@/contexts/MessagingContext';
 import { usePathname } from 'next/navigation';
 
 const navigation = [
@@ -16,6 +17,7 @@ const navigation = [
 
 export function Sidebar() {
     const { userData } = useAuth();
+    const { totalUnreadCount } = useMessaging();
     const pathname = usePathname();
 
     if (!userData) return null;
@@ -37,10 +39,18 @@ export function Sidebar() {
                                 : 'text-brand-ebony/80 hover:bg-brand-burgundy/5 hover:text-brand-ebony'
                                 }`}
                         >
-                            <div className="flex items-center">
+                            <div className="flex items-center relative">
                                 <item.icon className={`h-5 w-5 mr-3 transition-colors ${isActive ? 'text-brand-burgundy' : 'text-brand-ebony/60 group-hover:text-brand-burgundy'
                                     }`} />
                                 <span>{item.name}</span>
+                                {item.name === 'Messages' && totalUnreadCount > 0 && (
+                                    <span className="absolute -top-1.5 -left-1.5 flex h-4 w-4">
+                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                                        <span className="relative inline-flex rounded-full h-4 w-4 bg-red-500 border-2 border-brand-cream text-[8px] text-white items-center justify-center font-bold">
+                                            {totalUnreadCount > 9 ? '9+' : totalUnreadCount}
+                                        </span>
+                                    </span>
+                                )}
                             </div>
                         </Link>
                     )

@@ -7,6 +7,7 @@ import { db } from '@/lib/firebase';
 import { Search, Loader2, Trash2, MessageSquare, Plus, Users, MessageCircle } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { CreateGroupModal } from '../modals/CreateGroupModal';
+import { useMessaging } from '@/contexts/MessagingContext';
 
 interface ChatListProps {
     currentUser: User;
@@ -29,6 +30,7 @@ export function ChatList({ currentUser, chats, onSelectChat, onStartChat, onSele
     const [isCreateGroupModalOpen, setIsCreateGroupModalOpen] = useState(false);
     const [userGroups, setUserGroups] = useState<Group[]>([]);
     const [loadingGroups, setLoadingGroups] = useState(false);
+    const { unreadUsersCount } = useMessaging();
 
     useEffect(() => {
         const searchUsers = async () => {
@@ -170,6 +172,11 @@ export function ChatList({ currentUser, chats, onSelectChat, onStartChat, onSele
                     >
                         <MessageCircle className="w-3.5 h-3.5" />
                         Chats
+                        {unreadUsersCount > 0 && (
+                            <span className="ml-1 bg-brand-burgundy text-white text-[10px] px-1.5 py-0.5 rounded-full animate-in zoom-in duration-300">
+                                {unreadUsersCount}
+                            </span>
+                        )}
                     </button>
                     <button
                         onClick={() => onViewModeChange('groups')}

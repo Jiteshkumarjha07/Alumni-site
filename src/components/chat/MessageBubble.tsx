@@ -329,13 +329,13 @@ export function MessageBubble({
                                     {message.isEdited && <span className="text-[9px] italic font-medium">edited</span>}
                                     <span className="text-[10px] font-bold tracking-tight uppercase whitespace-nowrap">{timeString}</span>
                                     {isOwnMessage && (
-                                        <div className="flex items-center" title={isRead ? 'Read' : (message.isDelivered ? 'Delivered' : (message.createdAt ? 'Sent' : 'Sending...'))}>
+                                        <div className="flex items-center ml-1" title={isRead ? 'Read' : (message.isDelivered ? 'Delivered' : (message.createdAt ? 'Sent' : 'Sending...'))}>
                                             {isRead ? (
-                                                <CheckCheck className="w-3.5 h-3.5 text-sky-400 drop-shadow-[0_0_5px_rgba(56,189,248,1)]" />
+                                                <CheckCheck className="w-[15px] h-[15px] text-sky-500 drop-shadow-sm" strokeWidth={2.5} />
                                             ) : message.isDelivered ? (
-                                                <CheckCheck className="w-3.5 h-3.5 opacity-40" />
+                                                <CheckCheck className="w-[15px] h-[15px] text-brand-ebony/60" strokeWidth={2} />
                                             ) : (
-                                                <Check className="w-3.5 h-3.5 opacity-40" />
+                                                <Check className="w-[15px] h-[15px] text-brand-ebony/40" strokeWidth={2} />
                                             )}
                                         </div>
                                     )}

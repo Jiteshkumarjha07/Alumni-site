@@ -43,15 +43,9 @@ export default function RootLayout({
       >
         <AuthProvider>
           <ThemeProvider>
-            <div className="min-h-screen">
-              <Sidebar />
-              
-              <LayoutClient>
-                {children}
-              </LayoutClient>
-  
-              <MobileNav />
-            </div>
+            <LayoutClient>
+              {children}
+            </LayoutClient>
           </ThemeProvider>
         </AuthProvider>
       </body>
