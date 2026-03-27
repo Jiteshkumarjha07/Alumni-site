@@ -50,6 +50,22 @@ export function MessageBubble({
 
     const isRead = message.isRead || (message.readBy && message.readBy.length > 1);
 
+    const [statusKey, setStatusKey] = useState(0);
+    const [showStatus, setShowStatus] = useState(false);
+
+    // Increment key when status updates to trigger reveal
+    React.useEffect(() => {
+        if (isOwnMessage) setStatusKey(prev => prev + 1);
+    }, [isRead, message.isDelivered, isOwnMessage]);
+
+    // Auto-hide after 3 seconds whenever statusKey changes
+    React.useEffect(() => {
+        if (!isOwnMessage || statusKey === 0) return;
+        setShowStatus(true);
+        const timer = setTimeout(() => setShowStatus(false), 3000);
+        return () => clearTimeout(timer);
+    }, [statusKey, isOwnMessage]);
+
     const senderColor = useMemo(() => {
         if (isOwnMessage || !message.senderId) return 'text-brand-burgundy';
         const colors = [
@@ -96,8 +112,14 @@ export function MessageBubble({
 
     return (
         <div 
-            className={`flex w-full mb-4 group ${isOwnMessage ? 'justify-end' : 'justify-start'} transition-all duration-300 ${isSelectionMode ? 'cursor-pointer' : ''}`}
-            onClick={() => isSelectionMode && onSelect?.(message.id)}
+            className={`flex w-full mb-4 group ${isOwnMessage ? 'justify-end' : 'justify-start'} transition-all duration-300 ${(!isSelectionMode && isOwnMessage) ? 'cursor-pointer sm:cursor-default' : isSelectionMode ? 'cursor-pointer' : ''}`}
+            onClick={() => {
+                if (isSelectionMode) {
+                    onSelect?.(message.id);
+                } else if (isOwnMessage) {
+                    setStatusKey(prev => prev + 1);
+                }
+            }}
         >
             <div className={`flex max-w-[92%] sm:max-w-[75%] md:max-w-[70%] items-end gap-2 ${isSelectionMode ? (isSelected ? 'opacity-100 scale-[1.02]' : 'opacity-60 grayscale-[0.2]') : ''}`}>
                 {isSelectionMode && (
@@ -333,7 +355,11 @@ export function MessageBubble({
                         </div>
 
                         {isOwnMessage && (
-                            <div className="text-right mt-1 mr-1 select-none flex items-center justify-end gap-1 mb-1">
+                            <div 
+                                className={`text-right mt-1 mr-1 select-none flex items-center justify-end gap-1 mb-1 transition-all duration-500 ease-in-out sm:group-hover:opacity-100 sm:group-hover:max-h-4 sm:group-hover:transform-none ${
+                                    showStatus ? 'opacity-100 max-h-4 translate-y-0' : 'opacity-0 max-h-0 -translate-y-2 overflow-hidden'
+                                }`}
+                            >
                                 <span className={`text-[10px] font-medium tracking-wide lowercase ${isRead ? 'text-brand-ebony/60' : 'text-brand-ebony/40'}`}>
                                     {isRead ? 'seen' : message.isDelivered ? 'delivered' : message.createdAt ? 'sent' : 'sending...'}
                                 </span>
