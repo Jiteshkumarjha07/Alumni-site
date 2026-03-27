@@ -56,3 +56,22 @@ export const uploadVideo = async (file: File, path: string = 'videos'): Promise<
         throw error;
     }
 };
+/**
+ * Uploads a file to Firebase Storage and returns the download URL
+ * @param file The file to upload
+ * @param path The storage path (e.g., 'chats/files')
+ * @returns The download URL of the uploaded file
+ */
+export const uploadFile = async (file: File, path: string = 'files'): Promise<string | null> => {
+    if (!file) return null;
+
+    try {
+        const storageRef = ref(storage, `${path}/${Date.now()}_${file.name}`);
+        const snapshot = await uploadBytes(storageRef, file);
+        const downloadURL = await getDownloadURL(snapshot.ref);
+        return downloadURL;
+    } catch (error) {
+        console.error("Firebase Storage Upload Error:", error);
+        throw error;
+    }
+};

@@ -5,6 +5,7 @@ import { SwipeProvider } from '@/components/layout/SwipeProvider';
 import { motion, AnimatePresence, Variants } from 'framer-motion';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
+import { GlobalMessaging } from '@/components/chat/GlobalMessaging';
 
 const variants: Variants = {
     initial: (direction: number) => ({
@@ -61,6 +62,7 @@ export function LayoutClient({ children }: { children: React.ReactNode }) {
     // Fixed sidebar space on md: screens, fluid padding for all
     return (
         <SwipeProvider>
+            {userData && <GlobalMessaging />}
             <main className={`min-h-screen transition-all duration-300 ${userData ? 'md:pl-64' : ''} ${isMobile ? 'pb-24' : 'pb-8'}`}>
                 <div className="mx-auto w-full px-4 sm:px-6 md:px-8 lg:px-12 max-w-screen-2xl">
                     {isMobile ? (

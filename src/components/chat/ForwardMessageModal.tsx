@@ -56,6 +56,14 @@ export function ForwardMessageModal({ isOpen, onClose, message, currentUser, ori
             const targetSharedSecret = getSharedSecret(currentUser.uid, targetUser.uid);
             const encryptedForTarget = encryptMessage(decryptedOriginalText, targetSharedSecret);
 
+            const decryptedImageUrl = message.imageUrl ? decryptMessage(message.imageUrl, originSharedSecret) : '';
+            const decryptedVideoUrl = message.videoUrl ? decryptMessage(message.videoUrl, originSharedSecret) : '';
+            const decryptedFileUrl = message.fileUrl ? decryptMessage(message.fileUrl, originSharedSecret) : '';
+
+            const encryptedImageUrl = decryptedImageUrl ? encryptMessage(decryptedImageUrl, targetSharedSecret) : '';
+            const encryptedVideoUrl = decryptedVideoUrl ? encryptMessage(decryptedVideoUrl, targetSharedSecret) : '';
+            const encryptedFileUrl = decryptedFileUrl ? encryptMessage(decryptedFileUrl, targetSharedSecret) : '';
+
             // 1. Find or create chat
             const chatsRef = collection(db, 'chats');
             const q = query(chatsRef, where('participants', 'array-contains', currentUser.uid));
@@ -75,11 +83,7 @@ export function ForwardMessageModal({ isOpen, onClose, message, currentUser, ori
                 chatId = combinedId;
                 await setDoc(doc(db, 'chats', chatId), {
                     participants: [currentUser.uid, targetUser.uid],
-                    lastMessage: decryptedOriginalText, // Plaintext preview? 
-                    // To follow the ChatWindow logic, we could encrypt this too, but let's be consistent.
-                    // If we want total E2EE, lastMessage should also be encrypted.
-                    // But then ChatList needs to calculate secrets for everyone.
-                    // For now, let's keep it consistent with what I did in ChatWindow (plaintext lastMessage).
+                    lastMessage: decryptedOriginalText || (decryptedImageUrl ? '📷 Photo' : (decryptedVideoUrl ? '🎥 Video' : (decryptedFileUrl ? '📄 File' : (message.poll ? '📊 Poll' : '')))),
                     lastMessageAt: serverTimestamp(),
                     participantDetails: {
                         [currentUser.uid]: {
@@ -95,19 +99,33 @@ export function ForwardMessageModal({ isOpen, onClose, message, currentUser, ori
             }
 
             // 2. Send forwarded message
-            await addDoc(collection(db, 'chats', chatId, 'messages'), {
+            const forwardData: any = {
                 text: encryptedForTarget,
                 senderId: currentUser.uid,
                 senderName: currentUser.name,
                 senderProfilePic: currentUser.profilePic || null,
                 createdAt: serverTimestamp(),
                 isRead: false,
-                isForwarded: true
-            });
+                isDelivered: false,
+                isForwarded: true,
+                receiverId: targetUser.uid
+            };
+
+            if (encryptedImageUrl) forwardData.imageUrl = encryptedImageUrl;
+            if (encryptedVideoUrl) forwardData.videoUrl = encryptedVideoUrl;
+            if (encryptedFileUrl) {
+                forwardData.fileUrl = encryptedFileUrl;
+                forwardData.fileName = message.fileName;
+                forwardData.fileSize = message.fileSize;
+                forwardData.fileType = message.fileType;
+            }
+            if (message.poll) forwardData.poll = message.poll;
+
+            await addDoc(collection(db, 'chats', chatId, 'messages'), forwardData);
 
             // 3. Update chat last message
             await setDoc(doc(db, 'chats', chatId), {
-                lastMessage: decryptedOriginalText,
+                lastMessage: decryptedOriginalText || (decryptedImageUrl ? '📷 Photo' : (decryptedVideoUrl ? '🎥 Video' : (decryptedFileUrl ? '📄 File' : (message.poll ? '📊 Poll' : '')))),
                 lastMessageAt: serverTimestamp()
             }, { merge: true });
 

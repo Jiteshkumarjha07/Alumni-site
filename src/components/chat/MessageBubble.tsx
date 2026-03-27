@@ -1,9 +1,9 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
-import { Message } from '@/types';
+import { Message, User } from '@/types';
 import { format } from 'date-fns';
-import { Share2, Check, CheckCheck, Play, FileText, MoreVertical, Pencil, Trash2, Paperclip } from 'lucide-react';
+import { Share2, Check, CheckCheck, Play, FileText, MoreVertical, Pencil, Trash2, Paperclip, BarChart2, Circle, CheckCircle2 } from 'lucide-react';
 import { decryptMessage } from '@/lib/encryption';
 import Link from 'next/link';
 
@@ -16,9 +16,18 @@ interface MessageBubbleProps {
     onForward?: (message: Message) => void;
     sharedSecret: string;
     showSenderName?: boolean;
+    onVote?: (messageId: string, optionId: string) => void;
+    currentUserId: string;
+    isSelectionMode?: boolean;
+    isSelected?: boolean;
+    onSelect?: (id: string) => void;
 }
 
-export function MessageBubble({ message, isOwnMessage, onEdit, onUnsend, onReply, onForward, sharedSecret, showSenderName = false }: MessageBubbleProps) {
+export function MessageBubble({ 
+    message, isOwnMessage, onEdit, onUnsend, onReply, onForward, 
+    sharedSecret, showSenderName = false, onVote, currentUserId,
+    isSelectionMode = false, isSelected = false, onSelect
+}: MessageBubbleProps) {
     const [showMenu, setShowMenu] = useState(false);
 
     const decryptedText = useMemo(() => decryptMessage(message.text, sharedSecret), [message.text, sharedSecret]);
@@ -31,6 +40,9 @@ export function MessageBubble({ message, isOwnMessage, onEdit, onUnsend, onReply
     const decryptedVideoUrl = useMemo(() => 
         message.videoUrl ? decryptMessage(message.videoUrl, sharedSecret) : null
     , [message.videoUrl, sharedSecret]);
+    const decryptedFileUrl = useMemo(() => 
+        message.fileUrl ? decryptMessage(message.fileUrl, sharedSecret) : null
+    , [message.fileUrl, sharedSecret]);
 
     const timeString = message.createdAt
         ? format(message.createdAt.toDate(), 'h:mm a')
@@ -83,8 +95,20 @@ export function MessageBubble({ message, isOwnMessage, onEdit, onUnsend, onReply
     };
 
     return (
-        <div className={`flex w-full mb-4 group ${isOwnMessage ? 'justify-end' : 'justify-start'}`}>
-            <div className={`flex max-w-[92%] sm:max-w-[75%] md:max-w-[70%] items-end gap-2`}>
+        <div 
+            className={`flex w-full mb-4 group ${isOwnMessage ? 'justify-end' : 'justify-start'} transition-all duration-300 ${isSelectionMode ? 'cursor-pointer' : ''}`}
+            onClick={() => isSelectionMode && onSelect?.(message.id)}
+        >
+            <div className={`flex max-w-[92%] sm:max-w-[75%] md:max-w-[70%] items-end gap-2 ${isSelectionMode ? (isSelected ? 'opacity-100 scale-[1.02]' : 'opacity-60 grayscale-[0.2]') : ''}`}>
+                {isSelectionMode && (
+                    <div className="flex items-center justify-center p-2 mb-2">
+                        {isSelected ? (
+                            <CheckCircle2 className="w-5 h-5 text-brand-burgundy animate-in zoom-in duration-200" />
+                        ) : (
+                            <Circle className="w-5 h-5 text-brand-ebony/20" />
+                        )}
+                    </div>
+                )}
                 {!isOwnMessage && message.senderProfilePic && (
                     <div className="relative flex-shrink-0 mb-1">
                          <img
@@ -224,6 +248,72 @@ export function MessageBubble({ message, isOwnMessage, onEdit, onUnsend, onReply
                                 </div>
                             )}
 
+                            {decryptedFileUrl && !message.isDeleted && (
+                                <div className={`mb-3 p-3 rounded-xl border flex items-center justify-between gap-4 ${isOwnMessage ? 'bg-white/10 border-white/20' : 'bg-brand-cream border-brand-ebony/10'}`}>
+                                    <div className="flex items-center gap-3 overflow-hidden">
+                                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${isOwnMessage ? 'bg-white/20 text-white' : 'bg-brand-burgundy/10 text-brand-burgundy'}`}>
+                                            <FileText className="w-5 h-5" />
+                                        </div>
+                                        <div className="overflow-hidden">
+                                            <p className={`text-xs font-bold truncate ${isOwnMessage ? 'text-white' : 'text-brand-ebony'}`}>{message.fileName}</p>
+                                            <p className={`text-[10px] uppercase tracking-widest opacity-60 ${isOwnMessage ? 'text-white' : 'text-brand-ebony'}`}>
+                                                {message.fileSize ? (message.fileSize / 1024).toFixed(1) + ' KB' : 'Size unknown'}
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <button 
+                                        onClick={() => window.open(decryptedFileUrl, '_blank')}
+                                        className={`p-2 rounded-full transition-colors ${isOwnMessage ? 'hover:bg-white/20 text-white' : 'hover:bg-brand-ebony/5 text-brand-burgundy'}`}
+                                    >
+                                        <div className="flex items-center gap-1.5 px-2">
+                                            <span className="text-[10px] font-bold uppercase tracking-wider">Download</span>
+                                        </div>
+                                    </button>
+                                </div>
+                            )}
+
+                            {message.poll && !message.isDeleted && (
+                                <div className={`mb-3 p-4 rounded-xl border ${isOwnMessage ? 'bg-white/10 border-white/20 text-white' : 'bg-brand-cream border-brand-ebony/10 text-brand-ebony'}`}>
+                                    <h4 className="font-serif font-bold text-sm mb-4 flex items-center gap-2">
+                                        <BarChart2 className="w-4 h-4 text-brand-gold" />
+                                        {message.poll.question}
+                                    </h4>
+                                    <div className="space-y-3">
+                                        {message.poll.options.map((option) => {
+                                            const voteCount = option.votes?.length || 0;
+                                            const percentage = message.poll!.totalVotes > 0 
+                                                ? (voteCount / message.poll!.totalVotes) * 100 
+                                                : 0;
+                                            const hasVoted = option.votes?.includes(currentUserId);
+                                            
+                                            return (
+                                                <button
+                                                    key={option.id}
+                                                    onClick={() => onVote?.(message.id, option.id)}
+                                                    className={`w-full relative overflow-hidden rounded-xl border transition-all hover:scale-[1.01] active:scale-[0.99] group/opt ${hasVoted ? (isOwnMessage ? 'border-white' : 'border-brand-burgundy') : ''}`}
+                                                    style={{ borderColor: hasVoted ? undefined : (isOwnMessage ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.1)') }}
+                                                >
+                                                    <div 
+                                                        className={`absolute inset-0 transition-all duration-1000 ${isOwnMessage ? 'bg-white/20' : 'bg-brand-burgundy/10'} ${hasVoted ? (isOwnMessage ? 'opacity-40' : 'opacity-20') : ''}`}
+                                                        style={{ width: `${percentage}%` }}
+                                                    />
+                                                    <div className="relative p-3 flex items-center justify-between gap-3 text-xs font-bold">
+                                                        <div className="flex items-center gap-2 overflow-hidden">
+                                                            {hasVoted && <Check className="w-3 h-3 shrink-0" />}
+                                                            <span className="flex-1 text-left truncate">{option.text}</span>
+                                                        </div>
+                                                        <span className="opacity-60">{voteCount} ({Math.round(percentage)}%)</span>
+                                                    </div>
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
+                                    <p className="mt-4 text-[10px] font-bold uppercase tracking-widest opacity-50 text-center">
+                                        {message.poll.totalVotes} total votes
+                                    </p>
+                                </div>
+                            )}
+
                             <div className={`flex flex-col sm:flex-row sm:items-end justify-between gap-x-4 gap-y-1 ${isOwnMessage ? 'items-end' : 'items-start'}`}>
                                 <div className="flex-1 min-w-0">
                                     {decryptedText && (
@@ -239,9 +329,11 @@ export function MessageBubble({ message, isOwnMessage, onEdit, onUnsend, onReply
                                     {message.isEdited && <span className="text-[9px] italic font-medium">edited</span>}
                                     <span className="text-[10px] font-bold tracking-tight uppercase whitespace-nowrap">{timeString}</span>
                                     {isOwnMessage && (
-                                        <div className="flex items-center" title={isRead ? 'Read' : 'Delivered'}>
+                                        <div className="flex items-center" title={isRead ? 'Read' : (message.isDelivered ? 'Delivered' : (message.createdAt ? 'Sent' : 'Sending...'))}>
                                             {isRead ? (
-                                                <CheckCheck className="w-3.5 h-3.5 text-brand-gold drop-shadow-[0_0_2px_rgba(255,215,0,0.5)]" />
+                                                <CheckCheck className="w-3.5 h-3.5 text-sky-400 drop-shadow-[0_0_5px_rgba(56,189,248,1)]" />
+                                            ) : message.isDelivered ? (
+                                                <CheckCheck className="w-3.5 h-3.5 opacity-40" />
                                             ) : (
                                                 <Check className="w-3.5 h-3.5 opacity-40" />
                                             )}

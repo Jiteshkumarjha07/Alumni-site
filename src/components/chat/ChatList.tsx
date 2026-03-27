@@ -125,32 +125,35 @@ export function ChatList({ currentUser, chats, onSelectChat, onStartChat, onSele
                         </button>
 
                         {isActionsPopupOpen && (
-                            <div className="absolute right-0 top-12 w-56 bg-brand-cream rounded-2xl shadow-2xl border border-brand-ebony/10 z-[80] overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
-                                <div className="p-2 space-y-1">
-                                    <button 
-                                        onClick={() => {
-                                            setIsActionsPopupOpen(false);
-                                            setSearchQuery('');
-                                            const input = document.getElementById('chat-search-input');
-                                            if (input) input.focus();
-                                        }}
-                                        className="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-brand-ebony hover:bg-brand-parchment/30 rounded-xl transition-colors"
-                                    >
-                                        <MessageCircle className="w-4 h-4 text-brand-burgundy" />
-                                        New Message
-                                    </button>
-                                    <button 
-                                        onClick={() => {
-                                            setIsActionsPopupOpen(false);
-                                            setIsCreateGroupModalOpen(true);
-                                        }}
-                                        className="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-brand-ebony hover:bg-brand-parchment/30 rounded-xl transition-colors"
-                                    >
-                                        <Users className="w-4 h-4 text-brand-burgundy" />
-                                        Create Group
-                                    </button>
+                            <>
+                                <div className="fixed inset-0 z-[70]" onClick={() => setIsActionsPopupOpen(false)}></div>
+                                <div className="absolute right-0 top-12 w-56 bg-brand-cream rounded-2xl shadow-2xl border border-brand-ebony/10 z-[80] overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+                                    <div className="p-2 space-y-1">
+                                        <button 
+                                            onClick={() => {
+                                                setIsActionsPopupOpen(false);
+                                                setSearchQuery('');
+                                                const input = document.getElementById('chat-search-input');
+                                                if (input) input.focus();
+                                            }}
+                                            className="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-brand-ebony hover:bg-brand-parchment/30 rounded-xl transition-colors"
+                                        >
+                                            <MessageCircle className="w-4 h-4 text-brand-burgundy" />
+                                            New Message
+                                        </button>
+                                        <button 
+                                            onClick={() => {
+                                                setIsActionsPopupOpen(false);
+                                                setIsCreateGroupModalOpen(true);
+                                            }}
+                                            className="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-brand-ebony hover:bg-brand-parchment/30 rounded-xl transition-colors"
+                                        >
+                                            <Users className="w-4 h-4 text-brand-burgundy" />
+                                            Create Group
+                                        </button>
+                                    </div>
                                 </div>
-                            </div>
+                            </>
                         )}
                     </div>
                 </div>

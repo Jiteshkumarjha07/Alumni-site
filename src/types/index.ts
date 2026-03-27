@@ -91,6 +91,8 @@ export interface Message {
   senderProfilePic?: string;
   createdAt: Timestamp;
   isRead?: boolean;
+  isDelivered?: boolean;
+  receiverId?: string;
   readAt?: Timestamp;
   readBy?: string[]; // Array of UIDs who have read this message
   isEdited?: boolean;
@@ -111,8 +113,27 @@ export interface Message {
     text: string;
     senderName: string;
   };
-  mediaUrl?: string;
-  mediaType?: 'image' | 'video';
+  mediaUrl?: string; // Generic media URL (replaces imageUrl/videoUrl for new messages)
+  mediaType?: 'image' | 'video' | 'file';
+  fileUrl?: string;
+  fileName?: string;
+  fileSize?: number;
+  fileType?: string;
+  poll?: Poll;
+}
+
+export interface Poll {
+  question: string;
+  options: PollOption[];
+  expiresAt?: Timestamp;
+  allowMultiple?: boolean;
+  totalVotes: number;
+}
+
+export interface PollOption {
+  id: string;
+  text: string;
+  votes: string[]; // array of uids who voted for this option
 }
 
 export interface Group {
