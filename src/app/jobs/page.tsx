@@ -107,8 +107,8 @@ export default function JobsPage() {
     return (
         <div className="max-w-6xl mx-auto p-4 pt-8">
             {/* Header */}
-            <div className="flex items-center justify-between mb-8">
-                <div className="flex items-center gap-4">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
+                <div className="flex items-center gap-4 w-full sm:w-auto">
                     <div className="bg-brand-burgundy/10 p-3 rounded-xl border border-brand-burgundy/20">
                         <Briefcase className="w-8 h-8 text-brand-burgundy" />
                     </div>
@@ -116,7 +116,7 @@ export default function JobsPage() {
                 </div>
                 <button
                     onClick={() => setShowCreateModal(true)}
-                    className="flex items-center gap-2 px-5 py-2.5 bg-brand-burgundy text-white rounded-lg hover:bg-[#5a2427] shadow-sm transition font-medium tracking-wide"
+                    className="w-full sm:w-auto flex items-center justify-center gap-2 px-5 py-2.5 bg-brand-burgundy text-white rounded-lg hover:bg-[#5a2427] shadow-sm transition font-medium tracking-wide active:scale-[0.98]"
                 >
                     <Plus className="w-5 h-5" />
                     Post a Job

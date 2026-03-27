@@ -81,8 +81,8 @@ export default function EventsPage() {
 
     return (
         <div className="max-w-6xl mx-auto pt-8 px-4 pb-20 md:pb-6">
-            <div className="flex items-center justify-between mb-8">
-                <div className="flex items-center gap-4">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
+                <div className="flex items-center gap-4 w-full sm:w-auto">
                     <div className="bg-brand-gold/20 p-3 rounded-xl border border-brand-gold/30">
                         <CalendarIcon className="h-7 w-7 text-brand-burgundy" />
                     </div>
@@ -91,7 +91,7 @@ export default function EventsPage() {
                 {userData && (
                     <button
                         onClick={() => setShowCreateModal(true)}
-                        className="bg-brand-burgundy text-white px-5 py-2.5 rounded-lg text-sm font-semibold hover:bg-[#5a2427] shadow-sm tracking-wide transition-all flex items-center gap-2"
+                        className="w-full sm:w-auto flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg bg-brand-burgundy text-white text-sm font-semibold hover:bg-[#5a2427] shadow-sm tracking-wide transition-all active:scale-[0.98]"
                     >
                         <Plus className="w-4 h-4" />
                         Create Event
