@@ -328,20 +328,17 @@ export function MessageBubble({
                                 <div className={`flex items-center gap-1.5 shrink-0 select-none pb-0.5 mt-1 sm:mt-0 ${isOwnMessage ? 'text-white/60' : 'text-brand-ebony/30'}`}>
                                     {message.isEdited && <span className="text-[9px] italic font-medium">edited</span>}
                                     <span className="text-[10px] font-bold tracking-tight uppercase whitespace-nowrap">{timeString}</span>
-                                    {isOwnMessage && (
-                                        <div className="flex items-center ml-1" title={isRead ? 'Read' : (message.isDelivered ? 'Delivered' : (message.createdAt ? 'Sent' : 'Sending...'))}>
-                                            {isRead ? (
-                                                <CheckCheck className="w-[15px] h-[15px] text-sky-500 drop-shadow-sm" strokeWidth={2.5} />
-                                            ) : message.isDelivered ? (
-                                                <CheckCheck className="w-[15px] h-[15px] text-brand-ebony/60" strokeWidth={2} />
-                                            ) : (
-                                                <Check className="w-[15px] h-[15px] text-brand-ebony/40" strokeWidth={2} />
-                                            )}
-                                        </div>
-                                    )}
                                 </div>
                             </div>
                         </div>
+
+                        {isOwnMessage && (
+                            <div className="text-right mt-1 mr-1 select-none flex items-center justify-end gap-1 mb-1">
+                                <span className={`text-[10px] font-medium tracking-wide lowercase ${isRead ? 'text-brand-ebony/60' : 'text-brand-ebony/40'}`}>
+                                    {isRead ? 'seen' : message.isDelivered ? 'delivered' : message.createdAt ? 'sent' : 'sending...'}
+                                </span>
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>
