@@ -146,7 +146,7 @@ export const PostCard: React.FC<PostCardProps> = ({
                         }`}
                 >
                     <Heart className={`w-4 h-4 ${isLiked ? 'fill-current' : ''}`} />
-                    <span>{isLiked ? 'Liked' : 'Like'} <span className="text-[10px] opacity-70 ml-0.5">{post.likes?.length || 0}</span></span>
+                    <span className="whitespace-nowrap tracking-tight">{isLiked ? 'Liked' : 'Like'} <span className="text-[10px] opacity-70 ml-0.5">{post.likes?.length || 0}</span></span>
                 </button>
 
                 <button
@@ -154,7 +154,7 @@ export const PostCard: React.FC<PostCardProps> = ({
                     className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-brand-ebony/60 hover:bg-brand-burgundy/5 hover:text-brand-burgundy transition font-semibold text-sm"
                 >
                     <MessageCircle className="w-4 h-4" />
-                    <span>Comment <span className="text-[10px] opacity-70 ml-0.5">{post.comments?.length || 0}</span></span>
+                    <span className="whitespace-nowrap tracking-tight">Comment <span className="text-[10px] opacity-70 ml-0.5">{post.comments?.length || 0}</span></span>
                 </button>
 
                 <button

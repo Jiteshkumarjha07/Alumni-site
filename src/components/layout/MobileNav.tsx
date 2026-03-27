@@ -9,7 +9,6 @@ import { useMessaging } from '@/contexts/MessagingContext';
 const navigation = [
     { name: 'Home', href: '/', icon: Home },
     { name: 'Messages', href: '/messages', icon: MessageSquare },
-    { name: 'Groups', href: '/messages?view=groups', icon: Users },
     { name: 'Network', href: '/network', icon: Users },
     { name: 'Profile', href: '/profile', icon: User },
     { name: 'Settings', href: '/settings', icon: Settings },
