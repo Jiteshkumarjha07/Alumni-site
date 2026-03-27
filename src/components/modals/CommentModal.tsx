@@ -284,11 +284,15 @@ export const CommentModal: React.FC<CommentModalProps> = ({
 
     return (
         <div 
-            className="fixed inset-0 bg-brand-ebony/60 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-0 sm:p-4 overscroll-none"
-            onClick={(e) => e.target === e.currentTarget && onClose()}
+            className="fixed inset-0 bg-brand-ebony/60 backdrop-blur-sm flex items-end sm:items-center justify-center z-[100] p-0 sm:p-4 overscroll-none"
+            onClick={(e) => {
+                if (window.innerWidth >= 640 && e.target === e.currentTarget) {
+                    onClose();
+                }
+            }}
         >
             <div 
-                className={`bg-brand-parchment rounded-t-3xl sm:rounded-2xl max-w-2xl w-full max-h-[92vh] sm:max-h-[80vh] flex flex-col border border-brand-ebony/10 shadow-2xl ${touchTranslate > 0 ? '' : 'transition-transform duration-200'}`}
+                className={`bg-brand-parchment rounded-t-3xl sm:rounded-2xl max-w-2xl w-full max-h-[85dvh] sm:max-h-[80vh] flex flex-col border border-brand-ebony/10 shadow-2xl ${touchTranslate > 0 ? '' : 'transition-transform duration-200'}`}
                 style={{ transform: `translateY(${touchTranslate}px)` }}
                 onTouchStart={handleTouchStart}
                 onTouchMove={handleTouchMove}
@@ -367,7 +371,7 @@ export const CommentModal: React.FC<CommentModalProps> = ({
                 )}
 
                 {/* Comment Input */}
-                <div className="p-4 border-t border-brand-ebony/10 bg-brand-ebony/5">
+                <div className="p-4 pb-6 sm:pb-4 border-t border-brand-ebony/10 bg-brand-ebony/5">
                     <div className="flex flex-wrap gap-2 mb-3">
                         {['👍', '❤️', '😂', '😮', '😢', '🔥', '👏', '🙌', '✨', '💯'].map(emoji => (
                             <button
