@@ -69,10 +69,10 @@ export const CreateOpportunityModal: React.FC<CreateOpportunityModalProps> = ({
     };
 
     return (
-        <div className="fixed inset-0 bg-brand-ebony/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-            <div className="bg-brand-cream rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-brand-gold/20">
+        <div className="fixed inset-0 bg-brand-ebony/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 sm:p-6">
+            <div className="bg-brand-cream rounded-2xl max-w-2xl w-full max-h-[85dvh] flex flex-col shadow-2xl border border-brand-gold/20 overflow-hidden">
                 {/* Header */}
-                <div className="flex items-center justify-between p-6 border-b border-brand-gold/10 bg-brand-parchment/30">
+                <div className="flex-shrink-0 flex items-center justify-between p-4 sm:p-6 border-b border-brand-gold/10 bg-brand-parchment/30">
                     <h2 className="text-2xl font-serif font-bold text-brand-ebony underline decoration-brand-gold/30 underline-offset-8">Post an Opportunity</h2>
                     <button
                         onClick={onClose}
@@ -84,7 +84,7 @@ export const CreateOpportunityModal: React.FC<CreateOpportunityModalProps> = ({
                 </div>
 
                 {/* Form */}
-                <div className="p-6 space-y-6">
+                <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6">
                     <div>
                         <label className="block text-sm font-bold text-brand-ebony/70 uppercase tracking-widest mb-2">
                             Job Title *
@@ -197,7 +197,7 @@ export const CreateOpportunityModal: React.FC<CreateOpportunityModalProps> = ({
                 </div>
 
                 {/* Actions */}
-                <div className="flex justify-end gap-3 p-6 border-t border-brand-gold/10 bg-brand-parchment/30">
+                <div className="flex-shrink-0 flex justify-end gap-3 p-4 sm:p-6 border-t border-brand-gold/10 bg-brand-cream">
                     <button
                         onClick={onClose}
                         disabled={loading}
