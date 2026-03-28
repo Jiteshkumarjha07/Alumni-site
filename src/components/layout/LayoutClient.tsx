@@ -12,23 +12,23 @@ import { MobileNav } from './MobileNav';
 
 const variants: Variants = {
     initial: (direction: number) => ({
-        x: direction > 0 ? '100%' : direction < 0 ? '-100%' : 0,
+        x: direction > 0 ? '20%' : direction < 0 ? '-20%' : 0,
         opacity: 0
     }),
     animate: {
         x: 0,
         opacity: 1,
         transition: {
-            x: { type: "spring", stiffness: 260, damping: 26 },
-            opacity: { duration: 0.15 }
+            x: { type: "tween", ease: "circOut", duration: 0.25 },
+            opacity: { duration: 0.2 }
         }
     },
     exit: (direction: number) => ({
-        x: direction > 0 ? '-100%' : direction < 0 ? '100%' : 0,
+        x: direction > 0 ? '-20%' : direction < 0 ? '20%' : 0,
         opacity: 0,
         transition: {
-            x: { type: "spring", stiffness: 260, damping: 26 },
-            opacity: { duration: 0.15 }
+            x: { type: "tween", ease: "circOut", duration: 0.25 },
+            opacity: { duration: 0.2 }
         }
     })
 };
@@ -53,7 +53,7 @@ export function LayoutClient({ children }: { children: React.ReactNode }) {
         return () => window.removeEventListener('resize', checkMobile);
     }, []);
 
-    const tabs = ['/', '/messages', '/network', '/jobs', '/events', '/profile'];
+    const tabs = ['/', '/events', '/jobs', '/network', '/messages', '/profile'];
     const [prevPath, setPrevPath] = React.useState(pathname);
     const direction = tabs.indexOf(pathname) > tabs.indexOf(prevPath) ? 1 : -1;
 
