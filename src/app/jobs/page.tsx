@@ -105,9 +105,9 @@ export default function JobsPage() {
 
 
     return (
-        <div className="max-w-6xl mx-auto p-4 pt-8">
+        <div className="max-w-6xl mx-auto p-4 pt-8 pb-24 md:pb-8">
             {/* Header */}
-            <div className="flex items-center justify-between gap-2 mb-6 sm:mb-8">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 sm:mb-8">
                 <div className="flex items-center gap-3">
                     <div className="bg-brand-burgundy/10 p-2 sm:p-3 rounded-xl border border-brand-burgundy/20 hidden sm:block">
                         <Briefcase className="w-6 h-6 sm:w-8 sm:h-8 text-brand-burgundy" />
@@ -119,11 +119,10 @@ export default function JobsPage() {
                 </div>
                 <button
                     onClick={() => setShowCreateModal(true)}
-                    className="flex-shrink-0 flex items-center justify-center gap-1.5 sm:gap-2 px-4 py-2 sm:px-5 sm:py-2.5 bg-brand-burgundy text-white text-xs sm:text-sm rounded-lg hover:bg-[#5a2427] shadow-sm transition font-medium tracking-wide active:scale-[0.98]"
+                    className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-3 sm:px-5 sm:py-2.5 bg-brand-burgundy text-white text-sm sm:text-sm rounded-xl hover:bg-[#5a2427] shadow-sm transition-all font-semibold tracking-wide active:scale-[0.98]"
                 >
-                    <Plus className="w-4 h-4 sm:w-5 sm:h-5" />
-                    <span className="hidden sm:inline">Post a Job</span>
-                    <span className="sm:hidden">Post Job</span>
+                    <Plus className="w-5 h-5" />
+                    <span>Post a Job</span>
                 </button>
             </div>
 

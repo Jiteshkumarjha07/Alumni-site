@@ -72,14 +72,14 @@ export const CreateOpportunityModal: React.FC<CreateOpportunityModalProps> = ({
         <div className="fixed inset-0 bg-brand-ebony/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 sm:p-6">
             <div className="bg-brand-cream rounded-2xl max-w-2xl w-full max-h-[85dvh] flex flex-col shadow-2xl border border-brand-gold/20 overflow-hidden">
                 {/* Header */}
-                <div className="flex-shrink-0 flex items-center justify-between p-4 sm:p-6 border-b border-brand-gold/10 bg-brand-parchment/30">
-                    <h2 className="text-2xl font-serif font-bold text-brand-ebony underline decoration-brand-gold/30 underline-offset-8">Post an Opportunity</h2>
+                <div className="flex-shrink-0 flex items-start sm:items-center justify-between gap-4 p-4 sm:p-6 border-b border-brand-gold/10 bg-brand-parchment/30">
+                    <h2 className="text-xl sm:text-2xl font-serif font-bold text-brand-ebony underline decoration-brand-gold/30 underline-offset-8">Post an Opportunity</h2>
                     <button
                         onClick={onClose}
                         disabled={loading}
-                        className="p-2 hover:bg-brand-burgundy/10 rounded-full transition text-brand-ebony/40 hover:text-brand-burgundy"
+                        className="p-2 -mr-2 hover:bg-brand-burgundy/10 rounded-full transition text-brand-ebony/40 hover:text-brand-burgundy flex-shrink-0"
                     >
-                        <X className="w-6 h-6" />
+                        <X className="w-5 h-5 sm:w-6 sm:h-6" />
                     </button>
                 </div>
 
@@ -197,18 +197,18 @@ export const CreateOpportunityModal: React.FC<CreateOpportunityModalProps> = ({
                 </div>
 
                 {/* Actions */}
-                <div className="flex-shrink-0 flex justify-end gap-3 p-4 sm:p-6 border-t border-brand-gold/10 bg-brand-cream">
+                <div className="flex-shrink-0 flex flex-col-reverse sm:flex-row sm:justify-end gap-3 p-4 sm:p-6 border-t border-brand-gold/10 bg-brand-cream">
                     <button
                         onClick={onClose}
                         disabled={loading}
-                        className="px-6 py-2.5 border border-brand-gold/20 rounded-xl font-bold text-brand-ebony/70 hover:bg-brand-gold/5 transition tracking-wide disabled:opacity-50"
+                        className="w-full sm:w-auto px-6 py-2.5 border border-brand-gold/20 rounded-xl font-bold text-brand-ebony/70 hover:bg-brand-gold/5 transition tracking-wide disabled:opacity-50"
                     >
                         Cancel
                     </button>
                     <button
                         onClick={handleSubmit}
                         disabled={loading}
-                        className="px-8 py-2.5 bg-brand-burgundy text-white rounded-xl font-bold hover:bg-[#5a2427] transition disabled:opacity-50 disabled:cursor-not-allowed shadow-md shadow-brand-burgundy/20 tracking-wide"
+                        className="w-full sm:w-auto px-8 py-2.5 bg-brand-burgundy text-white rounded-xl font-bold hover:bg-[#5a2427] transition disabled:opacity-50 disabled:cursor-not-allowed shadow-md shadow-brand-burgundy/20 tracking-wide"
                     >
                         {loading ? 'Posting...' : 'Post Opportunity'}
                     </button>
