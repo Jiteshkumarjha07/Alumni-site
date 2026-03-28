@@ -75,8 +75,8 @@ export const CreateEventModal: React.FC<CreateEventModalProps> = ({
     };
 
     return (
-        <div className="fixed inset-0 bg-brand-ebony/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 sm:p-6">
-            <div className="bg-brand-cream rounded-2xl max-w-2xl w-full max-h-[85dvh] flex flex-col shadow-2xl border border-brand-gold/20 overflow-hidden">
+        <div className="fixed inset-0 bg-brand-ebony/60 dark:bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 sm:p-6 pb-0">
+            <div className="bg-brand-cream w-full max-w-2xl max-h-[90dvh] sm:max-h-[85dvh] rounded-t-3xl sm:rounded-2xl flex flex-col shadow-2xl sm:border sm:border-brand-gold/20 overflow-hidden slide-up-animation">
                 {/* Header */}
                 <div className="flex-shrink-0 flex items-start sm:items-center justify-between gap-4 p-4 sm:p-6 border-b border-brand-gold/10 bg-brand-parchment/30">
                     <div className="flex items-center gap-3">

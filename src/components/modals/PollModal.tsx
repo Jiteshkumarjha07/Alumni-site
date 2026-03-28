@@ -46,7 +46,7 @@ export function PollModal({ isOpen, onClose, onSubmit }: PollModalProps) {
     };
 
     return (
-        <div className="fixed inset-0 bg-brand-ebony/40 flex items-center justify-center z-[100] p-4 backdrop-blur-sm">
+        <div className="fixed inset-0 bg-brand-ebony/40 dark:bg-black/40 flex items-center justify-center z-[100] p-4 backdrop-blur-sm">
             <div className="bg-brand-cream rounded-2xl p-6 max-w-md w-full shadow-2xl animate-in zoom-in-95 duration-200 border border-brand-ebony/10">
                 <div className="flex items-center justify-between mb-6">
                     <div className="flex items-center gap-3">

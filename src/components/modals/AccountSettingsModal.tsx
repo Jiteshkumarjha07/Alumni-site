@@ -141,7 +141,7 @@ export function AccountSettingsModal({ isOpen, onClose, userEmail, userId, onAcc
     const labelClass = "block text-xs font-bold uppercase tracking-widest text-brand-ebony/50 mb-1.5";
 
     return (
-        <div className="fixed inset-0 bg-brand-ebony/50 flex items-center justify-center z-[70] p-4 backdrop-blur-sm">
+        <div className="fixed inset-0 bg-brand-ebony/50 dark:bg-black/50 dark:bg-black/50 flex items-center justify-center z-[70] p-4 backdrop-blur-sm">
             <div className="bg-brand-cream border border-brand-ebony/10 rounded-2xl shadow-2xl w-full max-w-md animate-in zoom-in-95 duration-200 overflow-hidden">
                 {/* Header */}
                 <div className="flex items-center justify-between px-6 py-4 border-b border-brand-ebony/10 bg-brand-parchment/60">

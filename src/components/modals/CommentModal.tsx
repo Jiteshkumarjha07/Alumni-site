@@ -289,7 +289,7 @@ export const CommentModal: React.FC<CommentModalProps> = ({
 
     return (
         <div 
-            className="fixed inset-0 bg-brand-ebony/60 backdrop-blur-sm flex items-end sm:items-center justify-center z-[100] p-0 sm:p-4 overscroll-none"
+            className="fixed inset-0 bg-brand-ebony/60 dark:bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center z-[100] p-0 sm:p-4 overscroll-none"
             onClick={(e) => {
                 if (window.innerWidth >= 640 && e.target === e.currentTarget) {
                     onClose();

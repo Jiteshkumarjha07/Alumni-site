@@ -118,7 +118,7 @@ export function SharePostModal({ isOpen, onClose, post, currentUser }: SharePost
     );
 
     return (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-brand-ebony/60 backdrop-blur-sm">
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-brand-ebony/60 dark:bg-black/60 backdrop-blur-sm">
             <div className="bg-brand-parchment rounded-3xl w-full max-w-md shadow-2xl border border-brand-ebony/10 overflow-hidden">
                 <div className="p-6 border-b border-brand-ebony/10 flex items-center justify-between bg-brand-ebony/5">
                     <div>

@@ -44,7 +44,7 @@ export const EditPostModal: React.FC<EditPostModalProps> = ({
     };
 
     return (
-        <div className="fixed inset-0 bg-brand-ebony/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-brand-ebony/60 dark:bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
             <div className="bg-brand-parchment rounded-2xl max-w-2xl w-full shadow-2xl border border-brand-ebony/20 overflow-hidden">
                 {/* Header */}
                 <div className="flex items-center justify-between p-4 border-b border-brand-ebony/10 bg-brand-parchment/95 backdrop-blur-md">
