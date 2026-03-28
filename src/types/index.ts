@@ -119,6 +119,8 @@ export interface Message {
   fileName?: string;
   fileSize?: number;
   fileType?: string;
+  audioUrl?: string;
+  audioDuration?: number; // seconds
   poll?: Poll;
 }
 

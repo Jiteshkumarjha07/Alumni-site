@@ -43,6 +43,9 @@ export function MessageBubble({
     const decryptedFileUrl = useMemo(() => 
         message.fileUrl ? decryptMessage(message.fileUrl, sharedSecret) : null
     , [message.fileUrl, sharedSecret]);
+    const decryptedAudioUrl = useMemo(() => 
+        message.audioUrl ? decryptMessage(message.audioUrl, sharedSecret) : null
+    , [message.audioUrl, sharedSecret]);
 
     const timeString = message.createdAt
         ? format(message.createdAt.toDate(), 'h:mm a')
@@ -291,6 +294,25 @@ export function MessageBubble({
                                             <span className="text-[10px] font-bold uppercase tracking-wider">Download</span>
                                         </div>
                                     </button>
+                                </div>
+                            )}
+
+                            {decryptedAudioUrl && !message.isDeleted && (
+                                <div className={`mb-3 p-3 rounded-xl min-w-[220px] ${isOwnMessage ? 'bg-white/10' : 'bg-brand-cream/80 border border-brand-ebony/10'}`}>
+                                    <div className="flex items-center gap-2 mb-2">
+                                        <span className="text-[10px] font-bold uppercase tracking-widest opacity-60">🎙️ Voice message</span>
+                                        {message.audioDuration != null && (
+                                            <span className="text-[10px] opacity-50">
+                                                {String(Math.floor(message.audioDuration / 60)).padStart(2,'0')}:{String(message.audioDuration % 60).padStart(2,'0')}
+                                            </span>
+                                        )}
+                                    </div>
+                                    <audio
+                                        src={decryptedAudioUrl}
+                                        controls
+                                        className="w-full h-8"
+                                        style={{ filter: isOwnMessage ? 'invert(1) brightness(2)' : 'none' }}
+                                    />
                                 </div>
                             )}
 

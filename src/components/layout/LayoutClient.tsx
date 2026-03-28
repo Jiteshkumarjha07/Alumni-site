@@ -19,16 +19,16 @@ const variants: Variants = {
         x: 0,
         opacity: 1,
         transition: {
-            x: { type: "spring", stiffness: 300, damping: 30 },
-            opacity: { duration: 0.2 }
+            x: { type: "spring", stiffness: 260, damping: 26 },
+            opacity: { duration: 0.15 }
         }
     },
     exit: (direction: number) => ({
         x: direction > 0 ? '-100%' : direction < 0 ? '100%' : 0,
         opacity: 0,
         transition: {
-            x: { type: "spring", stiffness: 300, damping: 30 },
-            opacity: { duration: 0.2 }
+            x: { type: "spring", stiffness: 260, damping: 26 },
+            opacity: { duration: 0.15 }
         }
     })
 };
@@ -69,10 +69,10 @@ export function LayoutClient({ children }: { children: React.ReactNode }) {
             <MessagingProvider>
                 <div className="flex flex-col min-h-screen">
                     <Sidebar />
-                    <main className={`min-h-screen transition-all duration-300 ${userData ? 'md:pl-64' : ''} ${isMobile ? 'pb-24' : 'pb-8'}`}>
-                <div className="mx-auto w-full px-4 sm:px-6 md:px-8 lg:px-12 max-w-screen-2xl">
+                    <main className={`min-h-screen ${userData ? 'md:pl-64' : ''} ${isMobile ? 'pb-24' : 'pb-8'}`}>
+                <div className="mx-auto w-full px-4 sm:px-6 md:px-8 lg:px-12 max-w-screen-2xl overflow-x-hidden">
                     {isMobile ? (
-                        <AnimatePresence initial={false} custom={direction} mode="wait">
+                        <AnimatePresence initial={false} custom={direction} mode="popLayout">
                             <motion.div
                                 key={pathname}
                                 custom={direction}
@@ -81,6 +81,7 @@ export function LayoutClient({ children }: { children: React.ReactNode }) {
                                 animate="animate"
                                 exit="exit"
                                 className="w-full"
+                                style={{ willChange: 'transform, opacity' }}
                             >
                                 {children}
                             </motion.div>

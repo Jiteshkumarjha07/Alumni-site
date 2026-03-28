@@ -62,7 +62,7 @@ export const EditPostModal: React.FC<EditPostModalProps> = ({
                     <textarea
                         value={content}
                         onChange={(e) => setContent(e.target.value)}
-                        className="w-full min-h-[150px] p-4 bg-white/50 border border-brand-ebony/10 rounded-xl focus:ring-2 focus:ring-brand-burgundy focus:border-transparent resize-none text-brand-ebony font-sans transition-all"
+                        className="w-full min-h-[150px] p-4 bg-white/50 dark:bg-black/20 border border-brand-ebony/10 rounded-xl focus:ring-2 focus:ring-brand-burgundy focus:border-transparent resize-none text-brand-ebony font-sans transition-all"
                     />
 
                     <div className="flex items-center justify-end gap-4 mt-6">

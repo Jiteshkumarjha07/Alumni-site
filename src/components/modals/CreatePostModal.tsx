@@ -82,54 +82,57 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
 
     return (
         <div className="fixed inset-0 bg-brand-ebony/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-            <div className="bg-brand-parchment rounded-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-brand-ebony/20">
+            <div className="bg-brand-cream rounded-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-brand-gold/20">
                 {/* Header */}
-                <div className="flex items-center justify-between p-4 border-b border-brand-ebony/10 sticky top-0 bg-brand-parchment/95 backdrop-blur-md z-10">
-                    <h2 className="text-xl font-serif font-bold text-brand-ebony">Create Post</h2>
+                <div className="flex items-center justify-between p-6 border-b border-brand-gold/10 sticky top-0 bg-brand-parchment/95 backdrop-blur-md z-10">
+                    <h2 className="text-2xl font-serif font-bold text-brand-ebony underline decoration-brand-gold/30 underline-offset-8">Create Post</h2>
                     <button
                         onClick={onClose}
                         disabled={loading}
                         className="p-2 hover:bg-brand-burgundy/10 text-brand-ebony/40 hover:text-brand-burgundy rounded-full transition disabled:opacity-50"
                     >
-                        <X className="w-5 h-5" />
+                        <X className="w-6 h-6" />
                     </button>
                 </div>
 
                 {/* User Info */}
-                <div className="p-4 flex items-center gap-3">
-                    <img
-                        src={currentUser.profilePic || `https://placehold.co/48x48/EFEFEFF/3B82F6?text=${currentUser.name.substring(0, 1)}`}
-                        alt={currentUser.name}
-                        className="w-12 h-12 rounded-full object-cover"
-                    />
+                <div className="p-6 flex items-center gap-4">
+                    <div className="relative">
+                        <img
+                            src={currentUser.profilePic || `https://placehold.co/48x48/EFEFEFF/3B82F6?text=${currentUser.name.substring(0, 1)}`}
+                            alt={currentUser.name}
+                            className="w-12 h-12 rounded-full object-cover border-2 border-brand-gold/20 shadow-sm"
+                        />
+                        <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-brand-cream rounded-full"></div>
+                    </div>
                     <div className="flex flex-col">
-                        <p className="font-bold text-brand-ebony">{currentUser.name}</p>
-                        <p className="text-xs font-medium text-brand-ebony/50 uppercase tracking-widest">Posting to alumni network</p>
+                        <p className="font-bold text-brand-ebony text-lg leading-tight">{currentUser.name}</p>
+                        <p className="text-xs font-bold text-brand-ebony/40 uppercase tracking-widest mt-0.5">Posting to alumni network</p>
                     </div>
                 </div>
 
                 {/* Content */}
-                <div className="px-4 pb-4">
+                <div className="px-6 pb-6">
                     <textarea
                         value={content}
                         onChange={(e) => setContent(e.target.value)}
                         placeholder="What's on your mind?"
-                        className="w-full min-h-[120px] p-4 bg-white/50 border border-brand-ebony/10 rounded-xl focus:ring-2 focus:ring-brand-burgundy focus:border-transparent resize-none text-brand-ebony placeholder-brand-ebony/30 transition-all font-sans"
+                        className="w-full min-h-[160px] p-5 bg-white/50 dark:bg-black/20 border border-brand-gold/20 rounded-2xl focus:ring-2 focus:ring-brand-burgundy/20 focus:border-brand-burgundy outline-none resize-none text-brand-ebony placeholder-brand-ebony/30 transition-all font-sans text-lg leading-relaxed"
                         disabled={loading}
                     />
 
                     {/* Image Preview */}
                     {imagePreview && (
-                        <div className="mt-3 relative">
+                        <div className="mt-4 relative group">
                             <img
                                 src={imagePreview}
                                 alt="Preview"
-                                className="w-full rounded-lg max-h-96 object-cover"
+                                className="w-full rounded-xl max-h-96 object-cover border border-brand-gold/20 shadow-lg"
                             />
                             <button
                                 onClick={handleRemoveImage}
                                 disabled={loading}
-                                className="absolute top-2 right-2 p-2 bg-gray-900 bg-opacity-75 hover:bg-opacity-90 text-white rounded-full transition disabled:opacity-50"
+                                className="absolute top-3 right-3 p-2.5 bg-brand-ebony/80 hover:bg-brand-ebony text-white rounded-full transition-all disabled:opacity-50 shadow-md transform hover:scale-110"
                             >
                                 <X className="w-5 h-5" />
                             </button>
@@ -138,9 +141,9 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
 
                     {/* Image Upload Button */}
                     {!imagePreview && (
-                        <label className="mt-3 flex items-center justify-center gap-2 p-6 border-2 border-dashed border-brand-ebony/10 rounded-xl hover:border-brand-burgundy/40 hover:bg-brand-burgundy/5 transition-all cursor-pointer group">
-                            <ImageIcon className="w-5 h-5 text-brand-ebony/30 group-hover:text-brand-burgundy transition-colors" />
-                            <span className="text-sm font-bold text-brand-ebony/60 group-hover:text-brand-burgundy transition-colors">Add an image</span>
+                        <label className="mt-4 flex items-center justify-center gap-3 p-8 border-2 border-dashed border-brand-gold/20 rounded-2xl hover:border-brand-burgundy/40 hover:bg-brand-burgundy/5 transition-all cursor-pointer group">
+                            <ImageIcon className="w-6 h-6 text-brand-ebony/20 group-hover:text-brand-burgundy transition-colors" />
+                            <span className="text-sm font-bold text-brand-ebony/60 group-hover:text-brand-burgundy transition-colors tracking-wide uppercase">Add a photo to your update</span>
                             <input
                                 type="file"
                                 accept="image/*"
@@ -151,22 +154,25 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
                         </label>
                     )}
 
-                    <p className="text-xs text-gray-500 mt-2">Max image size: 5MB</p>
+                    <div className="flex items-center justify-between mt-3 px-1">
+                         <p className="text-[10px] text-brand-ebony/40 font-bold uppercase tracking-tighter">Maximum image size: 5MB • PNG, JPG</p>
+                         <p className={`text-[10px] font-bold uppercase tracking-widest ${content.length > 2000 ? 'text-red-500' : 'text-brand-ebony/20'}`}>{content.length} characters</p>
+                    </div>
                 </div>
 
                 {/* Actions */}
-                <div className="flex items-center justify-end gap-4 p-4 border-t border-brand-ebony/10 bg-brand-parchment/80 sticky bottom-0 backdrop-blur-sm">
+                <div className="flex items-center justify-end gap-4 p-6 border-t border-brand-gold/10 bg-brand-parchment/80 sticky bottom-0 backdrop-blur-sm">
                     <button
                         onClick={onClose}
                         disabled={loading}
-                        className="px-6 py-2.5 text-brand-ebony/60 hover:text-brand-ebony font-bold text-sm tracking-wider uppercase hover:bg-brand-ebony/5 rounded-xl transition-all disabled:opacity-50"
+                        className="px-6 py-2.5 text-brand-ebony/60 hover:text-brand-ebony font-bold text-xs tracking-widest uppercase hover:bg-brand-ebony/5 rounded-xl transition-all disabled:opacity-50"
                     >
                         Cancel
                     </button>
                     <button
                         onClick={handleSubmit}
                         disabled={loading || (!content.trim() && !imageFile)}
-                        className="px-8 py-2.5 bg-brand-burgundy text-white rounded-xl font-bold text-sm tracking-wider uppercase hover:bg-[#5a2427] transition-all shadow-md shadow-brand-burgundy/20 disabled:opacity-50 disabled:cursor-not-allowed min-w-[120px]"
+                        className="px-10 py-3 bg-brand-burgundy text-white rounded-xl font-bold text-xs tracking-widest uppercase hover:bg-[#5a2427] transition-all shadow-lg shadow-brand-burgundy/20 disabled:opacity-50 disabled:cursor-not-allowed min-w-[140px] active:scale-95"
                     >
                         {loading ? (
                             <span className="flex items-center justify-center gap-2">
@@ -174,7 +180,7 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
                                 <span>Posting...</span>
                             </span>
                         ) : (
-                            'Post'
+                            'Post Now'
                         )}
                     </button>
                 </div>

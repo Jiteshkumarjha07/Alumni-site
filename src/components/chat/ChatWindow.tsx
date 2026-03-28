@@ -7,9 +7,9 @@ import { db } from '@/lib/firebase';
 import { MessageBubble } from './MessageBubble';
 import { ForwardMessageModal } from './ForwardMessageModal';
 import { PollModal } from '../modals/PollModal';
-import { Send, Loader2, ArrowLeft, X, CheckCheck, ShieldCheck, Lock, Image as ImageIcon, Video as VideoIcon, Plus, Users, Phone, Video, Mic, Paperclip, FileText, BarChart2, Download, Smile, LogOut, ListChecks, CheckCircle2, Trash2 } from 'lucide-react';
+import { Send, Loader2, ArrowLeft, X, CheckCheck, ShieldCheck, Lock, Image as ImageIcon, Video as VideoIcon, Plus, Users, Phone, Video, Mic, MicOff, Paperclip, FileText, BarChart2, Download, Smile, LogOut, ListChecks, CheckCircle2, Trash2 } from 'lucide-react';
 import { encryptMessage, decryptMessage, getSharedSecret } from '@/lib/encryption';
-import { uploadMedia, uploadVideo, uploadFile } from '@/lib/media';
+import { uploadMedia, uploadVideo, uploadFile, uploadAudio } from '@/lib/media';
 
 interface ChatWindowProps {
     chatId: string;
@@ -45,6 +45,150 @@ export function ChatWindow({ chatId, currentUser, otherUser, isGroup = false, gr
     const fileInputRef = useRef<HTMLInputElement>(null);
     const videoInputRef = useRef<HTMLInputElement>(null);
     const docInputRef = useRef<HTMLInputElement>(null);
+
+    // Voice message recording state
+    const [isRecording, setIsRecording] = useState(false);
+    const [recordingSeconds, setRecordingSeconds] = useState(0);
+    const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+    const audioChunksRef = useRef<Blob[]>([]);
+    const recordingTimerRef = useRef<ReturnType<typeof setInterval> | null>(null); // tracks if user manually stopped
+    const isStartingRecordingRef = useRef(false);
+
+    const startRecording = async () => {
+        if (isStartingRecordingRef.current || isRecording) return;
+        isStartingRecordingRef.current = true;
+        
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            audioChunksRef.current = [];
+            
+            let options: MediaRecorderOptions | undefined = undefined;
+            if (MediaRecorder.isTypeSupported('audio/webm')) {
+                options = { mimeType: 'audio/webm' };
+            } else if (MediaRecorder.isTypeSupported('audio/mp4')) {
+                options = { mimeType: 'audio/mp4' };
+            } else if (MediaRecorder.isTypeSupported('audio/ogg')) {
+                options = { mimeType: 'audio/ogg' };
+            }
+            
+            const recorder = new MediaRecorder(stream, options);
+            mediaRecorderRef.current = recorder;
+
+            recorder.ondataavailable = (e) => {
+                if (e.data.size > 0) audioChunksRef.current.push(e.data);
+            };
+
+            recorder.start(); // collect audio data internally until stop() is called
+            setIsRecording(true);
+            setRecordingSeconds(0);
+            recordingTimerRef.current = setInterval(() => {
+                setRecordingSeconds(s => s + 1);
+            }, 1000);
+        } catch (err: any) {
+            console.error('Audio setup failed:', err);
+            if (err.name === 'NotAllowedError' || err.name === 'NotFoundError') {
+                alert('Microphone access denied. Please allow microphone permission to send voice messages.');
+            } else {
+                alert('Failed to start recording. Your browser might not support this format.');
+            }
+        } finally {
+            isStartingRecordingRef.current = false;
+        }
+    };
+
+    const stopRecording = async (send: boolean) => {
+        if (recordingTimerRef.current) clearInterval(recordingTimerRef.current);
+        setIsRecording(false);
+        const finalDuration = recordingSeconds;
+        setRecordingSeconds(0);
+
+        const recorder = mediaRecorderRef.current;
+        if (!recorder) return;
+
+        if (!send) {
+            try { recorder.stop(); } catch(e) {}
+            recorder.stream.getTracks().forEach(t => t.stop());
+            return;
+        }
+
+        recorder.onstop = async () => {
+            // Stop tracks after onstop completes
+            recorder.stream.getTracks().forEach(t => t.stop());
+            
+            const rawBlob = new Blob(audioChunksRef.current, { type: recorder.mimeType || 'audio/webm' });
+            
+            // Critical fix for Chromium/Windows: Convert the live MediaRecorder Blob into a static Buffer. 
+            // Uploading a raw MediaRecorder Blob directly via fetch/Firebase causes indefinite hanging
+            // as the browser network stack waits for the live stream to "close".
+            const buffer = await rawBlob.arrayBuffer();
+            const blob = new Blob([buffer], { type: rawBlob.type });
+
+            const duration = finalDuration;
+            audioChunksRef.current = [];
+
+            if (blob.size === 0) {
+                 alert("Voice message too short to send.");
+                 return;
+            }
+
+            setSending(true);
+            try {
+                const collectionPath = isGroup ? 'groups' : 'chats';
+                const audioPath = isGroup ? `groups/${chatId}/audio` : `chats/${chatId}/audio`;
+                const audioUrl = await uploadAudio(blob, audioPath);
+                if (!audioUrl) return;
+
+                const encryptedAudioUrl = encryptMessage(audioUrl, encryptionSecret);
+                const messageData: any = {
+                    text: encryptMessage('🎙️ Voice message', encryptionSecret),
+                    audioUrl: encryptedAudioUrl,
+                    audioDuration: duration,
+                    senderId: currentUser.uid,
+                    senderName: currentUser.name,
+                    senderProfilePic: currentUser.profilePic || null,
+                    createdAt: serverTimestamp(),
+                    isRead: false,
+                    isDelivered: false,
+                    readBy: [currentUser.uid],
+                    receiverId: isGroup ? null : otherUser?.uid || null,
+                };
+                await addDoc(collection(db, collectionPath, chatId, 'messages'), messageData);
+
+                // Update last message pointer
+                if (!isGroup && otherUser) {
+                    await setDoc(doc(db, 'chats', chatId), {
+                        participants: [currentUser.uid, otherUser.uid],
+                        lastMessage: '🎙️ Voice message',
+                        lastMessageAt: serverTimestamp(),
+                        [`unreadCount.${otherUser.uid}`]: 1,
+                        participantDetails: {
+                            [currentUser.uid]: { name: currentUser.name, profilePic: currentUser.profilePic || null },
+                            [otherUser.uid]: { name: otherUser.name, profilePic: otherUser.profilePic || null },
+                        },
+                    }, { merge: true });
+                } else if (isGroup) {
+                    await updateDoc(doc(db, 'groups', chatId), {
+                        lastMessage: '🎙️ Voice message',
+                        lastMessageAt: serverTimestamp(),
+                        lastSenderName: currentUser.name,
+                    });
+                }
+            } catch (err) {
+                console.error('Voice message upload failed:', err);
+                alert('Failed to send voice message. Please try again.');
+            } finally {
+                setSending(false);
+            }
+        };
+
+        try {
+            if (recorder.state !== 'inactive') {
+                recorder.stop();
+            }
+        } catch (err) {
+            console.error('Error stopping recorder:', err);
+        }
+    };
 
     const encryptionSecret = isGroup 
         ? (groupData?.groupSecret || chatId) 
@@ -857,8 +1001,8 @@ export function ChatWindow({ chatId, currentUser, otherUser, isGroup = false, gr
                                 type="text"
                                 value={newMessage}
                                 onChange={(e) => setNewMessage(e.target.value)}
-                                placeholder={editingMessage ? "Edit message..." : (replyingToMessage ? "Type a reply..." : "Type a message...")}
-                                className="w-full px-5 py-3.5 pr-12 bg-brand-cream border border-brand-ebony/10 rounded-2xl focus:ring-2 focus:ring-brand-burgundy/20 focus:border-brand-burgundy outline-none transition-all placeholder:text-brand-ebony/30 text-brand-ebony shadow-inner text-sm"
+                                placeholder={editingMessage ? 'Edit message...' : (replyingToMessage ? 'Type a reply...' : 'Type a message...')}
+                                className="w-full px-5 py-3.5 pr-12 border rounded-2xl focus:ring-2 outline-none transition-all text-brand-ebony shadow-inner text-sm bg-brand-cream border-brand-ebony/10 focus:ring-brand-burgundy/20 focus:border-brand-burgundy placeholder:text-brand-ebony/30"
                                 disabled={sending}
                             />
                             <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2 menu-container">
@@ -879,7 +1023,6 @@ export function ChatWindow({ chatId, currentUser, otherUser, isGroup = false, gr
                                                     type="button"
                                                     onClick={() => {
                                                         setNewMessage(prev => prev + emoji);
-                                                        // Keep picker open or close based on preference? Usually keep open for multiple.
                                                     }}
                                                     className="text-xl p-2 hover:bg-brand-parchment rounded-xl transition-colors"
                                                 >
@@ -891,15 +1034,64 @@ export function ChatWindow({ chatId, currentUser, otherUser, isGroup = false, gr
                                 )}
                             </div>
                         </div>
-                        <button
-                            type="submit"
-                            disabled={(!newMessage.trim() && !mediaPreview) || sending}
-                            className="p-3.5 bg-brand-burgundy text-white rounded-2xl hover:bg-[#5a2427] transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-brand-burgundy/20 flex items-center justify-center"
-                        >
-                            {sending ? <Loader2 className="w-5 h-5 animate-spin" /> : (
-                                editingMessage ? <CheckCheck className="w-5 h-5" /> : <Send className="w-5 h-5" />
-                            )}
-                        </button>
+
+                        {/* Mic / Recording area */}
+                        {isRecording ? (
+                            // Recording active: show timer + cancel + send
+                            <div className="flex items-center gap-2">
+                                <div className="flex items-center gap-2 px-3 py-2 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-2xl">
+                                    <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+                                    <span className="text-xs font-bold text-red-600 dark:text-red-400 tabular-nums min-w-[2.5rem]">
+                                        {String(Math.floor(recordingSeconds / 60)).padStart(2, '0')}:{String(recordingSeconds % 60).padStart(2, '0')}
+                                    </span>
+                                </div>
+                                {/* Cancel */}
+                                <button
+                                    type="button"
+                                    onClick={() => stopRecording(false)}
+                                    title="Cancel recording"
+                                    className="p-3 rounded-2xl bg-brand-cream border border-brand-ebony/10 text-brand-ebony/50 hover:bg-red-50 hover:text-red-500 transition-all"
+                                >
+                                    <X className="w-5 h-5" />
+                                </button>
+                                {/* Send */}
+                                <button
+                                    type="button"
+                                    onClick={() => stopRecording(true)}
+                                    disabled={sending}
+                                    title="Send voice message"
+                                    className="p-3.5 bg-brand-burgundy text-white rounded-2xl hover:bg-[#5a2427] transition-all disabled:opacity-50 shadow-lg shadow-brand-burgundy/20 flex items-center justify-center"
+                                >
+                                    {sending ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
+                                </button>
+                            </div>
+                        ) : (
+                            // Not recording: show record mic + send
+                            <>
+                                {/* Tap to record voice message */}
+                                <button
+                                    type="button"
+                                    onClick={startRecording}
+                                    title="Tap to record voice message"
+                                    className="p-3.5 rounded-2xl transition-all flex items-center justify-center flex-shrink-0 bg-brand-cream border border-brand-ebony/10 text-brand-ebony/50 hover:bg-green-50 hover:text-green-600 hover:border-green-200 shadow-lg"
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
+                                        <path d="M8.25 4.5a3.75 3.75 0 1 1 7.5 0v8.25a3.75 3.75 0 1 1-7.5 0V4.5Z" />
+                                        <path d="M6 10.5a.75.75 0 0 1 .75.75v1.5a5.25 5.25 0 1 0 10.5 0v-1.5a.75.75 0 0 1 1.5 0v1.5a6.751 6.751 0 0 1-6 6.709v2.291h3a.75.75 0 0 1 0 1.5h-7.5a.75.75 0 0 1 0-1.5h3v-2.291a6.751 6.751 0 0 1-6-6.709v-1.5A.75.75 0 0 1 6 10.5Z" />
+                                    </svg>
+                                </button>
+
+                                <button
+                                    type="submit"
+                                    disabled={(!newMessage.trim() && !mediaPreview) || sending}
+                                    className="p-3.5 bg-brand-burgundy text-white rounded-2xl hover:bg-[#5a2427] transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-brand-burgundy/20 flex items-center justify-center"
+                                >
+                                    {sending ? <Loader2 className="w-5 h-5 animate-spin" /> : (
+                                        editingMessage ? <CheckCheck className="w-5 h-5" /> : <Send className="w-5 h-5" />
+                                    )}
+                                </button>
+                            </>
+                        )}
                     </form>
                 </div>
             </div>

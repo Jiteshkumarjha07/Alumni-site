@@ -75,3 +75,25 @@ export const uploadFile = async (file: File, path: string = 'files'): Promise<st
         throw error;
     }
 };
+
+/**
+ * Uploads an audio blob to Firebase Storage and returns the download URL
+ */
+export const uploadAudio = async (blob: Blob, path: string = 'audio'): Promise<string | null> => {
+    if (!blob) return null;
+    try {
+        let extension = 'webm';
+        if (blob.type.includes('mp4')) extension = 'mp4';
+        else if (blob.type.includes('ogg')) extension = 'ogg';
+        else if (blob.type.includes('wav')) extension = 'wav';
+        else if (blob.type.includes('mpeg') || blob.type.includes('mp3')) extension = 'mp3';
+
+        const storageRef = ref(storage, `${path}/${Date.now()}_voice.${extension}`);
+        const snapshot = await uploadBytes(storageRef, blob, { contentType: blob.type || 'audio/webm' });
+        const downloadURL = await getDownloadURL(snapshot.ref);
+        return downloadURL;
+    } catch (error) {
+        console.error('Firebase Audio Upload Error:', error);
+        throw error;
+    }
+};
