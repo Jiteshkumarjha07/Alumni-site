@@ -81,20 +81,24 @@ export default function EventsPage() {
 
     return (
         <div className="max-w-6xl mx-auto pt-8 px-4 pb-20 md:pb-6">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
-                <div className="flex items-center gap-4 w-full sm:w-auto">
-                    <div className="bg-brand-gold/20 p-3 rounded-xl border border-brand-gold/30">
-                        <CalendarIcon className="h-7 w-7 text-brand-burgundy" />
+            <div className="flex items-center justify-between gap-2 mb-6 sm:mb-8">
+                <div className="flex items-center gap-3">
+                    <div className="bg-brand-gold/20 p-2 sm:p-3 rounded-xl border border-brand-gold/30 hidden sm:block">
+                        <CalendarIcon className="h-6 w-6 sm:h-7 sm:w-7 text-brand-burgundy" />
                     </div>
-                    <h1 className="text-3xl font-serif font-bold text-brand-ebony">Alumni Events</h1>
+                    <h1 className="text-2xl sm:text-3xl font-serif font-bold text-brand-ebony">
+                        Events
+                        <span className="hidden sm:inline"> Directory</span>
+                    </h1>
                 </div>
                 {userData && (
                     <button
                         onClick={() => setShowCreateModal(true)}
-                        className="w-full sm:w-auto flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg bg-brand-burgundy text-white text-sm font-semibold hover:bg-[#5a2427] shadow-sm tracking-wide transition-all active:scale-[0.98]"
+                        className="flex-shrink-0 flex items-center justify-center gap-1.5 sm:gap-2 px-4 py-2 sm:px-5 sm:py-2.5 rounded-lg bg-brand-burgundy text-white text-xs sm:text-sm font-semibold hover:bg-[#5a2427] shadow-sm tracking-wide transition-all active:scale-[0.98]"
                     >
                         <Plus className="w-4 h-4" />
-                        Create Event
+                        <span className="hidden sm:inline">Create Event</span>
+                        <span className="sm:hidden">Create</span>
                     </button>
                 )}
             </div>
