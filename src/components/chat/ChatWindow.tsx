@@ -865,7 +865,7 @@ export function ChatWindow({ chatId, currentUser, otherUser, isGroup = false, gr
             </div>
 
             {/* Input Area */}
-            <div className="p-4 pb-8 sm:pb-4 bg-brand-parchment/90 border-t border-brand-ebony/10 backdrop-blur-md relative z-20">
+            <div className="p-4 pb-6 sm:pb-4 bg-brand-parchment/90 border-t border-brand-ebony/10 backdrop-blur-md relative z-20">
                 {editingMessage && (
                     <div className="flex items-center justify-between mb-2 px-4 py-2 bg-brand-burgundy/10 rounded-xl border border-brand-burgundy/20 animate-in slide-in-from-bottom-2 duration-200">
                         <div className="flex items-center gap-2">

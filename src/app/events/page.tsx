@@ -80,7 +80,7 @@ export default function EventsPage() {
     if (!userData) return null; // Wait for redirect
 
     return (
-        <div className="max-w-6xl mx-auto pt-8 px-4 pb-20 md:pb-6">
+        <div className="max-w-6xl mx-auto pt-8 px-4 md:pb-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 sm:mb-8">
                 <div className="flex items-center gap-3">
                     <div className="bg-brand-gold/20 p-2 sm:p-3 rounded-xl border border-brand-gold/30 hidden sm:block">

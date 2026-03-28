@@ -284,7 +284,7 @@ export default function ProfilePage() {
     }
 
     return (
-        <div className="max-w-4xl mx-auto py-8 px-4 sm:px-6">
+        <div className="max-w-4xl mx-auto pt-8 pb-4 px-4 sm:px-6">
             {/* Cover Photo Area */}
             <div className="bg-gradient-to-r from-brand-burgundy to-[#4a1c20] h-32 sm:h-40 md:h-48 rounded-t-xl opacity-90 border-b-4 border-brand-gold/60 relative">
                 <button
@@ -596,7 +596,7 @@ export default function ProfilePage() {
                 onAccountDeleted={() => { signOut(); }}
             />
 
-            <div className="py-8 text-center text-brand-ebony/30 text-xs font-serif italic tracking-widest">
+            <div className="py-4 text-center text-brand-ebony/30 text-[10px] font-serif italic tracking-widest">
                 Alumnest &bull; For the Tribe
             </div>
         </div>

@@ -132,7 +132,7 @@ export default function PostDetailPage() {
     }
 
     return (
-        <div className="max-w-2xl mx-auto pt-8 px-4 pb-20">
+        <div className="max-w-2xl mx-auto pt-8 px-4">
             <button
                 onClick={() => router.back()}
                 className="flex items-center gap-2 text-brand-ebony/60 hover:text-brand-burgundy transition-colors mb-6 font-medium"

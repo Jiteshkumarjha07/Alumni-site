@@ -221,7 +221,7 @@ export default function PublicProfilePage() {
     }
 
     return (
-        <div className="max-w-4xl mx-auto p-4 pt-8">
+        <div className="max-w-4xl mx-auto px-4 pt-8 pb-0">
             {/* Cover Photo Area */}
             <div className="bg-gradient-to-r from-brand-burgundy to-[#4a1c20] h-48 rounded-t-xl opacity-90 border-b-4 border-brand-gold/60"></div>
 

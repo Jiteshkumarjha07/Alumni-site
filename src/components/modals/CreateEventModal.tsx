@@ -196,7 +196,7 @@ export const CreateEventModal: React.FC<CreateEventModalProps> = ({
                 </div>
 
                 {/* Actions */}
-                <div className="flex-shrink-0 flex flex-col-reverse sm:flex-row sm:justify-end gap-3 p-4 sm:p-6 border-t border-brand-gold/10 bg-brand-cream">
+                <div className="flex-shrink-0 flex flex-col-reverse sm:flex-row sm:justify-end gap-3 p-4 sm:p-5 border-t border-brand-gold/10 bg-brand-cream">
                     <button
                         onClick={onClose}
                         disabled={loading}
