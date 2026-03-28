@@ -8,12 +8,11 @@ import { useMessaging } from '@/contexts/MessagingContext';
 
 const navigation = [
     { name: 'Home', href: '/', icon: Home },
-    { name: 'Messages', href: '/messages', icon: MessageSquare },
     { name: 'Events', href: '/events', icon: Calendar },
     { name: 'Jobs', href: '/jobs', icon: Briefcase },
     { name: 'Network', href: '/network', icon: Users },
+    { name: 'Messages', href: '/messages', icon: MessageSquare },
     { name: 'Profile', href: '/profile', icon: User },
-    { name: 'Settings', href: '/settings', icon: Settings },
 ];
 
 export function MobileNav() {
@@ -24,7 +23,7 @@ export function MobileNav() {
     if (!userData) return null;
 
     return (
-        <div className="fixed bottom-0 left-0 right-0 bg-brand-cream border-t border-brand-ebony/10 py-1 flex justify-around items-center md:hidden z-50 backdrop-blur-md bg-opacity-90">
+        <div className="fixed bottom-0 left-0 right-0 bg-brand-cream border-t border-brand-ebony/10 pt-1 pb-2 sm:pb-1 px-1 flex justify-around items-center md:hidden z-50 backdrop-blur-md bg-opacity-90">
             {navigation.map((item) => {
                 const isActive = pathname === item.href.split('?')[0];
                 return (
