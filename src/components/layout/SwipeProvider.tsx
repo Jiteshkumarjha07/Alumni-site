@@ -4,7 +4,7 @@ import React, { useState, createContext, useContext } from 'react';
 import { useSwipeable } from 'react-swipeable';
 import { useRouter, usePathname } from 'next/navigation';
 
-const tabs = ['/', '/events', '/jobs', '/network', '/messages', '/profile'];
+const tabs = ['/', '/messages', '/events', '/jobs', '/network', '/profile'];
 
 interface SwipeContextType {
     direction: number;

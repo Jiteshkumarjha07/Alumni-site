@@ -8,10 +8,10 @@ import { useMessaging } from '@/contexts/MessagingContext';
 
 const navigation = [
     { name: 'Home', href: '/', icon: Home },
+    { name: 'Messages', href: '/messages', icon: MessageSquare },
     { name: 'Events', href: '/events', icon: Calendar },
     { name: 'Jobs', href: '/jobs', icon: Briefcase },
     { name: 'Network', href: '/network', icon: Users },
-    { name: 'Messages', href: '/messages', icon: MessageSquare },
     { name: 'Profile', href: '/profile', icon: User },
 ];
 
