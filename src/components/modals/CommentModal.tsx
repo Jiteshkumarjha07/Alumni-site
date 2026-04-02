@@ -312,7 +312,7 @@ export const CommentModal: React.FC<CommentModalProps> = ({
                         <h2 className="text-xl font-serif font-bold text-brand-ebony">Comments</h2>
                         <button
                             onClick={onClose}
-                            className="p-2 hover:bg-brand-burgundy/5 text-brand-ebony/60 rounded-full transition"
+                            className="hidden sm:block p-2 hover:bg-brand-burgundy/5 text-brand-ebony/60 rounded-full transition"
                         >
                             <X className="w-5 h-5" />
                         </button>
