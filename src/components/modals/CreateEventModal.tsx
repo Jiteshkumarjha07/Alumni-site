@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { X, Calendar, MapPin, AlignLeft, Image as ImageIcon } from 'lucide-react';
 import { uploadMedia } from '@/lib/media';
+import { Portal } from '../ui/Portal';
 
 interface CreateEventModalProps {
     isOpen: boolean;
@@ -75,27 +76,28 @@ export const CreateEventModal: React.FC<CreateEventModalProps> = ({
     };
 
     return (
-        <div className="fixed inset-0 bg-brand-ebony/60 dark:bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4 sm:p-6">
-            <div className="bg-brand-cream w-full max-w-2xl max-h-[90vh] rounded-2xl flex flex-col shadow-2xl sm:border sm:border-brand-gold/20 overflow-hidden slide-up-animation">
-                {/* Header */}
-                <div className="flex-shrink-0 flex items-start sm:items-center justify-between gap-4 p-4 sm:p-6 border-b border-brand-gold/10 bg-brand-parchment/30">
-                    <div className="flex items-center gap-3">
-                        <div className="bg-brand-burgundy/10 p-2 rounded-lg">
-                            <Calendar className="w-5 h-5 text-brand-burgundy" />
+        <Portal>
+            <div className="fixed inset-0 bg-brand-ebony/60 dark:bg-black/60 backdrop-blur-sm flex items-start sm:items-center justify-center z-[100] sm:p-6">
+                <div className="bg-brand-cream w-full sm:max-w-2xl h-full sm:h-auto sm:max-h-[90vh] sm:rounded-2xl flex flex-col shadow-2xl sm:border sm:border-brand-gold/20 overflow-hidden slide-up-animation">
+                    {/* Header */}
+                    <div className="flex-shrink-0 flex items-center justify-between gap-4 p-4 sm:p-6 border-b border-brand-gold/10 bg-brand-parchment/30 pt-[max(1rem,env(safe-area-inset-top))]">
+                        <div className="flex items-center gap-3">
+                            <div className="bg-brand-burgundy/10 p-2 rounded-lg">
+                                <Calendar className="w-5 h-5 text-brand-burgundy" />
+                            </div>
+                            <h2 className="text-xl sm:text-2xl font-serif font-bold text-brand-ebony underline decoration-brand-gold/30 underline-offset-8">Create New Event</h2>
                         </div>
-                        <h2 className="text-xl sm:text-2xl font-serif font-bold text-brand-ebony underline decoration-brand-gold/30 underline-offset-8">Create New Event</h2>
+                        <button
+                            onClick={onClose}
+                            disabled={loading}
+                            className="p-2 -mr-2 hover:bg-brand-burgundy/10 rounded-full transition text-brand-ebony/40 hover:text-brand-burgundy flex-shrink-0"
+                        >
+                            <X className="w-5 h-5 sm:w-6 sm:h-6" />
+                        </button>
                     </div>
-                    <button
-                        onClick={onClose}
-                        disabled={loading}
-                        className="p-2 -mr-2 hover:bg-brand-burgundy/10 rounded-full transition text-brand-ebony/40 hover:text-brand-burgundy flex-shrink-0"
-                    >
-                        <X className="w-5 h-5 sm:w-6 sm:h-6" />
-                    </button>
-                </div>
 
-                {/* Form */}
-                <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6">
+                    {/* Form */}
+                    <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6 pb-20 sm:pb-6">
                     {/* Title */}
                     <div>
                         <label className="block text-sm font-bold text-brand-ebony/70 uppercase tracking-widest mb-2">
@@ -212,7 +214,8 @@ export const CreateEventModal: React.FC<CreateEventModalProps> = ({
                         {loading ? 'Creating...' : 'Create Event'}
                     </button>
                 </div>
+                </div>
             </div>
-        </div>
+        </Portal>
     );
 };
