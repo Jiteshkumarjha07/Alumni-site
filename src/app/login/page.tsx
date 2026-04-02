@@ -64,7 +64,9 @@ export default function LoginPage() {
                 <div className="bg-brand-parchment/80 rounded-2xl shadow-xl p-8 border border-brand-ebony/10 backdrop-blur-sm">
                     {/* Header */}
                     <div className="text-center mb-8">
-                        <BrandLogo size="lg" className="mx-auto mb-4" />
+                        <Link href="/" className="block transition-transform hover:scale-105 active:scale-95 mb-4">
+                            <BrandLogo size="lg" className="mx-auto" />
+                        </Link>
                         <h1 className="text-3xl font-serif font-bold text-brand-ebony mb-2">Welcome Back</h1>
                         <p className="text-brand-ebony/60">Sign in to your alumni account</p>
                     </div>

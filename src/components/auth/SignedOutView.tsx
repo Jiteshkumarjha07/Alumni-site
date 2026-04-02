@@ -8,7 +8,9 @@ export function SignedOutView({ user, signOut }: { user: any; signOut: () => Pro
     return (
         <div className="flex items-center justify-center min-h-[80vh]">
             <div className="text-center p-8 bg-brand-parchment/80 rounded-2xl shadow-xl max-w-sm w-full mx-4 border border-brand-ebony/10 backdrop-blur-md">
-                <BrandLogo size="lg" className="mx-auto mb-6" />
+                <Link href="/" className="block transition-transform hover:scale-105 active:scale-95 mb-6">
+                    <BrandLogo size="lg" className="mx-auto" />
+                </Link>
                 <h2 className="text-2xl font-serif font-bold mb-4 text-brand-ebony">Welcome back!</h2>
 
                 {user ? (

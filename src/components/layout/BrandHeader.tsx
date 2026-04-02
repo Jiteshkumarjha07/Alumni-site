@@ -1,11 +1,14 @@
 import React from 'react';
 import { BrandLogo } from '../brand/BrandLogo';
+import Link from 'next/link';
 
 export function BrandHeader() {
     return (
-        <header className="pt-8 pb-4 flex flex-col items-start text-left relative pointer-events-none w-full">
+        <header className="pt-8 pb-4 flex flex-col items-start text-left relative w-full group/header">
             {/* The Logo */}
-            <BrandLogo size="md" showText tagline className="mb-2" />
+            <Link href="/" className="transition-transform duration-300 hover:scale-[1.02] active:scale-95 cursor-pointer z-10">
+                <BrandLogo size="md" showText tagline className="mb-2" />
+            </Link>
 
             <div className="flex items-center gap-1.5 w-full mt-1">
                 <div className="h-[1px] flex-1 bg-gradient-to-r from-transparent via-brand-ebony/20 to-brand-ebony/10" />

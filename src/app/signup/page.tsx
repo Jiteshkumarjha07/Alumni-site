@@ -98,7 +98,9 @@ export default function SignUpPage() {
                 <div className="bg-brand-parchment/80 rounded-2xl shadow-xl p-8 border border-brand-ebony/10 backdrop-blur-sm">
                     {/* Header */}
                     <div className="text-center mb-8">
-                        <BrandLogo size="lg" className="mx-auto mb-4" />
+                        <Link href="/" className="block transition-transform hover:scale-105 active:scale-95 mb-4">
+                            <BrandLogo size="lg" className="mx-auto" />
+                        </Link>
                         <h1 className="text-3xl font-serif font-bold text-brand-ebony mb-2">Join Alumni Network</h1>
                         <p className="text-brand-ebony/60">Create your account to connect with fellow alumni</p>
                     </div>
