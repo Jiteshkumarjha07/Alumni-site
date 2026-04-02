@@ -109,7 +109,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
     };
 
     return (
-        <div className="fixed inset-0 bg-brand-ebony/60 dark:bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-brand-ebony/60 dark:bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
             <div className="bg-brand-parchment rounded-2xl max-w-md w-full max-h-[90vh] overflow-y-auto border border-brand-ebony/10 shadow-2xl">
                 {/* Header */}
                 <div className="flex items-center justify-between p-4 border-b border-brand-ebony/10 sticky top-0 bg-brand-parchment z-10">
