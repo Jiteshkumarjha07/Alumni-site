@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { X, Send, Trash2, Loader2, Reply, Smile, Heart } from 'lucide-react';
 import { Comment as AppComment } from '@/types';
 import { formatDistanceToNow } from 'date-fns';
+import { Portal } from '../ui/Portal';
 
 interface CommentModalProps {
     isOpen: boolean;
@@ -95,18 +96,15 @@ export const CommentModal: React.FC<CommentModalProps> = ({
         const diff = currentY - touchStart;
         if (diff > 0) {
             setTouchTranslate(diff);
-            // Disable body scroll while swiping
-            document.body.style.overflow = 'hidden';
         }
     };
 
     const handleTouchEnd = () => {
-        if (touchTranslate > 80) {
+        if (touchTranslate > 100) {
             onClose();
         }
         setTouchStart(null);
         setTouchTranslate(0);
-        document.body.style.overflow = '';
     };
 
     const handleSubmit = async () => {
@@ -288,36 +286,37 @@ export const CommentModal: React.FC<CommentModalProps> = ({
     );
 
     return (
-        <div 
-            className="fixed inset-0 bg-brand-ebony/60 dark:bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center z-[100] p-0 sm:p-4 overscroll-none"
-            onClick={(e) => {
-                if (window.innerWidth >= 640 && e.target === e.currentTarget) {
-                    onClose();
-                }
-            }}
-        >
+        <Portal>
             <div 
-                className={`bg-brand-parchment rounded-t-3xl sm:rounded-2xl max-w-2xl w-full max-h-[85dvh] sm:max-h-[80vh] flex flex-col border border-brand-ebony/10 shadow-2xl ${touchTranslate > 0 ? '' : 'transition-transform duration-200'}`}
-                style={{ transform: `translateY(${touchTranslate}px)` }}
-                onTouchStart={handleTouchStart}
-                onTouchMove={handleTouchMove}
-                onTouchEnd={handleTouchEnd}
+                className="fixed inset-0 bg-brand-ebony/60 dark:bg-black/60 backdrop-blur-sm flex items-start sm:items-center justify-center z-[100] sm:p-4 overscroll-none"
+                onClick={(e) => {
+                    if (window.innerWidth >= 640 && e.target === e.currentTarget) {
+                        onClose();
+                    }
+                }}
             >
-                {/* Mobile Drag Handle */}
-                <div className="w-full flex justify-center pt-3 pb-1 sm:hidden">
-                    <div className="w-12 h-1.5 bg-brand-ebony/10 rounded-full" />
-                </div>
-
-                {/* Header */}
-                <div className="flex items-center justify-between p-4 border-b border-brand-ebony/10">
-                    <h2 className="text-xl font-serif font-bold text-brand-ebony">Comments</h2>
-                    <button
-                        onClick={onClose}
-                        className="p-2 hover:bg-brand-burgundy/5 text-brand-ebony/60 rounded-full transition"
-                    >
-                        <X className="w-5 h-5" />
-                    </button>
-                </div>
+                <div 
+                    className={`bg-brand-parchment sm:rounded-2xl max-w-2xl w-full h-full sm:h-auto sm:max-h-[90vh] flex flex-col border border-brand-ebony/10 shadow-2xl ${touchTranslate > 0 ? '' : 'transition-transform duration-200'} slide-up-animation`}
+                    style={{ transform: `translateY(${touchTranslate}px)` }}
+                    onTouchStart={handleTouchStart}
+                    onTouchMove={handleTouchMove}
+                    onTouchEnd={handleTouchEnd}
+                >
+                    {/* Mobile Drag Handle */}
+                    <div className="w-full flex justify-center pt-3 pb-1 sm:hidden flex-shrink-0">
+                        <div className="w-12 h-1.5 bg-brand-ebony/10 rounded-full" />
+                    </div>
+    
+                    {/* Header */}
+                    <div className="flex items-center justify-between p-4 border-b border-brand-ebony/10 pt-[max(1rem,env(safe-area-inset-top))] sm:pt-4">
+                        <h2 className="text-xl font-serif font-bold text-brand-ebony">Comments</h2>
+                        <button
+                            onClick={onClose}
+                            className="p-2 hover:bg-brand-burgundy/5 text-brand-ebony/60 rounded-full transition"
+                        >
+                            <X className="w-5 h-5" />
+                        </button>
+                    </div>
 
                 {/* Comments List */}
                 <div id="comments-scroll-container" className="flex-1 overflow-y-auto p-4 space-y-6 overscroll-contain">
@@ -376,7 +375,7 @@ export const CommentModal: React.FC<CommentModalProps> = ({
                 )}
 
                 {/* Comment Input */}
-                <div className="p-4 pb-6 sm:pb-4 border-t border-brand-ebony/10 bg-brand-ebony/5">
+                <div className="p-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] sm:pb-4 border-t border-brand-ebony/10 bg-brand-ebony/5 flex-shrink-0">
                     <div className="flex flex-wrap gap-2 mb-3">
                         {['👍', '❤️', '😂', '😮', '😢', '🔥', '👏', '🙌', '✨', '💯'].map(emoji => (
                             <button
@@ -413,5 +412,6 @@ export const CommentModal: React.FC<CommentModalProps> = ({
                 </div>
             </div>
         </div>
+    </Portal>
     );
 };
