@@ -165,7 +165,7 @@ export default function PublicProfilePage() {
                 sourceUserName: userData.name,
                 sourceUserProfilePic: userData.profilePic || '',
                 message: 'liked your post.',
-                link: `/posts/${postId}`,
+                link: `/posts/${postId}?action=view`,
                 createdAt: serverTimestamp(),
                 isRead: false,
             });
@@ -200,7 +200,7 @@ export default function PublicProfilePage() {
                 message: `${userData.name} commented on your post: "${text.substring(0, 30)}${
                     text.length > 30 ? '...' : ''
                 }"`,
-                link: `/posts/${post.id}#comments`,
+                link: `/posts/${post.id}?action=comment`,
                 createdAt: serverTimestamp(),
                 isRead: false,
             });

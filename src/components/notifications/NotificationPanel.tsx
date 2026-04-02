@@ -133,9 +133,9 @@ export function NotificationBell() {
   };
 
   const handleNotificationClick = async (notif: Notification) => {
-    // Mark as read
+    // Mark as read (background)
     if (!notif.isRead) {
-      await markRead(notif.id);
+      markRead(notif.id);
     }
 
     // Close panel

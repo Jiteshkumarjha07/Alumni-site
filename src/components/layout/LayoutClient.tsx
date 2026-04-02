@@ -19,16 +19,16 @@ const variants: Variants = {
         x: 0,
         opacity: 1,
         transition: {
-            x: { type: "tween", ease: "circOut", duration: 0.25 },
-            opacity: { duration: 0.2 }
+            x: { type: "tween", ease: "circOut", duration: 0.2 },
+            opacity: { duration: 0.15 }
         }
     },
     exit: (direction: number) => ({
         x: direction > 0 ? '-20%' : direction < 0 ? '20%' : 0,
         opacity: 0,
         transition: {
-            x: { type: "tween", ease: "circOut", duration: 0.25 },
-            opacity: { duration: 0.2 }
+            x: { type: "tween", ease: "circOut", duration: 0.2 },
+            opacity: { duration: 0.15 }
         }
     })
 };

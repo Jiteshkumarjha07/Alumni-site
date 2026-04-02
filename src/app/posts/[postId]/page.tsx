@@ -7,7 +7,7 @@ import { db } from '@/lib/firebase';
 import { Post, Comment as AppComment } from '@/types';
 import { PostCard } from '@/components/feed/PostCard';
 import { ArrowLeft, Loader2 } from 'lucide-react';
-import { useRouter, useParams } from 'next/navigation';
+import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import { SharePostModal } from '@/components/modals/SharePostModal';
 import { CommentModal } from '@/components/modals/CommentModal';
 
@@ -16,11 +16,14 @@ export default function PostDetailPage() {
     const params = useParams();
     const postId = params.postId as string;
     const router = useRouter();
+    const searchParams = useSearchParams();
+    const action = searchParams.get('action');
 
     const [post, setPost] = useState<Post | null>(null);
     const [loading, setLoading] = useState(true);
     const [sharingPost, setSharingPost] = useState<Post | null>(null);
     const [isCommenting, setIsCommenting] = useState(false);
+    const [isHighlighted, setIsHighlighted] = useState(false);
 
     useEffect(() => {
         if (!authLoading && !userData) {
@@ -45,14 +48,21 @@ export default function PostDetailPage() {
         return () => unsubscribe();
     }, [postId, userData, authLoading, router]);
 
-    // Handle auto-opening comments if #comments is in the URL
+    // Handle action from query params (e.g. ?action=comment)
     useEffect(() => {
-        if (!loading && post && typeof window !== 'undefined' && window.location.hash === '#comments') {
+        if (!loading && post && action === 'comment') {
             setIsCommenting(true);
-            // Clear hash after opening to avoid re-opening on reload
-            window.history.replaceState(null, '', window.location.pathname);
+            setIsHighlighted(true);
+            
+            // Clear highlight after 3 seconds
+            const timer = setTimeout(() => setIsHighlighted(false), 3000);
+            return () => clearTimeout(timer);
+        } else if (!loading && post && action === 'view') {
+            setIsHighlighted(true);
+            const timer = setTimeout(() => setIsHighlighted(false), 3000);
+            return () => clearTimeout(timer);
         }
-    }, [loading, post]);
+    }, [loading, post, action]);
 
     const handleLike = async (isLiked: boolean) => {
         if (!userData || !post) return;
@@ -158,6 +168,7 @@ export default function PostDetailPage() {
                 onLike={handleLike}
                 onComment={() => setIsCommenting(true)}
                 onShare={() => setSharingPost(post)}
+                highlighted={isHighlighted}
             />
 
             {isCommenting && (

@@ -13,6 +13,7 @@ interface PostCardProps {
     onEdit?: () => void;
     onDelete?: () => void;
     onShare?: () => void;
+    highlighted?: boolean;
 }
 
 export const PostCard: React.FC<PostCardProps> = ({
@@ -23,6 +24,7 @@ export const PostCard: React.FC<PostCardProps> = ({
     onEdit,
     onDelete,
     onShare,
+    highlighted = false,
 }) => {
     const [showMenu, setShowMenu] = useState(false);
     const menuRef = useRef<HTMLDivElement>(null);
@@ -65,7 +67,14 @@ export const PostCard: React.FC<PostCardProps> = ({
     };
 
     return (
-        <div className="bg-brand-parchment/60 rounded-2xl shadow-sm border border-brand-ebony/10 p-5 transition-all hover:shadow-md backdrop-blur-sm">
+        <div className={`bg-brand-parchment/60 rounded-2xl shadow-sm border p-5 transition-all hover:shadow-md backdrop-blur-sm relative overflow-hidden ${
+            highlighted 
+                ? 'border-brand-burgundy/40 shadow-[0_0_15px_rgba(139,35,45,0.15)] ring-2 ring-brand-burgundy/20 animate-pulse-subtle' 
+                : 'border-brand-ebony/10 md:hover:border-brand-burgundy/20'
+        }`}>
+            {highlighted && (
+                <div className="absolute top-0 left-0 w-1 h-full bg-brand-burgundy shadow-[2px_0_10px_rgba(139,35,45,0.3)]" />
+            )}
             {/* Header */}
             <div className="flex items-start justify-between mb-3">
                 <Link href={`/profile/${post.authorUid}`} className="flex items-center gap-3 hover:opacity-80 transition cursor-pointer group">
@@ -96,7 +105,7 @@ export const PostCard: React.FC<PostCardProps> = ({
                                 {onEdit && (
                                     <button
                                         onClick={() => {
-                                            onEdit();
+                                            onEdit?.();
                                             setShowMenu(false);
                                         }}
                                         className="w-full px-4 py-2 text-left hover:bg-brand-ebony/5 flex items-center gap-2 text-brand-ebony"
@@ -108,7 +117,7 @@ export const PostCard: React.FC<PostCardProps> = ({
                                 {onDelete && (
                                     <button
                                         onClick={() => {
-                                            onDelete();
+                                            onDelete?.();
                                             setShowMenu(false);
                                         }}
                                         className="w-full px-4 py-2 text-left hover:bg-brand-ebony/5 flex items-center gap-2 text-red-600"
