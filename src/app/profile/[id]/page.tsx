@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { collection, query, where, orderBy, onSnapshot, doc, getDocs, getDoc, updateDoc, arrayRemove } from 'firebase/firestore';
+import { collection, query, where, orderBy, onSnapshot, doc, getDocs, getDoc, updateDoc, arrayRemove, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { Post, User, Group } from '@/types';
 import { PostCard } from '@/components/feed/PostCard';
@@ -154,7 +154,22 @@ export default function PublicProfilePage() {
             ? likes.filter(uid => uid !== userData.uid)
             : [...likes, userData.uid];
 
+
         await updateDoc(postRef, { likes: updatedLikes });
+
+        if (!isLiked && post.authorUid !== userData.uid) {
+            await addDoc(collection(db, 'notifications'), {
+                userId: post.authorUid,
+                type: 'like',
+                sourceUserUid: userData.uid,
+                sourceUserName: userData.name,
+                sourceUserProfilePic: userData.profilePic || '',
+                message: 'liked your post.',
+                link: `/posts/${postId}`,
+                createdAt: serverTimestamp(),
+                isRead: false,
+            });
+        }
     };
 
     const handleAddComment = async (text: string) => {
@@ -171,8 +186,25 @@ export default function PublicProfilePage() {
             createdAt: new Date()
         };
 
+
         const updatedComments = [...(post.comments || []), newComment];
         await updateDoc(postRef, { comments: updatedComments });
+
+        if (post.authorUid !== userData.uid) {
+            await addDoc(collection(db, 'notifications'), {
+                userId: post.authorUid,
+                type: 'comment',
+                sourceUserUid: userData.uid,
+                sourceUserName: userData.name,
+                sourceUserProfilePic: userData.profilePic || '',
+                message: `${userData.name} commented on your post: "${text.substring(0, 30)}${
+                    text.length > 30 ? '...' : ''
+                }"`,
+                link: `/posts/${post.id}#comments`,
+                createdAt: serverTimestamp(),
+                isRead: false,
+            });
+        }
     };
 
     const handleDeleteComment = async (comment: any) => {

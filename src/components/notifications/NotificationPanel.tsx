@@ -10,6 +10,7 @@ import { db } from '@/lib/firebase';
 import { Notification } from '@/types';
 import { Bell, Heart, MessageCircle, UserPlus, CheckCheck, X, Check } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 function timeAgo(ts: any): string {
   try {
@@ -34,6 +35,7 @@ function NotifIcon({ type }: { type: string }) {
 
 export function NotificationBell() {
   const { userData } = useAuth();
+  const router = useRouter();
   const [open, setOpen] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const panelRef = useRef<HTMLDivElement>(null);
@@ -109,6 +111,7 @@ export function NotificationBell() {
         sourceUserName: userData.name,
         sourceUserProfilePic: userData.profilePic || '',
         message: 'accepted your connection request.',
+        link: `/profile/${userData.uid}`,
         createdAt: serverTimestamp(),
         isRead: false,
       });
@@ -127,6 +130,20 @@ export function NotificationBell() {
     } catch (err) {
       console.error('Ignore error:', err);
     }
+  };
+
+  const handleNotificationClick = async (notif: Notification) => {
+    // Mark as read
+    if (!notif.isRead) {
+      await markRead(notif.id);
+    }
+
+    // Close panel
+    setOpen(false);
+
+    // Navigate to link or profile
+    const destination = notif.link || `/profile/${notif.sourceUserUid}`;
+    router.push(destination);
   };
 
   return (
@@ -183,11 +200,14 @@ export function NotificationBell() {
               notifications.map((notif) => (
                 <div
                   key={notif.id}
-                  onClick={() => markRead(notif.id)}
-                  className={`flex items-start gap-3 px-4 py-3 border-b border-brand-ebony/5 hover:bg-brand-burgundy/5 transition-colors cursor-pointer ${
-                    !notif.isRead ? 'bg-brand-burgundy/5' : ''
+                  onClick={() => handleNotificationClick(notif)}
+                  className={`flex items-start gap-3 px-4 py-3 border-b border-brand-ebony/5 hover:bg-brand-burgundy/10 transition-all cursor-pointer group/item relative ${
+                    !notif.isRead ? 'bg-brand-burgundy/[0.03]' : ''
                   }`}
                 >
+                  {!notif.isRead && (
+                    <div className="absolute left-0 top-0 bottom-0 w-1 bg-brand-burgundy" />
+                  )}
                   {/* Avatar */}
                   <Link href={`/profile/${notif.sourceUserUid}`} onClick={e => e.stopPropagation()}>
                     <img
@@ -201,14 +221,13 @@ export function NotificationBell() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between gap-2">
                       <p className="text-sm text-brand-ebony leading-snug">
-                        <Link href={`/profile/${notif.sourceUserUid}`} className="font-bold hover:text-brand-burgundy transition-colors" onClick={e => e.stopPropagation()}>
+                        <span className="font-bold group-hover/item:text-brand-burgundy transition-colors">
                           {notif.sourceUserName}
-                        </Link>{' '}
+                        </span>{' '}
                         <span className="text-brand-ebony/60">{notif.message}</span>
                       </p>
                       <div className="flex items-center gap-1.5 flex-shrink-0 mt-0.5">
                         <NotifIcon type={notif.type} />
-                        {!notif.isRead && <span className="w-1.5 h-1.5 rounded-full bg-brand-burgundy flex-shrink-0" />}
                       </div>
                     </div>
                     <p className="text-[11px] text-slate-500 mt-0.5">{timeAgo(notif.createdAt)}</p>
@@ -231,15 +250,11 @@ export function NotificationBell() {
                       </div>
                     )}
 
-                    {/* Post link */}
+                    {/* Context Hint */}
                     {notif.link && notif.type !== 'connection_request' && notif.type !== 'connection_accepted' && (
-                      <Link
-                        href={notif.link}
-                        onClick={e => e.stopPropagation()}
-                        className="inline-block mt-1 text-[11px] text-brand-gold hover:text-brand-gold/70 transition-colors"
-                      >
-                        View post →
-                      </Link>
+                      <div className="inline-flex items-center mt-2 text-[10px] font-bold uppercase tracking-widest text-brand-gold group-hover/item:translate-x-1 transition-transform">
+                        View detail <span className="ml-1">→</span>
+                      </div>
                     )}
                   </div>
                 </div>

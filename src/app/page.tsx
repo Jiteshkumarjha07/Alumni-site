@@ -138,7 +138,7 @@ export default function HomePage() {
         message: `${userData.name} commented on your post: "${text.substring(0, 30)}${
           text.length > 30 ? '...' : ''
         }"`,
-        link: `/posts/${commentingPost.id}`,
+        link: `/posts/${commentingPost.id}#comments`,
         createdAt: serverTimestamp(),
         isRead: false,
       });

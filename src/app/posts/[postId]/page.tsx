@@ -45,6 +45,15 @@ export default function PostDetailPage() {
         return () => unsubscribe();
     }, [postId, userData, authLoading, router]);
 
+    // Handle auto-opening comments if #comments is in the URL
+    useEffect(() => {
+        if (!loading && post && typeof window !== 'undefined' && window.location.hash === '#comments') {
+            setIsCommenting(true);
+            // Clear hash after opening to avoid re-opening on reload
+            window.history.replaceState(null, '', window.location.pathname);
+        }
+    }, [loading, post]);
+
     const handleLike = async (isLiked: boolean) => {
         if (!userData || !post) return;
         const postRef = doc(db, 'posts', post.id);

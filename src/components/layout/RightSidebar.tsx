@@ -74,6 +74,7 @@ export function RightSidebar({ isOpen = false, onClose = () => {} }: RightSideba
                 sourceUserName: userData.name,
                 sourceUserProfilePic: userData.profilePic || '',
                 message: 'sent you a connection request',
+                link: `/profile/${userData.uid}`,
                 createdAt: new Date(),
                 isRead: false
             });
