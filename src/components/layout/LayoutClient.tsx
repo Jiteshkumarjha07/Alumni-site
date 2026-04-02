@@ -70,7 +70,7 @@ export function LayoutClient({ children }: { children: React.ReactNode }) {
                 <div className="flex flex-col min-h-screen">
                     <Sidebar />
                     <main className={`min-h-screen ${userData ? 'md:pl-64' : ''} ${isMobile ? 'pb-24' : 'pb-8'}`}>
-                <div className="mx-auto w-full px-4 sm:px-6 md:px-8 lg:px-12 max-w-screen-2xl overflow-x-hidden">
+                <div className="mx-auto w-full overflow-x-hidden">
                     {isMobile ? (
                         <AnimatePresence initial={false} custom={direction} mode="wait">
                             <motion.div

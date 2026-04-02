@@ -284,7 +284,7 @@ export default function ProfilePage() {
     }
 
     return (
-        <div className="max-w-4xl mx-auto pt-8 pb-4 px-4 sm:px-6">
+        <div className="max-w-4xl mx-auto px-4 md:px-8 pt-8 pb-12 w-full">
             {/* Cover Photo Area */}
             <div className="bg-gradient-to-r from-brand-burgundy to-[#4a1c20] h-32 sm:h-40 md:h-48 rounded-t-xl opacity-90 border-b-4 border-brand-gold/60 relative">
                 <button
