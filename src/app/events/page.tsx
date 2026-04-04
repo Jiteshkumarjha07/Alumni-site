@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { collection, query, orderBy, onSnapshot, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, query, orderBy, onSnapshot, addDoc, serverTimestamp, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { Event } from '@/types';
 import { EventCard } from '@/components/events/EventCard';
@@ -25,8 +25,14 @@ export default function EventsPage() {
     const [showCreateModal, setShowCreateModal] = useState(false);
 
     useEffect(() => {
+        if (!userData || !userData.instituteId) {
+            setLoading(false);
+            return;
+        }
+
         const eventsQuery = query(
             collection(db, 'events'),
+            where('instituteId', '==', userData.instituteId),
             orderBy('createdAt', 'desc')
         );
 
@@ -43,7 +49,7 @@ export default function EventsPage() {
         });
 
         return () => unsubscribe();
-    }, []);
+    }, [userData]);
 
     const handleCreateEvent = async (formData: EventFormData) => {
         if (!userData) return;
@@ -64,6 +70,7 @@ export default function EventsPage() {
             imageUrl: imageUrl,
             createdByUid: userData.uid,
             createdByName: userData.name,
+            instituteId: userData.instituteId || '',
             createdAt: serverTimestamp(),
             attendeesCount: 0
         });

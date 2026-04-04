@@ -112,6 +112,16 @@ service cloud.firestore {
       allow update, delete: if request.auth != null && 
         resource.data.createdByUid == request.auth.uid;
     }
+
+    // Institutes (Multi-tenant)
+    match /institutes/{instId} {
+      allow read, write: if true; // Public access for testing
+    }
+
+    // Email Approvals
+    match /approvals/{email} {
+      allow read, write: if true; // Public access for testing
+    }
   }
 }
 ```

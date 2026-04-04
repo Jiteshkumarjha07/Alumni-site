@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { collection, query, onSnapshot, updateDoc, arrayUnion, arrayRemove, doc } from 'firebase/firestore';
+import { collection, query, onSnapshot, updateDoc, arrayUnion, arrayRemove, doc, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { User } from '@/types';
 import { AlumniCard } from '@/components/network/AlumniCard';
@@ -26,12 +26,15 @@ export default function NetworkPage() {
 
     // Fetch all users
     useEffect(() => {
-        if (!userData) {
-            setTimeout(() => setLoading(false), 0);
+        if (!userData || !userData.instituteId) {
+            setLoading(false);
             return;
         }
 
-        const usersQuery = query(collection(db, 'users'));
+        const usersQuery = query(
+            collection(db, 'users'),
+            where('instituteId', '==', userData.instituteId)
+        );
         const unsubscribe = onSnapshot(usersQuery, (snapshot) => {
             const fetchedUsers = snapshot.docs
                 .map(doc => ({

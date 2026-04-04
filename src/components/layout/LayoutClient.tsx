@@ -19,16 +19,16 @@ const variants: Variants = {
         x: 0,
         opacity: 1,
         transition: {
-            x: { type: "tween", ease: "circOut", duration: 0.2 },
-            opacity: { duration: 0.15 }
+            x: { type: "tween", ease: "circOut", duration: 0.1 },
+            opacity: { duration: 0.1 }
         }
     },
     exit: (direction: number) => ({
         x: direction > 0 ? '-20%' : direction < 0 ? '20%' : 0,
         opacity: 0,
         transition: {
-            x: { type: "tween", ease: "circOut", duration: 0.2 },
-            opacity: { duration: 0.15 }
+            x: { type: "tween", ease: "circOut", duration: 0.1 },
+            opacity: { duration: 0.1 }
         }
     })
 };
@@ -69,10 +69,10 @@ export function LayoutClient({ children }: { children: React.ReactNode }) {
             <MessagingProvider>
                 <div className="flex flex-col min-h-screen">
                     <Sidebar />
-                    <main className={`min-h-screen ${userData ? 'md:pl-64' : ''} ${isMobile ? 'pb-24' : 'pb-8'}`}>
+                    <main className={`min-h-screen ${(userData && !pathname.startsWith('/admin')) ? 'md:pl-64' : ''} ${isMobile && !pathname.startsWith('/admin') ? 'pb-24' : 'pb-8'}`}>
                 <div className="mx-auto w-full overflow-x-hidden">
                     {isMobile ? (
-                        <AnimatePresence initial={false} custom={direction} mode="wait">
+                        <AnimatePresence initial={false} custom={direction}>
                             <motion.div
                                 key={pathname}
                                 custom={direction}

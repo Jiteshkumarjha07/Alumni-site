@@ -20,7 +20,7 @@ export function MobileNav() {
     const { totalUnreadCount } = useMessaging();
     const pathname = usePathname();
     
-    if (!userData) return null;
+    if (!userData || pathname.startsWith('/admin') || pathname === '/login' || pathname === '/signup') return null;
 
     return (
         <div className="fixed bottom-0 left-0 right-0 bg-brand-cream border-t border-brand-ebony/10 pt-1 pb-2 sm:pb-1 px-1 flex justify-around items-center md:hidden z-50 backdrop-blur-md bg-opacity-90">

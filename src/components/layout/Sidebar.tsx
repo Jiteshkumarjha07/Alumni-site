@@ -6,6 +6,7 @@ import { BrandHeader } from './BrandHeader';
 import { useAuth } from '@/contexts/AuthContext';
 import { useMessaging } from '@/contexts/MessagingContext';
 import { usePathname } from 'next/navigation';
+import { InstituteSwitcher } from './InstituteSwitcher';
 
 const navigation = [
     { name: 'Home', href: '/', icon: Home },
@@ -20,14 +21,18 @@ export function Sidebar() {
     const { totalUnreadCount } = useMessaging();
     const pathname = usePathname();
 
-    if (!userData) return null;
+    if (!userData || pathname.startsWith('/admin') || pathname === '/login' || pathname === '/signup') return null;
 
     return (
-        <div className="flex flex-col h-full w-64 border-r border-brand-ebony/10 px-6 py-6 fixed left-0 top-0 overflow-y-auto hidden md:flex scrollbar-hide z-40 bg-brand-cream/30 backdrop-blur-sm">
+        <div className="flex flex-col h-full w-64 border-r border-brand-ebony/10 px-6 py-6 fixed left-0 top-0 overflow-y-auto hidden md:flex scrollbar-hide z-50 bg-brand-cream/30 backdrop-blur-sm">
 
             <BrandHeader />
 
-            <nav className="space-y-2 mt-8 flex-1">
+            <div className="mt-8">
+                <InstituteSwitcher />
+            </div>
+
+            <nav className="space-y-2 flex-1">
                 {navigation.map((item) => {
                     const isActive = pathname === item.href;
                     return (

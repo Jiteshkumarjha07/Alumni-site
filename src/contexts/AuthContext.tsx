@@ -20,6 +20,7 @@ interface AuthContextType {
     signIn: (email: string, password: string) => Promise<void>;
     signUp: (email: string, password: string, userData: Partial<User>) => Promise<void>;
     signOut: () => Promise<void>;
+    switchInstitute: (instituteId: string, instituteName: string) => Promise<void>;
     clearError: () => void;
 }
 
@@ -155,6 +156,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                 sentRequests: [],
                 groups: [],
                 isAdmin: false,
+                joinedAt: serverTimestamp(),
             };
 
             console.log('User created in Auth, creating Firestore document...');
@@ -203,6 +205,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     };
 
     const clearError = () => setError(null);
+    
+    const switchInstitute = async (instituteId: string, instituteName: string) => {
+        if (!user) return;
+        try {
+            await updateDoc(doc(db, 'users', user.uid), {
+                instituteId,
+                instituteName
+            });
+        } catch (err) {
+            console.error('Error switching institute:', err);
+            setError('Failed to switch institute');
+        }
+    };
 
     const value: AuthContextType = {
         user,
@@ -212,6 +227,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         signIn,
         signUp,
         signOut,
+        switchInstitute,
         clearError,
     };
 

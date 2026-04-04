@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { collection, query, orderBy, onSnapshot, addDoc, deleteDoc, doc, serverTimestamp, Timestamp } from 'firebase/firestore';
+import { collection, query, orderBy, onSnapshot, addDoc, deleteDoc, doc, serverTimestamp, Timestamp, where, limit } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { Job } from '@/types';
 import { JobCard } from '@/components/jobs/JobCard';
@@ -10,6 +10,8 @@ import { CreateOpportunityModal, OpportunityFormData } from '@/components/modals
 import { ConfirmDialog } from '@/components/modals/ConfirmDialog';
 import { Briefcase, Plus } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { useMemo } from 'react';
+import { JobSkeleton } from '@/components/jobs/JobSkeleton';
 
 export default function JobsPage() {
     const { userData, loading: authLoading } = useAuth();
@@ -27,14 +29,16 @@ export default function JobsPage() {
     const [filterType, setFilterType] = useState<string>('all');
 
     useEffect(() => {
-        if (!userData) {
-            setTimeout(() => setLoading(false), 0);
+        if (!userData || !userData.instituteId) {
+            setLoading(false);
             return;
         }
 
         const jobsQuery = query(
             collection(db, 'opportunities'),
-            orderBy('createdAt', 'desc')
+            where('instituteId', '==', userData.instituteId),
+            orderBy('createdAt', 'desc'),
+            limit(20) // Only load the most recent 20 jobs to improve performance
         );
 
         const unsubscribe = onSnapshot(jobsQuery, (snapshot) => {
@@ -69,6 +73,7 @@ export default function JobsPage() {
             postedByUid: userData.uid,
             postedByName: userData.name,
             postedByBatch: userData.batch,
+            instituteId: userData.instituteId || '',
             createdAt: serverTimestamp(),
             expiresAt: expiresAt
         });
@@ -80,27 +85,30 @@ export default function JobsPage() {
         setDeletingJobId(null);
     };
 
-    const filteredJobs = jobs.filter(job => {
-        if (filterType === 'all') return true;
-        return job.type === filterType;
-    });
+    const activeJobs = useMemo(() => {
+        const filtered = jobs.filter(job => {
+            if (filterType === 'all') return true;
+            return job.type === filterType;
+        });
 
-    const activeJobs = filteredJobs.filter(job => {
-        if (!job.expiresAt) return true;
-        const now = new Date();
-        const expiryDate = job.expiresAt.toDate();
-        return expiryDate > now;
-    });
+        return filtered.filter(job => {
+            if (!job.expiresAt) return true;
+            const now = new Date();
+            const expiryDate = job.expiresAt.toDate();
+            return expiryDate > now;
+        });
+    }, [jobs, filterType]);
 
-    if (authLoading || loading) {
+    if (authLoading || (!userData && !authLoading)) {
         return (
             <div className="flex items-center justify-center min-h-screen">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-burgundy mx-auto mb-4"></div>
             </div>
         );
     }
 
-    if (!userData) return null; // Wait for redirect
+    // Now we are sure userData is not null
+    const currentUser = userData!;
 
 
 
@@ -144,12 +152,17 @@ export default function JobsPage() {
 
             {/* Jobs List */}
             <div className="space-y-4">
-                {activeJobs.length > 0 ? (
+                {loading ? (
+                    // Shimmering Skeletons
+                    Array.from({ length: 4 }).map((_, i) => (
+                        <JobSkeleton key={i} />
+                    ))
+                ) : activeJobs.length > 0 ? (
                     activeJobs.map(job => (
                         <JobCard
                             key={job.id}
                             job={job}
-                            currentUser={userData}
+                            currentUser={currentUser}
                             onDelete={() => setDeletingJobId(job.id)}
                         />
                     ))

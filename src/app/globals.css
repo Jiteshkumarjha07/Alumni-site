@@ -39,7 +39,6 @@
       radial-gradient(at 100% 0%, hsla(28, 24%, 90%, 1) 0, transparent 50%),
       url("https://www.transparenttextures.com/patterns/linen.png");
     color: var(--color-brand-ebony);
-    transition: background-color 0.3s ease, color 0.3s ease;
     min-height: 100vh;
   }
 

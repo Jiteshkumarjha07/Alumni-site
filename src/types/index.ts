@@ -1,4 +1,4 @@
-import { Timestamp } from 'firebase/firestore';
+import { Timestamp, FieldValue } from 'firebase/firestore';
 
 export interface Notification {
   id: string;
@@ -13,6 +13,15 @@ export interface Notification {
   isRead: boolean;
 }
 
+export interface Institute {
+  id: string;
+  name: string;
+  domain?: string; // e.g., 'mit.edu'
+  adminIds?: string[];
+  logoUrl?: string;
+  createdAt?: Timestamp;
+}
+
 export interface User {
   uid: string;
   name: string;
@@ -21,15 +30,18 @@ export interface User {
   batch: number;
   profession: string;
   location: string;
+  instituteId: string;
+  instituteName?: string;
+  instituteIds?: string[];
   profilePic?: string;
-  joinedAt?: Timestamp;
+  joinedAt?: Timestamp | FieldValue;
   connections?: string[];
   pendingRequests?: string[];
   sentRequests?: string[];
   groups?: string[];
   isAdmin?: boolean;
   isOnline?: boolean;
-  lastSeen?: Timestamp;
+  lastSeen?: Timestamp | FieldValue;
 }
 
 export interface Post {
@@ -43,6 +55,7 @@ export interface Post {
   likes?: string[];
   comments?: Comment[];
   createdAt: Timestamp;
+  instituteId: string;
 }
 
 export interface Comment {
@@ -66,6 +79,7 @@ export interface Job {
   postedByUid: string;
   postedByName: string;
   postedByBatch: number;
+  instituteId: string;
   createdAt: Timestamp;
   expiresAt?: Timestamp | null;
 }
@@ -79,6 +93,7 @@ export interface Event {
   imageUrl?: string;
   createdByUid: string;
   createdByName: string;
+  instituteId: string;
   createdAt: Timestamp;
   attendeesCount: number;
 }
@@ -144,6 +159,7 @@ export interface Group {
   createdBy: string;
   members: string[];
   admins: string[];
+  instituteId?: string; // Optional for backward compatibility with existing groups
   createdAt: Timestamp;
   groupSecret: string;
   lastMessage?: string;

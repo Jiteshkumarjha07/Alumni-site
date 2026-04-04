@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { collection, query, orderBy, onSnapshot, addDoc, updateDoc, deleteDoc, doc, serverTimestamp, arrayRemove } from 'firebase/firestore';
+import { collection, query, orderBy, onSnapshot, addDoc, updateDoc, deleteDoc, doc, serverTimestamp, arrayRemove, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { Post, Comment as AppComment } from '@/types';
 import { PostCard } from '@/components/feed/PostCard';
@@ -15,6 +15,7 @@ import { SignedOutView } from '@/components/auth/SignedOutView';
 import { PenSquare, Camera, Image as ImageIcon, Paperclip, Users, Menu } from 'lucide-react';
 import { RightSidebar } from '@/components/layout/RightSidebar';
 import { NotificationBell } from '@/components/notifications/NotificationPanel';
+import { InstituteSwitcher } from '@/components/layout/InstituteSwitcher';
 import Link from 'next/link';
 
 export default function HomePage() {
@@ -30,13 +31,14 @@ export default function HomePage() {
 
   // Fetch posts from Firebase
   useEffect(() => {
-    if (!userData) {
+    if (!userData || !userData.instituteId) {
       setTimeout(() => setLoading(false), 0);
       return;
     }
 
     const postsQuery = query(
       collection(db, 'posts'),
+      where('instituteId', '==', userData.instituteId),
       orderBy('createdAt', 'desc')
     );
 
@@ -61,17 +63,37 @@ export default function HomePage() {
   const handleCreatePost = async (content: string, imageUrl?: string) => {
     if (!userData) return;
 
-    await addDoc(collection(db, 'posts'), {
+    // Optimistic UI: Prepend to feed instantly
+    const pseudoId = `temp-${Date.now()}`;
+    const newPost: Post = {
+      id: pseudoId,
       authorUid: userData.uid,
       authorName: userData.name,
-      authorBatch: userData.batch,
+      authorBatch: userData.batch || 0,
       authorProfilePic: userData.profilePic,
       content,
       imageUrl: imageUrl || '',
       likes: [],
       comments: [],
+      instituteId: userData.instituteId || '',
+      createdAt: new Date() as any // Temporary visual timestamp
+    };
+    
+    setPosts(current => [newPost, ...current]);
+
+    // Background Firebase operation
+    addDoc(collection(db, 'posts'), {
+      authorUid: userData.uid,
+      authorName: userData.name,
+      authorBatch: userData.batch || 0,
+      authorProfilePic: userData.profilePic || '',
+      content,
+      imageUrl: imageUrl || '',
+      likes: [],
+      comments: [],
+      instituteId: userData.instituteId || '',
       createdAt: serverTimestamp()
-    });
+    }).catch(console.error);
   };
 
   const handleUpdatePost = async (postId: string, newContent: string) => {
@@ -82,7 +104,6 @@ export default function HomePage() {
   const handleLikePost = async (postId: string, isLiked: boolean) => {
     if (!userData) return;
 
-    const postRef = doc(db, 'posts', postId);
     const post = posts.find((p) => p.id === postId);
     if (!post) return;
 
@@ -91,10 +112,20 @@ export default function HomePage() {
       ? likes.filter((uid) => uid !== userData.uid)
       : [...likes, userData.uid];
 
-    await updateDoc(postRef, { likes: updatedLikes });
+    // Optimistic UI: Update local state instantly
+    setPosts(currentPosts => currentPosts.map(p => 
+      p.id === postId ? { ...p, likes: updatedLikes } : p
+    ));
+
+    // Background network request (No Await)
+    const postRef = doc(db, 'posts', postId);
+    updateDoc(postRef, { likes: updatedLikes }).catch(err => {
+      console.error("Failed optimistic like:", err);
+      // Let onSnapshot automatically revert local state if failed
+    });
 
     if (!isLiked && post.authorUid !== userData.uid) {
-      await addDoc(collection(db, 'notifications'), {
+      addDoc(collection(db, 'notifications'), {
         userId: post.authorUid,
         type: 'like',
         sourceUserUid: userData.uid,
@@ -104,14 +135,13 @@ export default function HomePage() {
         link: `/posts/${postId}?action=view`,
         createdAt: serverTimestamp(),
         isRead: false,
-      });
+      }).catch(console.error);
     }
   };
 
   const handleAddComment = async (text: string, replyToId?: string) => {
     if (!userData || !commentingPost) return;
 
-    const postRef = doc(db, 'posts', commentingPost.id);
     const post = posts.find((p) => p.id === commentingPost.id);
     if (!post) return;
 
@@ -126,10 +156,19 @@ export default function HomePage() {
     };
 
     const updatedComments = [...(post.comments || []), newComment];
-    await updateDoc(postRef, { comments: updatedComments });
+    
+    // Optimistic UI: Update feed and modal state instantly
+    setPosts(currentPosts => currentPosts.map(p => 
+      p.id === commentingPost.id ? { ...p, comments: updatedComments } : p
+    ));
+    setCommentingPost(prev => prev ? { ...prev, comments: updatedComments } : prev);
+
+    // Background network request
+    const postRef = doc(db, 'posts', commentingPost.id);
+    updateDoc(postRef, { comments: updatedComments }).catch(console.error);
 
     if (commentingPost.authorUid !== userData.uid) {
-      await addDoc(collection(db, 'notifications'), {
+      addDoc(collection(db, 'notifications'), {
         userId: commentingPost.authorUid,
         type: 'comment',
         sourceUserUid: userData.uid,
@@ -141,42 +180,44 @@ export default function HomePage() {
         link: `/posts/${commentingPost.id}?action=comment`,
         createdAt: serverTimestamp(),
         isRead: false,
-      });
+      }).catch(console.error);
     }
   };
 
   const handleReactComment = async (comment: AppComment, emoji: string) => {
     if (!userData || !commentingPost) return;
 
-    const postRef = doc(db, 'posts', commentingPost.id);
     const post = posts.find((p) => p.id === commentingPost.id);
     if (!post) return;
 
     const updatedComments = (post.comments || []).map(c => {
-      // Small check: new comments might not have IDs if they were legacy, but we use text/author as fallback if no ID
       const isMatch = c.id ? c.id === comment.id : (c.text === comment.text && c.authorUid === comment.authorUid);
-      
       if (isMatch) {
         const reactions = { ...(c.reactions || {}) };
         const hasReactedWithThis = reactions[emoji]?.includes(userData.uid);
         
-        // Remove user from ALL existing reactions in this comment
         Object.keys(reactions).forEach(key => {
           reactions[key] = (reactions[key] || []).filter(id => id !== userData.uid);
           if (reactions[key].length === 0) delete reactions[key];
         });
 
         if (!hasReactedWithThis) {
-          // Add to the new emoji
           reactions[emoji] = [...(reactions[emoji] || []), userData.uid];
         }
-        
         return { ...c, reactions };
       }
       return c;
     });
 
-    await updateDoc(postRef, { comments: updatedComments });
+    // Optimistic UI updates
+    setPosts(currentPosts => currentPosts.map(p => 
+      p.id === commentingPost.id ? { ...p, comments: updatedComments } : p
+    ));
+    setCommentingPost(prev => prev ? { ...prev, comments: updatedComments } : prev);
+
+    // Background network request
+    const postRef = doc(db, 'posts', commentingPost.id);
+    updateDoc(postRef, { comments: updatedComments }).catch(console.error);
   };
 
   const handleDeleteComment = async (comment: AppComment) => {
@@ -229,6 +270,11 @@ export default function HomePage() {
             </button>
             <NotificationBell />
           </div>
+        </div>
+
+        {/* Mobile Switcher (Hidden on Desktop) */}
+        <div className="md:hidden">
+          <InstituteSwitcher />
         </div>
 
         {/* Create Post Button Area */}

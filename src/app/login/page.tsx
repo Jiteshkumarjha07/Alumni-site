@@ -40,7 +40,7 @@ export default function LoginPage() {
     };
 
     return (
-        <div className="min-h-screen bg-brand-cream border-brand-ebony/5 flex items-center justify-center p-4 relative overflow-hidden">
+        <div className="flex items-center justify-center p-4 relative overflow-hidden">
             {/* Decorative Background Leaves */}
             <div className="absolute top-0 left-0 w-64 h-64 opacity-5 pointer-events-none -translate-x-1/4 -translate-y-1/4 rotate-45">
                 <svg viewBox="0 0 200 200" className="w-full h-full fill-brand-ebony">
@@ -89,7 +89,7 @@ export default function LoginPage() {
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
                                 placeholder="your.email@example.com"
-                                className="w-full px-4 py-3 bg-white/50 border border-brand-ebony/10 rounded-xl focus:ring-2 focus:ring-brand-burgundy/20 focus:border-brand-burgundy transition outline-none text-brand-ebony"
+                                className="w-full px-4 py-3 bg-white/50 border border-brand-ebony/10 rounded-xl focus:ring-2 focus:ring-brand-burgundy/20 focus:border-brand-burgundy transition outline-none text-brand-ebony placeholder-brand-ebony/40"
                                 disabled={loading}
                             />
                         </div>
@@ -104,7 +104,7 @@ export default function LoginPage() {
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
                                     placeholder="Enter your password"
-                                    className="w-full px-4 py-3 bg-white/50 border border-brand-ebony/10 rounded-xl focus:ring-2 focus:ring-brand-burgundy/20 focus:border-brand-burgundy transition outline-none pr-12 text-brand-ebony"
+                                    className="w-full px-4 py-3 bg-white/50 border border-brand-ebony/10 rounded-xl focus:ring-2 focus:ring-brand-burgundy/20 focus:border-brand-burgundy transition outline-none pr-12 text-brand-ebony placeholder-brand-ebony/40"
                                     disabled={loading}
                                 />
                                 <button
