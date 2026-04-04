@@ -18,6 +18,7 @@ export const mockUsers: User[] = [
         sentRequests: [],
         groups: [],
         isAdmin: false,
+        instituteId: '1',
     },
     {
         uid: '2',
@@ -33,6 +34,7 @@ export const mockUsers: User[] = [
         sentRequests: [],
         groups: [],
         isAdmin: false,
+        instituteId: '1',
     },
     {
         uid: '3',
@@ -48,6 +50,7 @@ export const mockUsers: User[] = [
         sentRequests: [],
         groups: [],
         isAdmin: false,
+        instituteId: '1',
     }
 ];
 
@@ -63,6 +66,7 @@ export const mockPosts: Post[] = [
         likes: [],
         comments: [],
         createdAt: mockTimestamp,
+        instituteId: '1',
     },
     {
         id: '2',
@@ -74,6 +78,7 @@ export const mockPosts: Post[] = [
         likes: [],
         comments: [],
         createdAt: mockTimestamp,
+        instituteId: '1',
     }
 ];
 
@@ -90,6 +95,7 @@ export const mockJobs: Job[] = [
         postedByBatch: 2010,
         createdAt: mockTimestamp,
         expiresAt: null,
+        instituteId: '1',
     },
     {
         id: '2',
@@ -103,6 +109,7 @@ export const mockJobs: Job[] = [
         postedByBatch: 2010,
         createdAt: mockTimestamp,
         expiresAt: null,
+        instituteId: '1',
     }
 ];
 

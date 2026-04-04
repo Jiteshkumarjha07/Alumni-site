@@ -11,7 +11,7 @@ import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 export const uploadMedia = async (file: File): Promise<string | null> => {
     if (!file) return null;
 
-    if (!imgbbApiKey || (imgbbApiKey as string) === "YOUR_IMGBB_API_KEY") {
+    if (!imgbbApiKey) {
         throw new Error("ImgBB API key is not configured.");
     }
 

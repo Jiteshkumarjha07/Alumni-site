@@ -24,16 +24,19 @@ export interface Institute {
 
 export interface User {
   uid: string;
+  id?: string; // Some internal components use 'id'
   name: string;
   nameLowercase: string;
   email: string;
   batch: number;
   profession: string;
+  headline?: string; // Professional headline for sidebar-profile cards
   location: string;
   instituteId: string;
   instituteName?: string;
   instituteIds?: string[];
   profilePic?: string;
+  avatar?: string; // Alias for profilePic used in some screens
   joinedAt?: Timestamp | FieldValue;
   connections?: string[];
   pendingRequests?: string[];
