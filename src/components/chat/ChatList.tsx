@@ -174,30 +174,30 @@ export function ChatList({ currentUser, chats, onSelectChat, onStartChat, onSele
                 <div className="flex p-1.5 bg-brand-ebony/5 rounded-2xl mb-8 border border-brand-ebony/5">
                     <button
                         onClick={() => onViewModeChange('chats')}
-                        className={`flex-1 flex items-center justify-center gap-2.5 py-3 text-[10px] font-extrabold uppercase tracking-[0.15em] rounded-xl transition-all ${
+                        className={`flex-1 flex items-center justify-center gap-1.5 py-3 text-[9px] font-extrabold uppercase tracking-[0.1em] rounded-xl transition-all ${
                             viewMode === 'chats' 
                                 ? 'bg-white dark:bg-brand-ebony/40 text-brand-burgundy shadow-sm' 
                                 : 'text-brand-ebony/40 hover:text-brand-ebony/60'
                         }`}
                     >
-                        <MessageSquare className="w-4 h-4" />
-                        Conversations
+                        <MessageSquare className="w-3.5 h-3.5 shrink-0" />
+                        <span className="truncate">Conversations</span>
                         {unreadUsersCount > 0 && (
-                            <span className="w-5 h-5 flex items-center justify-center bg-red-500 text-white rounded-full text-[9px] animate-in zoom-in">
+                            <span className="w-4 h-4 flex items-center justify-center bg-red-500 text-white rounded-full text-[8px] animate-in zoom-in shrink-0">
                                 {unreadUsersCount}
                             </span>
                         )}
                     </button>
                     <button
                         onClick={() => onViewModeChange('groups')}
-                        className={`flex-1 flex items-center justify-center gap-2.5 py-3 text-[10px] font-extrabold uppercase tracking-[0.15em] rounded-xl transition-all ${
+                        className={`flex-1 flex items-center justify-center gap-1.5 py-3 text-[9px] font-extrabold uppercase tracking-[0.1em] rounded-xl transition-all ${
                             viewMode === 'groups' 
                                 ? 'bg-white dark:bg-brand-ebony/40 text-brand-burgundy shadow-sm' 
                                 : 'text-brand-ebony/40 hover:text-brand-ebony/60'
                         }`}
                     >
-                        <Users className="w-4 h-4" />
-                        Circles
+                        <Users className="w-3.5 h-3.5 shrink-0" />
+                        <span className="truncate">Circles</span>
                     </button>
                 </div>
 

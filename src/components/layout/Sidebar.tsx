@@ -34,7 +34,7 @@ export function Sidebar() {
             />
 
             {/* --- TOP RIBBON (Social Navigation) --- */}
-            <div className="hidden md:block fixed top-6 left-[340px] right-12 z-50 pointer-events-none transition-all duration-300">
+            <div className="hidden md:block fixed top-6 left-[300px] right-12 z-50 pointer-events-none transition-all duration-300">
                 <div 
                     className="group pointer-events-auto flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-full sidebar-glass border border-brand-ebony/10 shadow-[0_8px_32px_rgba(79,70,229,0.12)] hover:shadow-[0_12px_48px_rgba(79,70,229,0.20)] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)]"
                 >
@@ -84,7 +84,7 @@ export function Sidebar() {
             {/* --- FIXED FULL SIDEBAR (Identity & Marketplace) --- */}
             <aside className="hidden md:flex fixed top-28 bottom-6 left-6 z-50 flex-col items-center pointer-events-none">
                 <div 
-                    className="pointer-events-auto flex flex-col h-full w-72 sidebar-glass border border-brand-ebony/10 shadow-[0_8px_32px_rgba(0,0,0,0.06)] rounded-[2.5rem] py-8 px-4"
+                    className="pointer-events-auto flex flex-col h-full w-64 sidebar-glass border border-brand-ebony/10 shadow-[0_8px_32px_rgba(0,0,0,0.06)] rounded-[2.5rem] py-8 px-4"
                 >
                     {/* Marketplace Section */}
                     <div className="mb-4">

@@ -66,7 +66,7 @@ export function LayoutClient({ children }: { children: React.ReactNode }) {
                 <div className="flex flex-col min-h-screen">
                     {showNav && <BrandHeader />}
                     <Sidebar />
-                    <main className={`min-h-screen ${showNav ? 'md:pt-28 md:pl-[340px] md:pr-12' : ''} ${isMobile && !isAdminPage ? 'pb-24' : 'pb-8'} relative z-0`}>
+                    <main className={`min-h-screen ${showNav ? 'md:pt-28 md:pl-80 md:pr-12' : ''} ${isMobile && !isAdminPage ? 'pb-24' : 'pb-8'} relative z-0`}>
                 <div className="mx-auto w-full overflow-x-hidden">
                     {isMobile ? (
                         <AnimatePresence initial={false} custom={direction}>
