@@ -7,7 +7,7 @@ import { db } from '@/lib/firebase';
 import { MessageBubble } from './MessageBubble';
 import { ForwardMessageModal } from './ForwardMessageModal';
 import { PollModal } from '../modals/PollModal';
-import { Send, Loader2, ArrowLeft, X, CheckCheck, ShieldCheck, Lock, Image as ImageIcon, Video as VideoIcon, Plus, Users, Phone, Video, Mic, MicOff, Paperclip, FileText, BarChart2, Download, Smile, LogOut, ListChecks, CheckCircle2, Trash2, Sparkles, MoreHorizontal, Info } from 'lucide-react';
+import { Send, Loader2, ArrowLeft, X, CheckCheck, ShieldCheck, Lock, Image as ImageIcon, Video as VideoIcon, Plus, Users, Phone, Video, Mic, MicOff, Paperclip, FileText, BarChart2, Download, Smile, LogOut, ListChecks, CheckCircle2, Trash2, Sparkles, MoreHorizontal, Info, Pencil } from 'lucide-react';
 import { encryptMessage, decryptMessage, getSharedSecret } from '@/lib/encryption';
 import { uploadMedia, uploadVideo, uploadFile, uploadAudio } from '@/lib/media';
 

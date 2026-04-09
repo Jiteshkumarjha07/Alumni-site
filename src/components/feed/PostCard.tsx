@@ -157,17 +157,17 @@ export const PostCard: React.FC<PostCardProps> = ({
                 )}
 
                 {/* Stats row */}
-                {(post.likes?.length > 0 || post.comments?.length > 0) && (
+                {((post.likes?.length ?? 0) > 0 || (post.comments?.length ?? 0) > 0) && (
                     <div className="flex items-center gap-3 mb-3 text-[11px] text-brand-ebony/40 font-medium">
-                        {post.likes?.length > 0 && (
+                        {(post.likes?.length ?? 0) > 0 && (
                             <span className="flex items-center gap-1">
                                 <span className="text-red-500">♥</span>
-                                {post.likes.length} {post.likes.length === 1 ? 'like' : 'likes'}
+                                {post.likes?.length} {post.likes?.length === 1 ? 'like' : 'likes'}
                             </span>
                         )}
-                        {post.likes?.length > 0 && post.comments?.length > 0 && <span>·</span>}
-                        {post.comments?.length > 0 && (
-                            <span>{post.comments.length} {post.comments.length === 1 ? 'comment' : 'comments'}</span>
+                        {(post.likes?.length ?? 0) > 0 && (post.comments?.length ?? 0) > 0 && <span>·</span>}
+                        {(post.comments?.length ?? 0) > 0 && (
+                            <span>{(post.comments?.length ?? 0)} {(post.comments?.length ?? 0) === 1 ? 'comment' : 'comments'}</span>
                         )}
                     </div>
                 )}
