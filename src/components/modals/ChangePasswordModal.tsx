@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { X, Lock, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
+import { X, Lock, Loader2, CheckCircle2, AlertCircle, Sparkles, ShieldCheck, Key } from 'lucide-react';
 
 interface ChangePasswordModalProps {
     isOpen: boolean;
@@ -22,13 +22,13 @@ export const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ isOpen
         e.preventDefault();
         setError(null);
 
-        if (newPassword.length < 6) {
-            setError('Password must be at least 6 characters long.');
+        if (newPassword.length < 8) {
+            setError('Password must be at least 8 characters for legacy-grade security.');
             return;
         }
 
         if (newPassword !== confirmPassword) {
-            setError('Passwords do not match.');
+            setError('The security keys do not match.');
             return;
         }
 
@@ -44,83 +44,111 @@ export const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ isOpen
             }, 2000);
         } catch (err: any) {
             console.error('Change password error:', err);
-            if (err.code === 'auth/requires-recent-login') {
-                setError('For security reasons, please log out and log back in before changing your password.');
-            } else {
-                setError(err.message || 'Failed to change password. Please try again.');
-            }
+            setError(err.code === 'auth/requires-recent-login' ? 'Recent authentication required. Please re-sign.' : 'Failed to rotate security keys.');
         } finally {
             setLoading(false);
         }
     };
 
+    const labelClass = "block text-[10px] font-extrabold text-brand-ebony/40 uppercase tracking-[0.2em] mb-2 px-1";
+    const inputClass = "w-full px-6 py-4 bg-brand-ebony/5 border border-brand-ebony/5 rounded-2xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all font-bold text-sm text-brand-ebony placeholder:text-brand-ebony/25 shadow-inner";
+
     return (
-        <div className="fixed inset-0 bg-brand-ebony/60 dark:bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
-            <div className="bg-brand-parchment rounded-2xl shadow-2xl max-w-md w-full overflow-hidden animate-in fade-in zoom-in duration-200 border border-brand-ebony/10">
-                <div className="px-6 py-4 border-b border-brand-ebony/10 flex justify-between items-center bg-brand-ebony/5">
-                    <h3 className="text-xl font-serif font-bold text-brand-ebony flex items-center gap-2 leading-none">
-                        <Lock className="w-5 h-5 text-brand-burgundy" />
-                        Change Password
-                    </h3>
-                    <button onClick={onClose} className="text-brand-ebony/40 hover:text-brand-burgundy transition-colors">
+        <div className="fixed inset-0 bg-brand-ebony/60 dark:bg-black/80 backdrop-blur-md flex items-center justify-center z-[250] p-4">
+            <div className="card-premium max-w-md w-full shadow-2xl animate-in fade-in zoom-in-95 duration-300 border-brand-burgundy/10 overflow-hidden">
+                {/* Header */}
+                <div className="p-8 border-b border-brand-ebony/5 flex items-center justify-between bg-white dark:bg-brand-parchment/10 backdrop-blur-xl">
+                    <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 bg-gradient-indigo rounded-2xl flex items-center justify-center text-white shadow-lg">
+                            <Key className="w-6 h-6" />
+                        </div>
+                        <div>
+                            <h2 className="text-2xl font-serif font-extrabold text-brand-ebony flex items-center gap-2">
+                                Key Rotation
+                                <Sparkles className="w-4 h-4 text-brand-gold" />
+                            </h2>
+                            <p className="text-[10px] font-extrabold text-brand-ebony/30 uppercase tracking-[0.2em] mt-1">Fortify your digital vault</p>
+                        </div>
+                    </div>
+                    <button onClick={onClose} className="p-3 hover:bg-brand-ebony/5 rounded-full transition-all text-brand-ebony/30">
                         <X className="w-6 h-6" />
                     </button>
                 </div>
 
-                <form onSubmit={handleSubmit} className="p-6 space-y-4">
+                <form onSubmit={handleSubmit} className="p-8 space-y-8">
                     {success ? (
-                        <div className="py-8 text-center animate-in zoom-in duration-300">
-                            <CheckCircle2 className="w-16 h-16 text-green-500 mx-auto mb-4" />
-                            <p className="text-lg font-serif font-bold text-brand-ebony">Password Updated!</p>
-                            <p className="text-xs font-bold text-brand-ebony/40 uppercase tracking-widest mt-1">Closing window...</p>
+                        <div className="py-12 text-center animate-in zoom-in duration-500">
+                            <div className="w-20 h-20 bg-emerald-500/10 rounded-[2rem] flex items-center justify-center mx-auto mb-6 text-emerald-500 shadow-xl border border-emerald-500/20">
+                                <CheckCircle2 className="w-10 h-10" />
+                            </div>
+                            <h3 className="text-2xl font-serif font-extrabold text-brand-ebony mb-2">Security Fortified</h3>
+                            <p className="text-[10px] font-extrabold text-emerald-500 uppercase tracking-[0.2em] animate-pulse">Synchronizing changes...</p>
                         </div>
                     ) : (
                         <>
                             {error && (
-                                <div className="p-3 rounded-lg bg-red-50 border border-red-100 text-red-600 text-sm flex items-start gap-2">
-                                    <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
+                                <div className="px-5 py-4 bg-red-500/5 border border-red-500/10 rounded-2xl text-[11px] font-extrabold text-red-500 uppercase tracking-widest flex items-start gap-3 animate-in slide-in-from-top-2">
+                                    <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
                                     <span>{error}</span>
                                 </div>
                             )}
 
-                            <div>
-                                <label className="block text-sm font-bold text-brand-ebony/70 mb-1 uppercase tracking-widest">New Password</label>
-                                <input
-                                    type="password"
-                                    value={newPassword}
-                                    onChange={(e) => setNewPassword(e.target.value)}
-                                    className="w-full px-4 py-3 bg-brand-ebony/5 border border-brand-ebony/10 rounded-xl focus:ring-2 focus:ring-brand-burgundy/20 focus:border-brand-burgundy transition-all outline-none text-brand-ebony"
-                                    placeholder="At least 6 characters"
-                                    required
-                                />
+                            <div className="space-y-3">
+                                <label className={labelClass}>New Security Key</label>
+                                <div className="relative">
+                                    <input
+                                        type="password"
+                                        value={newPassword}
+                                        onChange={(e) => setNewPassword(e.target.value)}
+                                        className={inputClass}
+                                        placeholder="••••••••"
+                                        required
+                                    />
+                                    <ShieldCheck className="absolute right-5 top-1/2 -translate-y-1/2 w-5 h-5 text-brand-ebony/20" />
+                                </div>
                             </div>
 
-                            <div>
-                                <label className="block text-sm font-bold text-brand-ebony/70 mb-1 uppercase tracking-widest">Confirm New Password</label>
-                                <input
-                                    type="password"
-                                    value={confirmPassword}
-                                    onChange={(e) => setConfirmPassword(e.target.value)}
-                                    className="w-full px-4 py-3 bg-brand-ebony/5 border border-brand-ebony/10 rounded-xl focus:ring-2 focus:ring-brand-burgundy/20 focus:border-brand-burgundy transition-all outline-none text-brand-ebony"
-                                    placeholder="Repeat new password"
-                                    required
-                                />
+                            <div className="space-y-3">
+                                <label className={labelClass}>Verify New Key</label>
+                                <div className="relative">
+                                    <input
+                                        type="password"
+                                        value={confirmPassword}
+                                        onChange={(e) => setConfirmPassword(e.target.value)}
+                                        className={inputClass}
+                                        placeholder="••••••••"
+                                        required
+                                    />
+                                    <Lock className="absolute right-5 top-1/2 -translate-y-1/2 w-5 h-5 text-brand-ebony/20" />
+                                </div>
                             </div>
 
-                            <button
-                                type="submit"
-                                disabled={loading}
-                                className="w-full py-3 bg-brand-burgundy text-white rounded-xl font-bold hover:bg-[#5a2427] transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-brand-burgundy/20 flex items-center justify-center gap-2 mt-2"
-                            >
-                                {loading ? (
-                                    <>
-                                        <Loader2 className="w-5 h-5 animate-spin" />
-                                        Updating...
-                                    </>
-                                ) : (
-                                    'Update Password'
-                                )}
-                            </button>
+                            <div className="pt-4 flex flex-col gap-4">
+                                <button
+                                    type="submit"
+                                    disabled={loading}
+                                    className="w-full py-4 bg-gradient-indigo text-white rounded-2xl font-extrabold uppercase tracking-[0.2em] text-xs shadow-xl shadow-indigo-500/20 hover:brightness-110 active:scale-95 transition-all disabled:opacity-30 flex items-center justify-center gap-3"
+                                >
+                                    {loading ? (
+                                        <>
+                                            <Loader2 className="w-5 h-5 animate-spin" />
+                                            Re-Encrypting...
+                                        </>
+                                    ) : (
+                                        <>
+                                            Authorize Change
+                                            <Key className="w-4 h-4" />
+                                        </>
+                                    )}
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={onClose}
+                                    className="w-full py-2 text-[10px] font-extrabold text-brand-ebony/20 uppercase tracking-widest hover:text-brand-ebony transition-all"
+                                >
+                                    Abort Rotation
+                                </button>
+                            </div>
                         </>
                     )}
                 </form>

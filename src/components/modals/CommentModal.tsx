@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { X, Send, Trash2, Loader2, Reply, Smile, Heart } from 'lucide-react';
+import { X, Send, Trash2, Loader2, Reply, Smile, Sparkles, Hash, MessageCircle } from 'lucide-react';
 import { Comment as AppComment } from '@/types';
 import { formatDistanceToNow } from 'date-fns';
 import { Portal } from '../ui/Portal';
@@ -43,14 +43,13 @@ export const CommentModal: React.FC<CommentModalProps> = ({
         const parts = text.split(/(@\w+)/g);
         return parts.map((part, i) => 
             part.startsWith('@') ? (
-                <span key={i} className="text-brand-burgundy font-bold hover:underline cursor-pointer">
+                <span key={i} className="text-indigo-500 font-extrabold hover:underline cursor-pointer">
                     {part}
                 </span>
             ) : part
         );
     };
 
-    // Sync displayComments with props when they change (from server)
     useEffect(() => {
         setDisplayComments(comments);
     }, [comments]);
@@ -60,21 +59,13 @@ export const CommentModal: React.FC<CommentModalProps> = ({
         onCloseRef.current = onClose;
     }, [onClose]);
 
-    // Back button support
     useEffect(() => {
         if (isOpen) {
             window.history.pushState({ modal: 'comments' }, '');
-            
-            const handlePopState = () => {
-                onCloseRef.current();
-            };
-
+            const handlePopState = () => onCloseRef.current();
             window.addEventListener('popstate', handlePopState);
             return () => {
                 window.removeEventListener('popstate', handlePopState);
-                if (window.history.state?.modal === 'comments') {
-                    window.history.back();
-                }
             };
         }
     }, [isOpen]);
@@ -94,15 +85,11 @@ export const CommentModal: React.FC<CommentModalProps> = ({
         if (touchStart === null) return;
         const currentY = e.targetTouches[0].clientY;
         const diff = currentY - touchStart;
-        if (diff > 0) {
-            setTouchTranslate(diff);
-        }
+        if (diff > 0) setTouchTranslate(diff);
     };
 
     const handleTouchEnd = () => {
-        if (touchTranslate > 100) {
-            onClose();
-        }
+        if (touchTranslate > 100) onClose();
         setTouchStart(null);
         setTouchTranslate(0);
     };
@@ -121,7 +108,6 @@ export const CommentModal: React.FC<CommentModalProps> = ({
             replyToId: currentReplyToId,
         };
 
-        // Optimistic update: show comment instantly
         setDisplayComments(prev => [...prev, optimisticComment]);
         setCommentText('');
         setReplyingTo(null);
@@ -131,10 +117,8 @@ export const CommentModal: React.FC<CommentModalProps> = ({
             await onSubmit(originalText, currentReplyToId);
         } catch (error) {
             console.error('Error adding comment:', error);
-            // Rollback on error
             setDisplayComments(prev => prev.filter(c => c !== optimisticComment));
             setCommentText(originalText);
-            alert('Failed to add comment. Please try again.');
         } finally {
             setLoading(false);
         }
@@ -142,29 +126,23 @@ export const CommentModal: React.FC<CommentModalProps> = ({
 
     const handleDelete = async (comment: AppComment) => {
         if (!onDelete) return;
-
         const previousComments = [...displayComments];
-        // Optimistic update: remove instantly
         setDisplayComments(prev => prev.filter(c => c !== comment));
-
         try {
             await onDelete(comment);
         } catch (error) {
-            console.error('Error deleting comment:', error);
-            // Rollback on error
             setDisplayComments(previousComments);
-            alert('Failed to delete comment.');
         }
     };
 
     const formatDate = (date: unknown) => {
         try {
             if ((date as { toDate?: () => Date })?.toDate) {
-                return formatDistanceToNow((date as { toDate: () => Date }).toDate(), { addSuffix: true });
+                return formatDistanceToNow((date as { toDate: () => Date }).toDate(), { addSuffix: false });
             }
-            return formatDistanceToNow(new Date(date as string | number | Date), { addSuffix: true });
+            return formatDistanceToNow(new Date(date as string | number | Date), { addSuffix: false });
         } catch (e) {
-            return 'just now';
+            return 'now';
         }
     };
 
@@ -187,41 +165,39 @@ export const CommentModal: React.FC<CommentModalProps> = ({
         showEmojiPicker: boolean;
         setShowEmojiPicker: (show: boolean) => void;
     }) => (
-        <div className="flex gap-3">
-            <div className={`w-8 h-8 rounded-full bg-brand-burgundy/10 flex items-center justify-center flex-shrink-0 ${isReply ? 'w-7 h-7' : ''}`}>
-                <span className={`${isReply ? 'text-xs' : 'text-sm'} font-bold text-brand-burgundy`}>
+        <div className="flex gap-4 group/item animate-in fade-in slide-in-from-left-2 duration-300">
+            <div className={`shrink-0 ${isReply ? 'w-8 h-8' : 'w-10 h-10'} rounded-2xl bg-brand-ebony/5 flex items-center justify-center border border-brand-ebony/5 shadow-sm overflow-hidden`}>
+                <span className={`${isReply ? 'text-[10px]' : 'text-xs'} font-extrabold text-brand-ebony/40`}>
                     {comment.authorName.substring(0, 1)}
                 </span>
             </div>
             <div className="flex-1 min-w-0">
-                <div className="bg-brand-ebony/5 rounded-2xl px-4 py-2 relative group/comment">
-                    <div className="flex justify-between items-start gap-2">
-                        <p className="font-bold text-xs text-brand-burgundy mb-0.5">{comment.authorName}</p>
+                <div className={`px-5 py-3 rounded-2xl relative group/comment transition-all ${isReply ? 'bg-brand-ebony/5' : 'bg-white dark:bg-brand-parchment/10 border border-brand-ebony/5 shadow-sm'}`}>
+                    <div className="flex justify-between items-center mb-1">
+                        <p className="font-extrabold text-[11px] text-indigo-500 uppercase tracking-widest">{comment.authorName}</p>
                         {onDelete && currentUserUid === comment.authorUid && (
                             <button
                                 onClick={onDelete}
-                                className="opacity-100 sm:opacity-0 sm:group-hover/comment:opacity-100 p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
-                                title="Delete comment"
+                                className="opacity-0 group-hover/comment:opacity-100 p-1.5 text-brand-ebony/20 hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-all"
                             >
-                                <Trash2 className="w-4 h-4" />
+                                <Trash2 className="w-3.5 h-3.5" />
                             </button>
                         )}
                     </div>
-                    <p className="text-brand-ebony leading-relaxed text-sm">
+                    <p className="text-brand-ebony leading-relaxed text-sm font-medium">
                         {highlightMentions(comment.text)}
                     </p>
 
-                    {/* Reactions Display */}
                     {comment.reactions && Object.entries(comment.reactions).length > 0 && (
-                        <div className="flex flex-wrap gap-1 mt-2">
+                        <div className="flex flex-wrap gap-1.5 mt-3">
                             {Object.entries(comment.reactions).map(([emoji, uids]) => (
                                 <button
                                     key={emoji}
                                     onClick={() => onReact(emoji)}
-                                    className={`flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold border transition-all ${
+                                    className={`flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-extrabold border transition-all ${
                                         uids.includes(currentUserUid || '')
-                                            ? 'bg-brand-burgundy/10 border-brand-burgundy/20 text-brand-burgundy'
-                                            : 'bg-white border-brand-ebony/10 text-brand-ebony/60'
+                                            ? 'bg-indigo-500/10 border-indigo-500/20 text-indigo-500'
+                                            : 'bg-white/50 border-brand-ebony/5 text-brand-ebony/40'
                                     }`}
                                 >
                                     <span>{emoji}</span>
@@ -233,13 +209,13 @@ export const CommentModal: React.FC<CommentModalProps> = ({
                 </div>
 
                 {/* Actions */}
-                <div className="flex items-center gap-4 mt-1.5 px-1">
-                    <p className="text-[10px] font-bold text-brand-ebony/30 uppercase tracking-widest">
+                <div className="flex items-center gap-6 mt-2 px-1">
+                    <p className="text-[9px] font-extrabold text-brand-ebony/20 uppercase tracking-widest">
                         {formatDate(comment.createdAt)}
                     </p>
                     <button 
                         onClick={onReply}
-                        className="text-[10px] font-bold text-brand-ebony/40 hover:text-brand-burgundy uppercase tracking-widest transition-colors flex items-center gap-1"
+                        className="text-[9px] font-extrabold text-brand-ebony/30 hover:text-indigo-500 uppercase tracking-widest transition-colors flex items-center gap-1.5"
                     >
                         <Reply className="w-3 h-3" />
                         Reply
@@ -247,37 +223,24 @@ export const CommentModal: React.FC<CommentModalProps> = ({
                     <div className="relative">
                         <button 
                             onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-                            className="text-[10px] font-bold text-brand-ebony/40 hover:text-brand-burgundy uppercase tracking-widest transition-colors flex items-center gap-1"
+                            className="text-[9px] font-extrabold text-brand-ebony/30 hover:text-indigo-500 uppercase tracking-widest transition-colors flex items-center gap-1.5"
                         >
                             <Smile className="w-3 h-3" />
                             React
                         </button>
                         
                         {showEmojiPicker && (
-                            <>
-                                <div 
-                                    className="fixed inset-0 z-40 cursor-default" 
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        setShowEmojiPicker(false);
-                                    }}
-                                ></div>
-                                <div className="absolute right-0 sm:right-auto sm:left-0 bottom-full mb-2 bg-white rounded-xl shadow-2xl border border-brand-ebony/10 p-2 flex gap-1 z-50 animate-in fade-in zoom-in slide-in-from-bottom-2">
-                                    {['👍', '❤️', '😂', '🔥', '👏'].map(emoji => (
-                                        <button
-                                            key={emoji}
-                                            onClick={(e) => { 
-                                                e.stopPropagation();
-                                                onReact(emoji); 
-                                                setShowEmojiPicker(false); 
-                                            }}
-                                            className="w-8 h-8 flex items-center justify-center hover:bg-brand-burgundy/10 rounded-lg transition text-lg"
-                                        >
-                                            {emoji}
-                                        </button>
-                                    ))}
-                                </div>
-                            </>
+                            <div className="absolute left-0 bottom-full mb-3 bg-white dark:bg-brand-ebony rounded-2xl shadow-2xl border border-brand-ebony/10 p-2 flex gap-1 z-50 animate-in fade-in zoom-in slide-in-from-bottom-2 duration-200">
+                                {['👍', '❤️', '😂', '🔥', '👏'].map(emoji => (
+                                    <button
+                                        key={emoji}
+                                        onClick={() => { onReact(emoji); setShowEmojiPicker(false); }}
+                                        className="w-9 h-9 flex items-center justify-center hover:bg-indigo-500/10 rounded-xl transition text-lg"
+                                    >
+                                        {emoji}
+                                    </button>
+                                ))}
+                            </div>
                         )}
                     </div>
                 </div>
@@ -288,130 +251,133 @@ export const CommentModal: React.FC<CommentModalProps> = ({
     return (
         <Portal>
             <div 
-                className="fixed inset-0 bg-brand-ebony/60 dark:bg-black/60 backdrop-blur-sm flex items-start sm:items-center justify-center z-[100] sm:p-4 overscroll-none"
-                onClick={(e) => {
-                    if (window.innerWidth >= 640 && e.target === e.currentTarget) {
-                        onClose();
-                    }
-                }}
+                className="fixed inset-0 bg-brand-ebony/70 dark:bg-black/80 backdrop-blur-md flex items-start sm:items-center justify-center z-[200] sm:p-4"
+                onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
             >
                 <div 
-                    className={`bg-brand-parchment sm:rounded-2xl max-w-2xl w-full h-full sm:h-auto sm:max-h-[90vh] flex flex-col border border-brand-ebony/10 shadow-2xl ${touchTranslate > 0 ? '' : 'transition-transform duration-200'} slide-up-animation`}
+                    className={`bg-white dark:bg-brand-parchment/10 sm:rounded-[2.5rem] max-w-2xl w-full h-full sm:h-auto sm:max-h-[85vh] flex flex-col border border-brand-ebony/5 shadow-2xl overflow-hidden ${touchTranslate > 0 ? '' : 'transition-transform duration-300'} slide-up-animation`}
                     style={{ transform: `translateY(${touchTranslate}px)` }}
                     onTouchStart={handleTouchStart}
                     onTouchMove={handleTouchMove}
                     onTouchEnd={handleTouchEnd}
                 >
-                    {/* Mobile Drag Handle */}
-                    <div className="w-full flex justify-center pt-3 pb-1 sm:hidden flex-shrink-0">
-                        <div className="w-12 h-1.5 bg-brand-ebony/10 rounded-full" />
-                    </div>
-    
                     {/* Header */}
-                    <div className="flex items-center justify-between p-4 border-b border-brand-ebony/10 pt-[max(1rem,env(safe-area-inset-top))] sm:pt-4">
-                        <h2 className="text-xl font-serif font-bold text-brand-ebony">Comments</h2>
-                        <button
-                            onClick={onClose}
-                            className="hidden sm:block p-2 hover:bg-brand-burgundy/5 text-brand-ebony/60 rounded-full transition"
-                        >
-                            <X className="w-5 h-5" />
+                    <div className="flex items-center justify-between p-8 border-b border-brand-ebony/5 bg-white/50 dark:bg-brand-parchment/5 backdrop-blur-xl">
+                        <div className="flex items-center gap-4">
+                            <div className="w-12 h-12 bg-gradient-indigo rounded-2xl flex items-center justify-center text-white shadow-lg">
+                                <MessageCircle className="w-6 h-6" />
+                            </div>
+                            <div>
+                                <h2 className="text-2xl font-serif font-extrabold text-brand-ebony flex items-center gap-2">
+                                    Dialogue
+                                    <Sparkles className="w-4 h-4 text-brand-gold" />
+                                </h2>
+                                <p className="text-[10px] font-extrabold text-brand-ebony/30 uppercase tracking-[0.2em] mt-1">Shared perspectives • Insights</p>
+                            </div>
+                        </div>
+                        <button onClick={onClose} className="p-3 hover:bg-brand-ebony/5 text-brand-ebony/30 rounded-full transition-all">
+                            <X className="w-6 h-6" />
                         </button>
                     </div>
 
-                {/* Comments List */}
-                <div id="comments-scroll-container" className="flex-1 overflow-y-auto p-4 space-y-6 overscroll-contain">
-                    {displayComments.length > 0 ? (
-                        // Grouping comments by parent (flat list with nesting logic)
-                        displayComments
-                            .filter(c => !c.replyToId)
-                            .map((parentComment) => (
-                                <div key={parentComment.id} className="space-y-4">
-                                    <CommentItem 
-                                        comment={parentComment} 
-                                        isReply={false}
-                                        onReply={() => setReplyingTo(parentComment)}
-                                        onReact={(emoji) => onReact?.(parentComment, emoji)}
-                                        onDelete={() => handleDelete(parentComment)}
-                                        currentUserUid={currentUserUid}
-                                        showEmojiPicker={showEmojiPickerFor === parentComment.id}
-                                        setShowEmojiPicker={(show) => setShowEmojiPickerFor(show ? parentComment.id : null)}
-                                    />
-                                    
-                                    {/* Sub-comments (Replies) */}
-                                    {displayComments
-                                        .filter(c => c.replyToId === parentComment.id)
-                                        .map((reply) => (
-                                            <div key={reply.id} className="ml-10">
-                                                <CommentItem 
-                                                    comment={reply} 
-                                                    isReply={true}
-                                                    onReply={() => setReplyingTo(parentComment)} // Reply to parent thread
-                                                    onReact={(emoji) => onReact?.(reply, emoji)}
-                                                    onDelete={() => handleDelete(reply)}
-                                                    currentUserUid={currentUserUid}
-                                                    showEmojiPicker={showEmojiPickerFor === reply.id}
-                                                    setShowEmojiPicker={(show) => setShowEmojiPickerFor(show ? reply.id : null)}
-                                                />
-                                            </div>
-                                        ))
-                                    }
+                    {/* Comments List */}
+                    <div id="comments-scroll-container" className="flex-1 overflow-y-auto p-8 space-y-8 scrollbar-hide">
+                        {displayComments.length > 0 ? (
+                            displayComments
+                                .filter(c => !c.replyToId)
+                                .map((parentComment) => (
+                                    <div key={parentComment.id} className="space-y-6">
+                                        <CommentItem 
+                                            comment={parentComment} 
+                                            isReply={false}
+                                            onReply={() => setReplyingTo(parentComment)}
+                                            onReact={(emoji) => onReact?.(parentComment, emoji)}
+                                            onDelete={() => handleDelete(parentComment)}
+                                            currentUserUid={currentUserUid}
+                                            showEmojiPicker={showEmojiPickerFor === parentComment.id}
+                                            setShowEmojiPicker={(show) => setShowEmojiPickerFor(show ? parentComment.id : null)}
+                                        />
+                                        
+                                        {displayComments
+                                            .filter(c => c.replyToId === parentComment.id)
+                                            .map((reply) => (
+                                                <div key={reply.id} className="ml-14">
+                                                    <CommentItem 
+                                                        comment={reply} 
+                                                        isReply={true}
+                                                        onReply={() => setReplyingTo(parentComment)}
+                                                        onReact={(emoji) => onReact?.(reply, emoji)}
+                                                        onDelete={() => handleDelete(reply)}
+                                                        currentUserUid={currentUserUid}
+                                                        showEmojiPicker={showEmojiPickerFor === reply.id}
+                                                        setShowEmojiPicker={(show) => setShowEmojiPickerFor(show ? reply.id : null)}
+                                                    />
+                                                </div>
+                                            ))
+                                        }
+                                    </div>
+                                ))
+                        ) : (
+                            <div className="text-center py-20 flex flex-col items-center justify-center">
+                                <div className="w-20 h-20 bg-brand-ebony/5 rounded-[2rem] flex items-center justify-center mb-6 text-brand-ebony/10">
+                                     <Hash className="w-10 h-10" />
                                 </div>
-                            ))
-                    ) : (
-                        <p className="text-center text-gray-500 py-8">No comments yet. Be the first to comment!</p>
-                    )}
-                </div>
-
-                {/* Reply Indicator */}
-                {replyingTo && (
-                    <div className="px-4 py-2 bg-brand-burgundy/5 flex items-center justify-between border-t border-brand-burgundy/10">
-                        <p className="text-xs text-brand-burgundy font-semibold">
-                            Replying to <span className="font-bold">{replyingTo.authorName}</span>
-                        </p>
-                        <button onClick={() => setReplyingTo(null)} className="text-[10px] uppercase font-bold text-gray-400 hover:text-gray-600">
-                            Cancel
-                        </button>
+                                <p className="text-lg font-serif italic text-brand-ebony/40 mb-2">The conversation begins with you.</p>
+                                <p className="text-[10px] font-extrabold uppercase tracking-widest text-brand-ebony/20">Be the first to share an insight</p>
+                            </div>
+                        )}
                     </div>
-                )}
 
-                {/* Comment Input */}
-                <div className="p-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] sm:pb-4 border-t border-brand-ebony/10 bg-brand-ebony/5 flex-shrink-0">
-                    <div className="flex flex-wrap gap-2 mb-3">
-                        {['👍', '❤️', '😂', '😮', '😢', '🔥', '👏', '🙌', '✨', '💯'].map(emoji => (
+                    {/* Input Footer Area */}
+                    <div className="p-8 border-t border-brand-ebony/5 bg-white/50 dark:bg-brand-parchment/10 backdrop-blur-3xl">
+                        {replyingTo && (
+                            <div className="mb-4 px-5 py-3 bg-indigo-500/5 flex items-center justify-between rounded-xl border border-indigo-500/10 animate-in slide-in-from-bottom-2">
+                                <p className="text-[10px] font-extrabold text-indigo-600 uppercase tracking-widest flex items-center gap-2">
+                                    <Reply className="w-3 h-3" /> Responding to {replyingTo.authorName}
+                                </p>
+                                <button onClick={() => setReplyingTo(null)} className="text-[9px] font-extrabold text-indigo-600/40 hover:text-indigo-600 uppercase">
+                                    Cancel
+                                </button>
+                            </div>
+                        )}
+
+                        <div className="flex gap-4">
+                            <input
+                                type="text"
+                                value={commentText}
+                                onChange={(e) => setCommentText(e.target.value)}
+                                onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
+                                placeholder="Express your perspective..."
+                                className="flex-1 px-6 py-4 bg-brand-ebony/5 border border-brand-ebony/5 rounded-2xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all outline-none font-bold text-sm text-brand-ebony placeholder:text-brand-ebony/25 shadow-inner"
+                                disabled={loading}
+                            />
                             <button
-                                key={emoji}
-                                onClick={() => setCommentText(prev => prev + emoji)}
-                                className="w-8 h-8 flex items-center justify-center hover:bg-brand-burgundy/10 rounded-lg transition text-xl"
+                                onClick={handleSubmit}
+                                disabled={!commentText.trim() || loading || !currentUserUid}
+                                className="w-14 h-14 bg-gradient-indigo text-white rounded-2xl hover:brightness-110 active:scale-95 transition-all shadow-xl shadow-indigo-500/20 disabled:opacity-30 flex items-center justify-center"
                             >
-                                {emoji}
+                                {loading ? (
+                                    <Loader2 className="w-6 h-6 animate-spin" />
+                                ) : (
+                                    <Send className="w-6 h-6" />
+                                )}
                             </button>
-                        ))}
-                    </div>
-                    <div className="flex gap-2">
-                        <input
-                            type="text"
-                            value={commentText}
-                            onChange={(e) => setCommentText(e.target.value)}
-                            onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
-                            placeholder="Write a comment..."
-                            className="flex-1 px-4 py-3 bg-brand-parchment border border-brand-ebony/10 rounded-xl focus:ring-2 focus:ring-brand-burgundy/20 focus:border-brand-burgundy transition outline-none text-brand-ebony"
-                            disabled={loading}
-                        />
-                        <button
-                            onClick={handleSubmit}
-                            disabled={!commentText.trim() || loading || !currentUserUid}
-                            className="p-3 bg-brand-burgundy text-white rounded-full hover:bg-[#5a2427] transition shadow-md shadow-brand-burgundy/20 disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                            {loading ? (
-                                <Loader2 className="w-5 h-5 animate-spin" />
-                            ) : (
-                                <Send className="w-5 h-5" />
-                            )}
-                        </button>
+                        </div>
+                        
+                        <div className="flex flex-wrap gap-2.5 mt-5 px-1">
+                            {['❤️', '👏', '🔥', '💯', '✨', '🙌'].map(emoji => (
+                                <button
+                                    key={emoji}
+                                    onClick={() => setCommentText(prev => prev + emoji)}
+                                    className="w-10 h-10 flex items-center justify-center hover:bg-brand-ebony/5 rounded-xl transition-all hover:scale-125 hover:-translate-y-1"
+                                >
+                                    <span className="text-xl">{emoji}</span>
+                                </button>
+                            ))}
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
-    </Portal>
+        </Portal>
     );
 };

@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { collection, doc, serverTimestamp, setDoc, deleteDoc, onSnapshot } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import { Shield, Plus, Loader2, Trash2, Building2 } from 'lucide-react';
+import { Shield, Plus, Loader2, Trash2, Building2, Sparkles, ChevronRight } from 'lucide-react';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
@@ -38,7 +38,7 @@ export default function AdminInstitutesPage() {
 
         const connectionTimeout = setTimeout(() => {
             if (!hasLoaded) {
-                setError("CRITICAL ERROR: Unable to connect to Firebase. Please ensure you have clicked 'Create database' under Firestore Database in the Firebase Console and that your config in firebase-config.ts is correct.");
+                setError("Connection timeout. Please check your credentials.");
                 setFetchLoading(false);
             }
         }, 8000);
@@ -52,55 +52,31 @@ export default function AdminInstitutesPage() {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         const trimmedName = name.trim();
-        
-        if (!trimmedName) {
-            setError("No institute added. Please enter a valid institute name.");
-            return;
-        }
+        if (!trimmedName) return;
 
         setLoading(true);
         setError(null);
         setSuccess(null);
 
         try {
-            // Generate document reference
             const newDocRef = doc(collection(db, 'institutes'));
-            const writePromise = setDoc(newDocRef, {
+            await setDoc(newDocRef, {
                 name: trimmedName,
                 createdAt: serverTimestamp(),
             });
 
-            // Enforce a 15-second timeout to prevent infinite "buffering" if network drops or is blocked
-            const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error("Network timeout: Could not reach the database after 15 seconds.")), 15000));
-            await Promise.race([writePromise, timeoutPromise]);
-
-            setSuccess(`Successfully created institute "${trimmedName}".`);
+            setSuccess(`Successfully added ${trimmedName}.`);
             setName('');
         } catch (err: any) {
-            console.error("DEBUG: Create institute error raw:", err);
-            
-            const errorCode = err.code || '';
-            const errorMessage = err.message || '';
-            
-            if (errorCode === 'permission-denied' || errorMessage.includes('permission-denied')) {
-                setError("Permission Denied: Your Firestore rules are blocking this action. Please check Step 6 of FIREBASE_SETUP.md.");
-            } else if (errorCode === 'unavailable') {
-                setError("Firebase Service Unavailable: Please check your internet connection or Firebase project status.");
-            } else if (errorMessage.includes('timeout')) {
-                setError("Network Timeout: The database did not respond in 15 seconds. This usually means a connection blockage (ISP, Firewall) or that the database hasn't been created yet.");
-            } else {
-                setError(`Error (${errorCode || 'unknown'}): ${errorMessage || 'Failed to create institute.'}`);
-            }
+            setError(`Error: ${err.message || 'Failed to create institute.'}`);
         } finally {
             setLoading(false);
         }
     };
 
     const handleDelete = async (id: string, instName: string) => {
-        if (!confirm(`Are you sure you want to delete "${instName}"? This will not delete users but may cause issues for them.`)) return;
-        
+        if (!confirm(`Are you sure you want to delete "${instName}"?`)) return;
         try {
-            // onSnapshot automatically removes it from the UI instantly
             await deleteDoc(doc(db, 'institutes', id));
         } catch (err) {
             setError("Failed to delete institute.");
@@ -108,110 +84,131 @@ export default function AdminInstitutesPage() {
     };
 
     return (
-        <div className="p-4 md:p-8 relative overflow-hidden">
-            {/* Decorative Background Leaves */}
-            <div className="absolute top-0 left-0 w-64 h-64 opacity-5 pointer-events-none -translate-x-1/4 -translate-y-1/4 rotate-45">
-                <svg viewBox="0 0 200 200" className="w-full h-full fill-brand-ebony">
-                    <path d="M40,100 C40,100 80,40 160,40 C160,40 100,100 40,100 Z" />
-                </svg>
-            </div>
-            <div className="absolute bottom-0 right-0 w-64 h-64 opacity-5 pointer-events-none translate-x-1/4 translate-y-1/4 -rotate-12">
-                <svg viewBox="0 0 200 200" className="w-full h-full fill-brand-ebony">
-                    <path d="M40,100 C40,100 80,40 160,40 C160,40 100,100 40,100 Z" />
-                </svg>
+        <div className="max-w-6xl mx-auto px-4 md:px-8 pt-8 pb-12 w-full animate-fade-up">
+            {/* Header Section */}
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
+                <div className="flex items-center gap-5">
+                    <div className="w-14 h-14 bg-gradient-indigo rounded-2xl flex items-center justify-center shadow-xl shadow-brand-burgundy/20">
+                         <Shield className="w-7 h-7 text-white" />
+                    </div>
+                    <div>
+                        <div className="flex items-center gap-3">
+                            <h1 className="text-3xl sm:text-4xl font-serif font-extrabold text-brand-ebony tracking-tight">
+                                Institute Control
+                            </h1>
+                            <Sparkles className="w-5 h-5 text-brand-gold animate-pulse" />
+                        </div>
+                        <p className="text-brand-ebony/40 font-medium text-sm mt-1 uppercase tracking-widest text-[11px]">System Administration • Multi-Tenancy</p>
+                    </div>
+                </div>
+                <div className="flex items-center gap-3">
+                    <Link href="/admin/approvals" className="flex items-center gap-2 px-6 py-3 bg-white hover:bg-brand-parchment border border-brand-ebony/10 rounded-xl transition-all font-bold text-xs tracking-widest uppercase text-brand-ebony/70 hover:text-brand-burgundy">
+                        Approvals <ChevronRight className="w-4 h-4" />
+                    </Link>
+                    <Link href="/" className="px-6 py-3 bg-brand-ebony/5 hover:bg-brand-ebony/10 rounded-xl transition-all font-bold text-xs tracking-widest uppercase text-brand-ebony/40">
+                        Exit
+                    </Link>
+                </div>
             </div>
 
-            <div className="max-w-4xl mx-auto relative z-10">
-                <div className="flex items-center justify-between mb-8">
-                    <div>
-                        <h1 className="text-3xl font-serif font-bold text-brand-ebony flex items-center gap-2">
-                            <Shield className="w-8 h-8 text-brand-burgundy" />
-                            Institute Setup
-                        </h1>
-                        <p className="text-brand-ebony/60">Add and manage multi-tenant organizations.</p>
-                    </div>
-                    <div className="flex gap-4">
-                        <Link href="/admin/approvals" className="text-brand-burgundy hover:underline font-bold text-sm uppercase tracking-widest">
-                            Manage Approvals
-                        </Link>
-                        <Link href="/signup" className="text-brand-ebony/60 hover:text-brand-ebony font-bold text-sm uppercase tracking-widest">
-                            Sign Up
-                        </Link>
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+                {/* Form Card */}
+                <div className="lg:col-span-4">
+                    <div className="card-premium p-8 relative overflow-hidden group">
+                        <div className="absolute top-0 right-0 w-32 h-32 bg-brand-burgundy/5 rounded-full -translate-y-1/2 translate-x-1/2 blur-2xl group-hover:bg-brand-burgundy/10 transition-colors"></div>
+                        
+                        <h2 className="text-xl font-serif font-extrabold text-brand-ebony mb-6 flex items-center gap-2">
+                             New Organization
+                        </h2>
+                        
+                        {error && (
+                            <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-red-600 text-[11px] font-bold uppercase tracking-wider animate-in fade-in">
+                                {error}
+                            </div>
+                        )}
+                        {success && (
+                            <div className="mb-6 p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-emerald-600 text-[11px] font-bold uppercase tracking-wider animate-in fade-in">
+                                {success}
+                            </div>
+                        )}
+
+                        <form onSubmit={handleSubmit} className="space-y-6 relative z-10">
+                            <div>
+                                <label className="block text-[10px] font-bold text-brand-ebony/40 mb-2 uppercase tracking-[0.2em]">Full Institute Name</label>
+                                <input
+                                    type="text"
+                                    placeholder="e.g. Stanford University"
+                                    value={name}
+                                    onChange={(e) => setName(e.target.value)}
+                                    className="w-full px-5 py-4 bg-brand-ebony/5 border border-brand-ebony/10 rounded-2xl focus:ring-4 focus:ring-brand-burgundy/10 hover:border-brand-burgundy/30 transition-all outline-none text-brand-ebony font-medium"
+                                    required
+                                />
+                            </div>
+
+                            <button
+                                type="submit"
+                                disabled={loading}
+                                className="w-full py-4 bg-gradient-indigo text-white rounded-2xl font-bold hover:shadow-[0_8px_20px_rgba(99,102,241,0.3)] transition-all flex items-center justify-center gap-3 uppercase tracking-[0.2em] text-[11px] shimmer overflow-hidden relative"
+                            >
+                                {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <><Plus className="w-5 h-5" /> Register Now</>}
+                            </button>
+                        </form>
                     </div>
                 </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                    {/* Add Form */}
-                    <div className="lg:col-span-1">
-                        <div className="bg-brand-parchment/60 backdrop-blur-sm rounded-2xl shadow-xl p-6 border border-brand-ebony/10 sticky top-8 transition-colors duration-300">
-                            <h2 className="text-xl font-serif font-bold text-brand-ebony mb-4">Add New</h2>
-                            
-                            {error && <div className="mb-4 p-3 bg-red-50 text-red-600 text-sm rounded-lg">{error}</div>}
-                            {success && <div className="mb-4 p-3 bg-green-50 text-green-700 text-sm rounded-lg">{success}</div>}
-
-                                    <form onSubmit={handleSubmit} className="space-y-6">
-                                        <div>
-                                            <label className="block text-xs font-bold text-brand-ebony/70 mb-2 uppercase tracking-widest">Institute Name</label>
-                                            <input
-                                                type="text"
-                                                placeholder="e.g. Stanford University"
-                                                value={name}
-                                                onChange={(e) => setName(e.target.value)}
-                                                className="w-full px-4 py-3 bg-brand-ebony/5 border border-brand-ebony/10 rounded-xl focus:ring-2 focus:ring-brand-burgundy/20 outline-none text-brand-ebony"
-                                                required
-                                            />
-                                        </div>
-
-                                        <button
-                                            type="submit"
-                                            disabled={loading}
-                                            className="w-full py-4 bg-brand-burgundy text-white rounded-xl font-bold hover:bg-[#5a2427] transition-all shadow-md disabled:opacity-50 flex items-center justify-center gap-2"
-                                        >
-                                            {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <><Plus className="w-5 h-5" /> Add Institute</>}
-                                        </button>
-                                    </form>
+                {/* List Card */}
+                <div className="lg:col-span-8">
+                    <div className="card-premium overflow-hidden border-brand-ebony/5">
+                        <div className="px-8 py-6 border-b border-brand-ebony/5 flex items-center justify-between bg-white/50 dark:bg-brand-parchment/5">
+                            <h2 className="text-xl font-serif font-extrabold text-brand-ebony">Existing Network</h2>
+                            <span className="bg-brand-ebony/5 text-brand-ebony/50 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest">{institutes.length} Institutes</span>
                         </div>
-                    </div>
-
-                    {/* List */}
-                    <div className="lg:col-span-2">
-                        <div className="bg-brand-parchment/60 backdrop-blur-sm rounded-2xl shadow-xl overflow-hidden border border-brand-ebony/10 transition-colors duration-300">
-                            <div className="p-6 border-b border-brand-ebony/10 bg-brand-ebony/5">
-                                <h2 className="text-xl font-serif font-bold text-brand-ebony">Existing Institutes</h2>
-                            </div>
-                            
-                            <div className="divide-y divide-brand-ebony/5">
-                                {fetchLoading ? (
-                                    <div className="p-12 text-center text-brand-ebony/40 font-serif italic">Loading institutes...</div>
-                                ) : institutes.length === 0 ? (
-                                    <div className="p-12 text-center text-brand-ebony/40 font-serif italic">No institutes found.</div>
-                                ) : (
-                                    institutes.map((inst) => (
-                                        <div key={inst.id} className="p-4 hover:bg-brand-parchment/10 transition-colors flex items-center justify-between group">
-                                            <div className="flex items-center gap-4">
-                                                <div className="w-10 h-10 rounded-full bg-brand-burgundy/5 flex items-center justify-center text-brand-burgundy">
-                                                    <Building2 className="w-5 h-5" />
+                        
+                        <div className="divide-y divide-brand-ebony/5">
+                            {fetchLoading ? (
+                                <div className="p-20 text-center text-brand-ebony/20">
+                                    <Loader2 className="w-10 h-10 animate-spin mx-auto mb-4 opacity-10" />
+                                    <p className="font-serif italic text-lg">Acquiring directories...</p>
+                                </div>
+                            ) : institutes.length === 0 ? (
+                                <div className="p-20 text-center">
+                                    <div className="w-20 h-20 bg-brand-ebony/5 rounded-full flex items-center justify-center mx-auto mb-6">
+                                        <Building2 className="w-10 h-10 text-brand-ebony/10" />
+                                    </div>
+                                    <p className="text-brand-ebony/40 text-sm font-bold uppercase tracking-widest">Workspace is empty</p>
+                                </div>
+                            ) : (
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-px bg-brand-ebony/5">
+                                    {institutes.map((inst) => (
+                                        <div key={inst.id} className="bg-white dark:bg-brand-parchment/5 p-6 hover:bg-brand-burgundy/5 transition-all group relative">
+                                            <div className="flex items-center gap-5">
+                                                <div className="w-12 h-12 rounded-2xl bg-brand-burgundy/5 flex items-center justify-center text-brand-burgundy border border-brand-burgundy/10 group-hover:bg-gradient-indigo group-hover:text-white transition-all shadow-sm">
+                                                    <Building2 className="w-6 h-6" />
                                                 </div>
-                                                <div>
-                                                    <p className="font-bold text-brand-ebony">{inst.name}</p>
-                                                    <p className="text-[10px] text-brand-ebony/40 uppercase tracking-widest font-bold">
-                                                        ID: {inst.id}
+                                                <div className="min-w-0 flex-1">
+                                                    <p className="font-extrabold text-brand-ebony truncate leading-tight group-hover:text-brand-burgundy transition-colors">{inst.name}</p>
+                                                    <p className="text-[9px] text-brand-ebony/30 uppercase tracking-[0.2em] font-bold mt-1">
+                                                        Ref: {inst.id.substring(0, 12)}...
                                                     </p>
                                                 </div>
+                                                <button 
+                                                    onClick={() => handleDelete(inst.id, inst.name)}
+                                                    className="p-3 text-brand-ebony/20 hover:text-red-500 hover:bg-red-500/10 rounded-2xl transition-all opacity-0 group-hover:opacity-100"
+                                                >
+                                                    <Trash2 className="w-5 h-5" />
+                                                </button>
                                             </div>
-                                            <button 
-                                                onClick={() => handleDelete(inst.id, inst.name)}
-                                                className="p-2 text-brand-ebony/20 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all opacity-0 group-hover:opacity-100"
-                                            >
-                                                <Trash2 className="w-5 h-5" />
-                                            </button>
                                         </div>
-                                    ))
-                                )}
-                            </div>
+                                    ))}
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>
+            </div>
+            
+            <div className="mt-16 text-center">
+                 <p className="text-[10px] font-bold text-brand-ebony/20 uppercase tracking-[0.4em]">Alumnest Security Core • Port 443 Locked</p>
             </div>
         </div>
     );

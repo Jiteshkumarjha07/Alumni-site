@@ -26,38 +26,41 @@ export const AlumniCard: React.FC<AlumniCardProps> = ({
     const router = useRouter();
 
     return (
-        <div className="bg-brand-parchment/80 rounded-xl shadow-sm border border-brand-ebony/10 p-6 hover:shadow-md transition">
+        <div className="card-premium p-6 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 ease-out group">
             <div className="flex flex-col items-center text-center">
-                <Link href={`/profile/${user.uid}`} className="flex flex-col items-center hover:opacity-80 transition cursor-pointer">
-                    <div className="relative w-20 h-20 mb-3 rounded-full overflow-hidden border-2 border-brand-cream shadow-sm">
+                <Link href={`/profile/${user.uid}`} className="flex flex-col items-center group/avatar cursor-pointer">
+                    <div className="relative w-20 h-20 mb-4 rounded-full overflow-hidden border-4 border-white dark:border-brand-parchment shadow-lg group-hover/avatar:scale-105 transition-transform duration-300">
                         <Image
-                            src={user.profilePic || `https://placehold.co/100x100/EFEFEFF/5a2427?text=${user.name.substring(0, 1)}`}
+                            src={user.profilePic || `https://placehold.co/100x100/4f46e5/ffffff?text=${user.name.substring(0, 1)}`}
                             alt={user.name}
                             fill
                             className="object-cover"
                             unoptimized
                         />
                     </div>
-                    <h3 className="font-serif font-bold text-xl text-brand-ebony hover:text-brand-burgundy transition-colors">{user.name}</h3>
+                    <h3 className="font-serif font-bold text-xl text-brand-ebony group-hover/avatar:text-brand-burgundy transition-colors leading-tight">{user.name}</h3>
                 </Link>
-                <p className="text-sm font-medium text-brand-ebony/80 mb-1">{user.profession || 'Alumni'}</p>
-                <p className="text-xs text-brand-ebony/60 mb-1 tracking-wide uppercase font-bold mt-1">Class of {user.batch}</p>
+                
+                <p className="text-sm font-bold text-brand-burgundy/80 mt-2 uppercase tracking-widest text-[10px]">Class of {user.batch}</p>
+                <p className="text-sm font-medium text-brand-ebony/70 mt-1 line-clamp-1">{user.profession || 'Alumni'}</p>
+                
                 {user.location && (
-                    <p className="text-sm text-brand-ebony/70 mb-3">{user.location}</p>
+                    <p className="text-xs text-brand-ebony/50 mt-1 line-clamp-1 italic">{user.location}</p>
                 )}
 
-                <div className="flex items-center gap-2 text-sm text-brand-ebony/60 mb-4 font-medium">
-                    <span>{user.connections?.length || 0} connections</span>
+                <div className="flex items-center gap-1.5 mt-4 text-[10px] font-bold text-brand-ebony/30 uppercase tracking-[0.15em]">
+                    <span className="w-1.5 h-1.5 rounded-full bg-brand-gold/40"></span>
+                    {user.connections?.length || 0} Network connections
                 </div>
 
                 {/* Action Buttons */}
-                <div className="flex gap-2 w-full mt-auto">
+                <div className="flex gap-2.5 w-full mt-6">
                     {connectionStatus === 'connected' && (
                         <button
                             onClick={() => router.push(`/messages?userId=${user.uid}&name=${encodeURIComponent(user.name)}&pic=${encodeURIComponent(user.profilePic || '')}`)}
-                            className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-brand-burgundy/10 text-brand-burgundy rounded-lg hover:bg-brand-burgundy hover:text-white transition shadow-sm font-semibold tracking-wide text-sm"
+                            className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-brand-burgundy/5 text-brand-burgundy border border-brand-burgundy/20 rounded-xl hover:bg-gradient-indigo hover:text-white hover:border-transparent transition-all shadow-sm font-bold tracking-tight text-xs uppercase"
                         >
-                            <MessageCircle className="w-4 h-4" />
+                            <MessageCircle className="w-3.5 h-3.5" />
                             Message
                         </button>
                     )}
@@ -65,9 +68,9 @@ export const AlumniCard: React.FC<AlumniCardProps> = ({
                     {connectionStatus === 'none' && (
                         <button
                             onClick={() => onConnect(user.uid)}
-                            className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-brand-burgundy text-white rounded-lg hover:bg-[#5a2427] transition shadow-sm font-semibold tracking-wide text-sm"
+                            className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-indigo text-white rounded-xl hover:shadow-[0_4px_12px_rgba(99,102,241,0.3)] transition-all font-bold tracking-tight text-xs uppercase"
                         >
-                            <UserPlus className="w-4 h-4" />
+                            <UserPlus className="w-3.5 h-3.5" />
                             Connect
                         </button>
                     )}
@@ -75,9 +78,9 @@ export const AlumniCard: React.FC<AlumniCardProps> = ({
                     {connectionStatus === 'pending' && (
                         <button
                             onClick={() => onCancelRequest(user.uid)}
-                            className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-brand-ebony/10 text-brand-ebony/70 rounded-lg hover:bg-brand-ebony/20 transition font-medium text-sm"
+                            className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-brand-ebony/5 text-brand-ebony/50 border border-brand-ebony/10 rounded-xl hover:bg-red-500/10 hover:text-red-500 hover:border-red-500/20 transition-all font-bold tracking-tight text-xs uppercase"
                         >
-                            <UserX className="w-4 h-4" />
+                            <UserX className="w-3.5 h-3.5" />
                             Cancel
                         </button>
                     )}
@@ -86,16 +89,16 @@ export const AlumniCard: React.FC<AlumniCardProps> = ({
                         <>
                             <button
                                 onClick={() => onAcceptRequest(user.uid)}
-                                className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-[#2d5a27]/10 text-[#2d5a27] rounded-lg hover:bg-[#2d5a27] hover:text-white transition font-medium text-sm"
+                                className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-brand-burgundy/10 text-brand-burgundy border border-brand-burgundy/20 rounded-xl hover:bg-brand-burgundy hover:text-white transition-all font-bold tracking-tight text-[10px] uppercase"
                             >
-                                <Check className="w-4 h-4" />
+                                <Check className="w-3.5 h-3.5" />
                                 Accept
                             </button>
                             <button
                                 onClick={() => onRejectRequest(user.uid)}
-                                className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-brand-burgundy/10 text-brand-burgundy rounded-lg hover:bg-brand-burgundy hover:text-white transition font-medium text-sm"
+                                className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-red-500/5 text-red-500/70 border border-red-500/10 rounded-xl hover:bg-red-500 hover:text-white transition-all font-bold tracking-tight text-[10px] uppercase"
                             >
-                                <X className="w-4 h-4" />
+                                <X className="w-3.5 h-3.5" />
                                 Reject
                             </button>
                         </>

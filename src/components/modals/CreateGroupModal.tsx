@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { User } from '@/types';
-import { collection, query, getDocs, where, addDoc, serverTimestamp, doc, updateDoc, arrayUnion } from 'firebase/firestore';
+import { collection, query, getDocs, addDoc, serverTimestamp, doc, updateDoc, arrayUnion } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import { X, Search, Loader2, Users, Check } from 'lucide-react';
+import { X, Search, Loader2, Users, Check, Sparkles } from 'lucide-react';
 
 interface CreateGroupModalProps {
     isOpen: boolean;
@@ -93,7 +93,7 @@ export function CreateGroupModal({ isOpen, onClose, currentUser, onGroupCreated 
             onClose();
         } catch (error) {
             console.error('Error creating group:', error);
-            alert('Failed to create group. Please try again.');
+            alert('Failed to create circle. Please try again.');
         } finally {
             setIsCreating(false);
         }
@@ -102,121 +102,148 @@ export function CreateGroupModal({ isOpen, onClose, currentUser, onGroupCreated 
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
-            <div className="bg-brand-cream rounded-3xl w-full max-w-md overflow-hidden shadow-2xl animate-in fade-in zoom-in-95 duration-200 border border-brand-ebony/10">
+        <div className="fixed inset-0 bg-brand-ebony/60 backdrop-blur-md flex items-center justify-center z-[200] p-4">
+            <div className="card-premium w-full max-w-lg overflow-hidden shadow-2xl animate-in fade-in zoom-in-95 duration-300 border-brand-burgundy/10">
                 {/* Header */}
-                <div className="p-6 border-b border-brand-ebony/10 flex items-center justify-between bg-brand-parchment/10">
-                    <div className="flex items-center gap-3">
-                        <div className="p-2 bg-brand-burgundy/10 rounded-xl">
-                            <Users className="w-5 h-5 text-brand-burgundy" />
+                <div className="p-8 border-b border-brand-ebony/5 flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 bg-gradient-indigo rounded-2xl flex items-center justify-center text-white shadow-lg">
+                            <Users className="w-6 h-6" />
                         </div>
-                        <h2 className="text-xl font-serif font-bold text-brand-ebony">Create New Group</h2>
+                        <div>
+                            <h2 className="text-2xl font-serif font-extrabold text-brand-ebony flex items-center gap-2">
+                                New Circle
+                                <Sparkles className="w-4 h-4 text-brand-gold" />
+                            </h2>
+                            <p className="text-[10px] font-extrabold text-brand-ebony/30 uppercase tracking-[0.2em] mt-1">Shared Space • Secure</p>
+                        </div>
                     </div>
-                    <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
+                    <button onClick={onClose} className="p-2.5 hover:bg-brand-ebony/5 rounded-full transition-all">
                         <X className="w-5 h-5 text-brand-ebony/30" />
                     </button>
                 </div>
 
-                <div className="p-6 space-y-6">
+                <div className="p-8 space-y-8">
                     {/* Group Name */}
                     <div>
-                        <label className="block text-xs font-bold text-brand-ebony/40 uppercase tracking-widest mb-2 px-1">Group Name</label>
+                        <label className="block text-xs font-extrabold text-brand-ebony/40 uppercase tracking-[0.2em] mb-3 px-1">Circle Identity</label>
                         <input
                             type="text"
-                            placeholder="Enter group name..."
+                            placeholder="e.g. Batch of 2020 Founders"
                             value={groupName}
                             onChange={(e) => setGroupName(e.target.value)}
-                            className="w-full px-4 py-3 bg-brand-parchment/20 border border-brand-ebony/10 rounded-xl focus:ring-2 focus:ring-brand-burgundy/20 focus:border-brand-burgundy outline-none transition-all placeholder:text-brand-ebony/30 shadow-inner"
+                            className="w-full px-6 py-4 bg-brand-ebony/5 border border-brand-ebony/5 rounded-2xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all placeholder:text-brand-ebony/25 font-bold text-sm"
                         />
                     </div>
 
                     {/* Member Selection */}
                     <div>
-                        <label className="block text-xs font-bold text-brand-ebony/40 uppercase tracking-widest mb-2 px-1">
-                            Add Members ({selectedMembers.length})
-                        </label>
+                        <div className="flex justify-between items-center mb-4 px-1">
+                            <label className="text-xs font-extrabold text-brand-ebony/40 uppercase tracking-[0.2em]">
+                                Add Members
+                            </label>
+                            <span className="text-[10px] font-extrabold bg-indigo-500 text-white px-2 py-0.5 rounded-full shadow-sm">
+                                {selectedMembers.length} Selected
+                            </span>
+                        </div>
                         
                         {/* Search Input */}
-                        <div className="relative mb-4">
+                        <div className="relative mb-6">
                             <input
                                 type="text"
-                                placeholder="Search alumni to add..."
+                                placeholder="Search by name or profession..."
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
-                                className="w-full pl-10 pr-4 py-2 bg-brand-parchment/20 border border-brand-ebony/5 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-brand-burgundy/30"
+                                className="w-full pl-12 pr-5 py-4 bg-white dark:bg-brand-ebony/10 border border-brand-ebony/5 rounded-2xl focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all font-bold text-sm shadow-inner"
                             />
-                            <Search className="w-4 h-4 text-brand-ebony/30 absolute left-3 top-1/2 -translate-y-1/2" />
+                            <Search className="w-5 h-5 text-brand-ebony/20 absolute left-4 top-1/2 -translate-y-1/2" />
                         </div>
 
                         {/* Search Results */}
-                        <div className="max-h-48 overflow-y-auto space-y-2 pr-1 custom-scrollbar">
+                        <div className="max-h-56 overflow-y-auto space-y-2 pr-2 custom-scrollbar scrollbar-hide">
                             {searchQuery ? (
                                 isSearching ? (
-                                    <div className="flex justify-center py-4">
-                                        <Loader2 className="w-5 h-5 animate-spin text-brand-burgundy/40" />
+                                    <div className="flex justify-center py-8">
+                                        <Loader2 className="w-6 h-6 animate-spin text-indigo-500/40" />
                                     </div>
                                 ) : searchResults.length > 0 ? (
-                                    searchResults.map(user => (
-                                        <button
-                                            key={user.uid}
-                                            onClick={() => toggleMember(user)}
-                                            className="w-full flex items-center justify-between p-2 hover:bg-brand-burgundy/5 rounded-xl transition-colors group"
-                                        >
-                                            <div className="flex items-center gap-3 text-left">
-                                                <img 
-                                                    src={user.profilePic || `https://placehold.co/100x100/EFEFEFF/3D2B27?text=${user.name.substring(0, 1)}`} 
-                                                    alt={user.name} 
-                                                    className="w-10 h-10 rounded-full object-cover border border-brand-ebony/20"
-                                                />
-                                                <div>
-                                                    <p className="text-sm font-serif font-bold text-brand-ebony">{user.name}</p>
-                                                    <p className="text-[10px] text-brand-ebony/50 uppercase font-bold">{user.profession || `Batch of ${user.batch}`}</p>
+                                    searchResults.map(user => {
+                                        const isSelected = selectedMembers.find(m => m.uid === user.uid);
+                                        return (
+                                            <button
+                                                key={user.uid}
+                                                onClick={() => toggleMember(user)}
+                                                className={`w-full flex items-center justify-between p-3.5 rounded-2xl transition-all group border ${
+                                                    isSelected 
+                                                        ? 'bg-indigo-500/5 border-indigo-500/20' 
+                                                        : 'hover:bg-brand-ebony/5 border-transparent'
+                                                }`}
+                                            >
+                                                <div className="flex items-center gap-4 text-left">
+                                                    <img 
+                                                        src={user.profilePic || `https://placehold.co/100x100/4f46e5/ffffff?text=${user.name.substring(0, 1)}`} 
+                                                        alt={user.name} 
+                                                        className={`w-11 h-11 rounded-full object-cover border-2 shadow-sm transition-transform ${isSelected ? 'border-indigo-500' : 'border-white dark:border-brand-parchment group-hover:scale-105'}`}
+                                                    />
+                                                    <div>
+                                                        <p className={`text-sm font-extrabold transition-colors ${isSelected ? 'text-indigo-600' : 'text-brand-ebony'}`}>{user.name}</p>
+                                                        <p className="text-[10px] text-brand-ebony/40 uppercase font-extrabold tracking-widest mt-0.5">{user.profession || `Class of ${user.batch}`}</p>
+                                                    </div>
                                                 </div>
-                                            </div>
-                                            <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
-                                                selectedMembers.find(m => m.uid === user.uid)
-                                                    ? 'bg-brand-burgundy border-brand-burgundy text-white'
-                                                    : 'border-brand-ebony/10 group-hover:border-brand-burgundy/30'
-                                            }`}>
-                                                {selectedMembers.find(m => m.uid === user.uid) && <Check className="w-3 h-3 stroke-[3]" />}
-                                            </div>
-                                        </button>
-                                    ))
+                                                <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${
+                                                    isSelected
+                                                        ? 'bg-indigo-500 border-indigo-500 text-white shadow-md'
+                                                        : 'border-brand-ebony/10'
+                                                }`}>
+                                                    {isSelected && <Check className="w-3.5 h-3.5 stroke-[4]" />}
+                                                </div>
+                                            </button>
+                                        );
+                                    })
                                 ) : (
-                                    <p className="text-center py-4 text-xs text-brand-ebony/30">No results found</p>
+                                    <div className="text-center py-10">
+                                        <p className="text-xs font-serif italic text-brand-ebony/30">No matching alumni found</p>
+                                    </div>
                                 )
                             ) : selectedMembers.length > 0 ? (
-                                <div className="flex flex-wrap gap-2">
+                                <div className="flex flex-wrap gap-2 py-2">
                                     {selectedMembers.map(user => (
-                                        <div key={user.uid} className="flex items-center gap-2 bg-brand-burgundy/10 px-3 py-1.5 rounded-full border border-brand-burgundy/20">
-                                            <span className="text-xs font-bold text-brand-burgundy">{user.name}</span>
-                                            <button onClick={() => toggleMember(user)}>
-                                                <X className="w-3 h-3 text-brand-burgundy hover:text-brand-ebony transition-colors" />
+                                        <div key={user.uid} className="flex items-center gap-2 bg-indigo-500 text-white px-4 py-2 rounded-2xl shadow-md animate-in zoom-in">
+                                            <span className="text-[11px] font-extrabold">{user.name}</span>
+                                            <button onClick={() => toggleMember(user)} className="p-0.5 hover:bg-white/20 rounded-full transition-colors">
+                                                <X className="w-3 h-3" />
                                             </button>
                                         </div>
                                     ))}
                                 </div>
                             ) : (
-                                <p className="text-center py-4 text-xs text-brand-ebony/30 italic">Search users to add them to the group</p>
+                                <div className="text-center py-12 px-6 border-2 border-dashed border-brand-ebony/5 rounded-3xl">
+                                    <p className="text-sm font-serif italic text-brand-ebony/30">Search for alumni to invite to this circle</p>
+                                </div>
                             )}
                         </div>
                     </div>
                 </div>
 
                 {/* Footer */}
-                <div className="p-6 bg-brand-parchment/5 border-t border-brand-ebony/10 flex gap-3">
+                <div className="p-8 border-t border-brand-ebony/5 flex gap-4">
                     <button
                         onClick={onClose}
-                        className="flex-1 py-3 text-sm font-medium text-brand-ebony/60 hover:text-brand-ebony transition-colors"
+                        className="flex-1 py-4 text-xs font-extrabold uppercase tracking-widest text-brand-ebony/40 hover:text-brand-ebony transition-all"
                     >
-                        Cancel
+                        Dismiss
                     </button>
                     <button
                         onClick={handleCreateGroup}
-                        disabled={!groupName.trim() || isCreating}
-                        className="flex-[2] py-3 bg-brand-burgundy text-white rounded-xl font-bold text-sm shadow-lg shadow-brand-burgundy/20 hover:bg-[#5a2427] transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                        disabled={!groupName.trim() || selectedMembers.length === 0 || isCreating}
+                        className="flex-[2] py-4 bg-gradient-indigo text-white rounded-2xl font-extrabold text-xs uppercase tracking-[0.2em] shadow-xl shadow-indigo-500/20 hover:brightness-110 active:scale-[0.98] transition-all disabled:opacity-30 disabled:cursor-not-allowed disabled:shadow-none flex items-center justify-center gap-2"
                     >
-                        {isCreating ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Create Group'}
+                        {isCreating ? <Loader2 className="w-5 h-5 animate-spin" /> : (
+                            <>
+                                Establish Circle
+                                <Check className="w-4 h-4" />
+                            </>
+                        )}
                     </button>
                 </div>
             </div>

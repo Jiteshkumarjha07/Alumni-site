@@ -9,7 +9,7 @@ import {
     deleteUser
 } from 'firebase/auth';
 import { doc, updateDoc, deleteDoc } from 'firebase/firestore';
-import { X, Lock, Trash2, PauseCircle, Eye, EyeOff, ChevronRight, AlertTriangle, CheckCircle2, LogOut } from 'lucide-react';
+import { X, Lock, Trash2, PauseCircle, Eye, EyeOff, ChevronRight, AlertTriangle, CheckCircle2, LogOut, ShieldCheck, Sparkles, User as UserIcon } from 'lucide-react';
 
 interface AccountSettingsModalProps {
     isOpen: boolean;
@@ -72,13 +72,8 @@ export function AccountSettingsModal({ isOpen, onClose, userEmail, userId, onAcc
             await updatePassword(user, newPassword);
             setSuccess('Password updated successfully!');
             setCurrentPassword(''); setNewPassword(''); setConfirmPassword('');
-        } catch (err: unknown) {
-            const e = err as { code?: string };
-            if (e.code === 'auth/wrong-password' || e.code === 'auth/invalid-credential') {
-                setError('Current password is incorrect.');
-            } else {
-                setError('Failed to update password. Please try again.');
-            }
+        } catch (err: any) {
+            setError(err.code === 'auth/wrong-password' ? 'Current password is incorrect.' : 'Failed to update password.');
         } finally {
             setLoading(false);
         }
@@ -97,15 +92,10 @@ export function AccountSettingsModal({ isOpen, onClose, userEmail, userId, onAcc
                 deactivatedAt: new Date(),
                 reactivateAt: reactivateAt,
             });
-            setSuccess(`Account deactivated for ${deactivateDuration} days. You will be signed out.`);
+            setSuccess(`Deactivated for ${deactivateDuration} days. Signing out...`);
             setTimeout(() => { auth.signOut(); }, 2000);
-        } catch (err: unknown) {
-            const e = err as { code?: string };
-            if (e.code === 'auth/wrong-password' || e.code === 'auth/invalid-credential') {
-                setError('Password is incorrect.');
-            } else {
-                setError('Failed to deactivate account. Please try again.');
-            }
+        } catch (err: any) {
+            setError('Failed to deactivate account.');
         } finally {
             setLoading(false);
         }
@@ -123,13 +113,8 @@ export function AccountSettingsModal({ isOpen, onClose, userEmail, userId, onAcc
             await deleteDoc(doc(db, 'users', userId));
             await deleteUser(user);
             onAccountDeleted();
-        } catch (err: unknown) {
-            const e = err as { code?: string };
-            if (e.code === 'auth/wrong-password' || e.code === 'auth/invalid-credential') {
-                setError('Password is incorrect.');
-            } else {
-                setError('Failed to delete account. Please try again.');
-            }
+        } catch (err: any) {
+            setError('Failed to delete account.');
         } finally {
             setLoading(false);
         }
@@ -137,45 +122,48 @@ export function AccountSettingsModal({ isOpen, onClose, userEmail, userId, onAcc
 
     if (!isOpen) return null;
 
-    const inputClass = "w-full px-4 py-2.5 bg-brand-parchment/40 border border-brand-ebony/15 rounded-xl focus:ring-2 focus:ring-brand-burgundy/20 focus:border-brand-burgundy outline-none transition-all text-sm placeholder:text-brand-ebony/30";
-    const labelClass = "block text-xs font-bold uppercase tracking-widest text-brand-ebony/50 mb-1.5";
+    const inputClass = "w-full px-6 py-4 bg-brand-ebony/5 border border-brand-ebony/5 rounded-2xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all font-bold text-sm text-brand-ebony placeholder:text-brand-ebony/25 shadow-inner";
+    const labelClass = "block text-[10px] font-extrabold uppercase tracking-[0.2em] text-brand-ebony/40 mb-2.5 px-1";
 
     return (
-        <div className="fixed inset-0 bg-brand-ebony/50 dark:bg-black/50 dark:bg-black/50 flex items-center justify-center z-[70] p-4 backdrop-blur-sm">
-            <div className="bg-brand-cream border border-brand-ebony/10 rounded-2xl shadow-2xl w-full max-w-md animate-in zoom-in-95 duration-200 overflow-hidden">
+        <div className="fixed inset-0 bg-brand-ebony/60 dark:bg-black/80 backdrop-blur-md flex items-center justify-center z-[200] p-4">
+            <div className="card-premium max-w-lg w-full max-h-[90vh] overflow-y-auto border-brand-burgundy/10 shadow-2xl animate-in fade-in zoom-in-95 duration-300">
                 {/* Header */}
-                <div className="flex items-center justify-between px-6 py-4 border-b border-brand-ebony/10 bg-brand-parchment/60">
-                    <div className="flex items-center gap-2">
-                        {section !== 'menu' && (
-                            <button 
-                                onClick={() => { setSection('menu'); setError(''); setSuccess(''); }}
-                                className="text-brand-ebony/40 hover:text-brand-ebony transition-colors mr-1 text-lg font-light"
-                            >
-                                ←
-                            </button>
-                        )}
-                        <h2 className="text-lg font-serif font-bold text-brand-ebony">
-                            {section === 'menu' && 'Account Settings'}
-                            {section === 'change-password' && 'Change Password'}
-                            {section === 'deactivate' && 'Deactivate Account'}
-                            {section === 'delete' && 'Delete Account'}
-                        </h2>
+                <div className="flex items-center justify-between p-8 border-b border-brand-ebony/5 sticky top-0 bg-white/50 dark:bg-brand-parchment/10 backdrop-blur-xl z-20">
+                    <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 bg-gradient-indigo rounded-2xl flex items-center justify-center text-white shadow-lg">
+                            {section === 'menu' ? <ShieldCheck className="w-6 h-6" /> : (
+                                <button onClick={() => { setSection('menu'); setError(''); setSuccess(''); }}>
+                                    <ChevronRight className="w-6 h-6 rotate-180" />
+                                </button>
+                            )}
+                        </div>
+                        <div>
+                            <h2 className="text-2xl font-serif font-extrabold text-brand-ebony flex items-center gap-2">
+                                {section === 'menu' && 'Governance'}
+                                {section === 'change-password' && 'Key Access'}
+                                {section === 'deactivate' && 'Pause Legacy'}
+                                {section === 'delete' && 'Dissolve Legacy'}
+                                <Sparkles className="w-4 h-4 text-brand-gold" />
+                            </h2>
+                            <p className="text-[10px] font-extrabold text-brand-ebony/30 uppercase tracking-[0.2em] mt-1">Manage your digital presence</p>
+                        </div>
                     </div>
-                    <button onClick={handleClose} className="p-1.5 rounded-full hover:bg-brand-ebony/5 text-brand-ebony/40 transition-colors">
-                        <X className="w-5 h-5" />
+                    <button onClick={handleClose} className="p-3 hover:bg-brand-ebony/5 text-brand-ebony/30 rounded-full transition-all">
+                        <X className="w-6 h-6" />
                     </button>
                 </div>
 
-                <div className="p-6">
-                    {/* Error / Success */}
+                <div className="p-8">
+                    {/* Error / Success Notifications */}
                     {error && (
-                        <div className="mb-4 flex items-center gap-2 px-4 py-3 bg-red-50 border border-red-100 rounded-xl text-sm text-red-700">
+                        <div className="mb-6 flex items-center gap-3 px-5 py-4 bg-red-500/5 border border-red-500/10 rounded-2xl text-[11px] font-extrabold text-red-500 uppercase tracking-widest animate-in slide-in-from-top-2">
                             <AlertTriangle className="w-4 h-4 shrink-0" />
                             {error}
                         </div>
                     )}
                     {success && (
-                        <div className="mb-4 flex items-center gap-2 px-4 py-3 bg-green-50 border border-green-100 rounded-xl text-sm text-green-700">
+                        <div className="mb-6 flex items-center gap-3 px-5 py-4 bg-emerald-500/5 border border-emerald-500/10 rounded-2xl text-[11px] font-extrabold text-emerald-500 uppercase tracking-widest animate-in slide-in-from-top-2">
                             <CheckCircle2 className="w-4 h-4 shrink-0" />
                             {success}
                         </div>
@@ -183,159 +171,117 @@ export function AccountSettingsModal({ isOpen, onClose, userEmail, userId, onAcc
 
                     {/* Menu */}
                     {section === 'menu' && (
-                        <div className="space-y-2">
-                            <p className="text-xs text-brand-ebony/40 italic mb-4">Signed in as <span className="font-semibold not-italic">{userEmail}</span></p>
-                            <button
-                                onClick={() => { setSection('change-password'); setError(''); setSuccess(''); }}
-                                className="w-full flex items-center justify-between p-4 bg-brand-parchment/50 hover:bg-brand-parchment rounded-xl border border-brand-ebony/10 transition-all group"
-                            >
-                                <div className="flex items-center gap-3">
-                                    <div className="w-9 h-9 bg-brand-burgundy/10 rounded-full flex items-center justify-center group-hover:bg-brand-burgundy/20 transition-colors">
-                                        <Lock className="w-4 h-4 text-brand-burgundy" />
+                        <div className="space-y-3">
+                            <div className="flex items-center gap-3 px-5 py-3 bg-brand-ebony/5 rounded-2xl border border-brand-ebony/5 mb-6">
+                                <UserIcon className="w-4 h-4 text-brand-ebony/20" />
+                                <p className="text-[10px] font-extrabold text-brand-ebony/40 uppercase tracking-widest leading-none">Registered as <span className="text-brand-ebony">{userEmail}</span></p>
+                            </div>
+
+                            {[
+                                { id: 'change-password', icon: Lock, title: 'Key Access', sub: 'Update account password', color: 'text-indigo-500', bg: 'bg-indigo-500/10' },
+                                { id: 'deactivate', icon: PauseCircle, title: 'Pause Legacy', sub: 'Hide profile temporarily', color: 'text-amber-500', bg: 'bg-amber-500/10' },
+                                { id: 'delete', icon: Trash2, title: 'Dissolve Legacy', sub: 'Permanent account removal', color: 'text-red-500', bg: 'bg-red-500/10' },
+                                { id: 'logout', icon: LogOut, title: 'Sign Out', sub: 'End current session', color: 'text-brand-ebony', bg: 'bg-brand-ebony/10', action: () => auth.signOut() }
+                            ].map((item) => (
+                                <button
+                                    key={item.id}
+                                    onClick={item.action || (() => { setSection(item.id as Section); setError(''); setSuccess(''); })}
+                                    className={`w-full flex items-center justify-between p-5 hover:bg-white dark:hover:bg-brand-ebony/20 rounded-[2rem] border border-transparent hover:border-brand-ebony/5 transition-all group active:scale-[0.98] ${item.id === 'logout' ? 'mt-8' : ''}`}
+                                >
+                                    <div className="flex items-center gap-5">
+                                        <div className={`w-12 h-12 ${item.bg} rounded-2xl flex items-center justify-center ${item.color} group-hover:scale-110 transition-transform shadow-sm`}>
+                                            <item.icon className="w-6 h-6" />
+                                        </div>
+                                        <div className="text-left">
+                                            <p className="text-sm font-extrabold text-brand-ebony">{item.title}</p>
+                                            <p className="text-[10px] font-extrabold text-brand-ebony/30 uppercase tracking-widest mt-1">{item.sub}</p>
+                                        </div>
                                     </div>
-                                    <div className="text-left">
-                                        <p className="text-sm font-semibold text-brand-ebony">Change Password</p>
-                                        <p className="text-xs text-brand-ebony/40">Update your account password</p>
-                                    </div>
-                                </div>
-                                <ChevronRight className="w-4 h-4 text-brand-ebony/30 group-hover:text-brand-burgundy transition-colors" />
-                            </button>
-                            <button
-                                onClick={() => { setSection('deactivate'); setError(''); setSuccess(''); }}
-                                className="w-full flex items-center justify-between p-4 bg-brand-parchment/50 hover:bg-brand-parchment rounded-xl border border-brand-ebony/10 transition-all group"
-                            >
-                                <div className="flex items-center gap-3">
-                                    <div className="w-9 h-9 bg-amber-100 rounded-full flex items-center justify-center group-hover:bg-amber-200 transition-colors">
-                                        <PauseCircle className="w-4 h-4 text-amber-700" />
-                                    </div>
-                                    <div className="text-left">
-                                        <p className="text-sm font-semibold text-brand-ebony">Deactivate Account</p>
-                                        <p className="text-xs text-brand-ebony/40">Temporarily hide your profile</p>
-                                    </div>
-                                </div>
-                                <ChevronRight className="w-4 h-4 text-brand-ebony/30 group-hover:text-amber-600 transition-colors" />
-                            </button>
-                            <button
-                                onClick={() => { setSection('delete'); setError(''); setSuccess(''); }}
-                                className="w-full flex items-center justify-between p-4 bg-red-50/80 hover:bg-red-50 rounded-xl border border-red-100 transition-all group"
-                            >
-                                <div className="flex items-center gap-3">
-                                    <div className="w-9 h-9 bg-red-100 rounded-full flex items-center justify-center group-hover:bg-red-200 transition-colors">
-                                        <Trash2 className="w-4 h-4 text-red-600" />
-                                    </div>
-                                    <div className="text-left">
-                                        <p className="text-sm font-semibold text-red-700">Delete Account</p>
-                                        <p className="text-xs text-red-400">Permanently remove your account</p>
-                                    </div>
-                                </div>
-                                <ChevronRight className="w-4 h-4 text-red-300 group-hover:text-red-500 transition-colors" />
-                            </button>
-                            <button
-                                onClick={() => auth.signOut()}
-                                className="w-full flex items-center justify-between p-4 bg-brand-parchment/50 hover:bg-brand-parchment rounded-xl border border-brand-ebony/10 transition-all group mt-6"
-                            >
-                                <div className="flex items-center gap-3">
-                                    <div className="w-9 h-9 bg-brand-ebony/10 rounded-full flex items-center justify-center group-hover:bg-brand-ebony/20 transition-colors">
-                                        <LogOut className="w-4 h-4 text-brand-ebony" />
-                                    </div>
-                                    <div className="text-left">
-                                        <p className="text-sm font-semibold text-brand-ebony">Log Out</p>
-                                        <p className="text-xs text-brand-ebony/40">End your current session</p>
-                                    </div>
-                                </div>
-                                <ChevronRight className="w-4 h-4 text-brand-ebony/30 group-hover:text-brand-ebony transition-colors" />
-                            </button>
+                                    <ChevronRight className={`w-5 h-5 transition-transform group-hover:translate-x-1 ${item.color} opacity-20`} />
+                                </button>
+                            ))}
                         </div>
                     )}
 
                     {/* Change Password */}
                     {section === 'change-password' && (
-                        <form onSubmit={handleChangePassword} className="space-y-4">
-                            <div>
-                                <label className={labelClass}>Current Password</label>
-                                <div className="relative">
-                                    <input type={showCurrent ? 'text' : 'password'} value={currentPassword} onChange={e => setCurrentPassword(e.target.value)} className={inputClass} placeholder="Enter current password" required />
-                                    <button type="button" onClick={() => setShowCurrent(!showCurrent)} className="absolute right-3 top-1/2 -translate-y-1/2 text-brand-ebony/30">
-                                        {showCurrent ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                                    </button>
+                        <form onSubmit={handleChangePassword} className="space-y-6">
+                            {[
+                                { label: 'Current Key', val: currentPassword, set: setCurrentPassword, show: showCurrent, setShow: setShowCurrent },
+                                { label: 'New Key', val: newPassword, set: setNewPassword, show: showNew, setShow: setShowNew },
+                                { label: 'Re-enter New Key', val: confirmPassword, set: setConfirmPassword, show: showConfirm, setShow: setShowConfirm }
+                            ].map((field, idx) => (
+                                <div key={idx}>
+                                    <label className={labelClass}>{field.label}</label>
+                                    <div className="relative">
+                                        <input type={field.show ? 'text' : 'password'} value={field.val} onChange={e => field.set(e.target.value)} className={inputClass} placeholder="••••••••" required />
+                                        <button type="button" onClick={() => field.setShow(!field.show)} className="absolute right-5 top-1/2 -translate-y-1/2 text-brand-ebony/20 hover:text-indigo-500 transition-colors">
+                                            {field.show ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                                        </button>
+                                    </div>
                                 </div>
-                            </div>
-                            <div>
-                                <label className={labelClass}>New Password</label>
-                                <div className="relative">
-                                    <input type={showNew ? 'text' : 'password'} value={newPassword} onChange={e => setNewPassword(e.target.value)} className={inputClass} placeholder="Min. 8 characters" required />
-                                    <button type="button" onClick={() => setShowNew(!showNew)} className="absolute right-3 top-1/2 -translate-y-1/2 text-brand-ebony/30">
-                                        {showNew ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                                    </button>
-                                </div>
-                            </div>
-                            <div>
-                                <label className={labelClass}>Confirm New Password</label>
-                                <div className="relative">
-                                    <input type={showConfirm ? 'text' : 'password'} value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} className={inputClass} placeholder="Repeat new password" required />
-                                    <button type="button" onClick={() => setShowConfirm(!showConfirm)} className="absolute right-3 top-1/2 -translate-y-1/2 text-brand-ebony/30">
-                                        {showConfirm ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                                    </button>
-                                </div>
-                            </div>
-                            <button type="submit" disabled={loading} className="w-full py-3 bg-brand-burgundy text-white rounded-xl font-semibold hover:bg-[#5a2427] transition-colors disabled:opacity-50 text-sm">
-                                {loading ? 'Updating...' : 'Update Password'}
+                            ))}
+                            <button type="submit" disabled={loading} className="w-full py-4 bg-gradient-indigo text-white rounded-[1.5rem] font-extrabold uppercase tracking-[0.2em] text-xs shadow-xl shadow-indigo-500/20 hover:brightness-110 transition-all disabled:opacity-30">
+                                {loading ? 'Updating Secret...' : 'Rotate Security Keys'}
                             </button>
                         </form>
                     )}
 
                     {/* Deactivate Account */}
                     {section === 'deactivate' && (
-                        <form onSubmit={handleDeactivate} className="space-y-4">
-                            <div className="p-4 bg-amber-50 border border-amber-100 rounded-xl text-sm text-amber-800">
-                                <p className="font-semibold mb-1">What happens when you deactivate?</p>
-                                <ul className="list-disc list-inside space-y-1 text-amber-700 text-xs">
-                                    <li>Your profile will be hidden from other users</li>
-                                    <li>Your posts and messages will be preserved</li>
-                                    <li>Your account will auto-reactivate after the selected period</li>
+                        <form onSubmit={handleDeactivate} className="space-y-6">
+                            <div className="p-6 bg-amber-500/5 border border-amber-500/10 rounded-[2rem] text-sm text-amber-700 space-y-4">
+                                <p className="font-extrabold uppercase tracking-widest text-[11px] mb-2 flex items-center gap-2">
+                                    <AlertTriangle className="w-4 h-4" /> Hibernation Logic
+                                </p>
+                                <ul className="space-y-2 text-[11px] font-medium leading-relaxed opacity-80">
+                                    <li>• Your profile will be hidden from the alumni network</li>
+                                    <li>• Contributions & messages remain archived and secure</li>
+                                    <li>• Auto-reactivation occurs after the chosen cycle</li>
                                 </ul>
                             </div>
                             <div>
-                                <label className={labelClass}>Deactivate For</label>
-                                <select value={deactivateDuration} onChange={e => setDeactivateDuration(e.target.value)} className={inputClass}>
-                                    <option value="7">7 days</option>
-                                    <option value="14">14 days</option>
-                                    <option value="30">30 days</option>
-                                    <option value="60">60 days</option>
-                                    <option value="90">90 days</option>
+                                <label className={labelClass}>Hibernation Period</label>
+                                <select value={deactivateDuration} onChange={e => setDeactivateDuration(e.target.value)} className={`${inputClass} appearance-none cursor-pointer`}>
+                                    <option value="7">7 Days Cycle</option>
+                                    <option value="14">14 Days Cycle</option>
+                                    <option value="30">30 Days Cycle</option>
+                                    <option value="90">90 Days Cycle</option>
                                 </select>
                             </div>
                             <div>
-                                <label className={labelClass}>Confirm Password</label>
-                                <input type="password" value={deactivatePassword} onChange={e => setDeactivatePassword(e.target.value)} className={inputClass} placeholder="Enter your password" required />
+                                <label className={labelClass}>Authorize Action</label>
+                                <input type="password" value={deactivatePassword} onChange={e => setDeactivatePassword(e.target.value)} className={inputClass} placeholder="Enter password to confirm" required />
                             </div>
-                            <button type="submit" disabled={loading} className="w-full py-3 bg-amber-600 text-white rounded-xl font-semibold hover:bg-amber-700 transition-colors disabled:opacity-50 text-sm">
-                                {loading ? 'Deactivating...' : `Deactivate for ${deactivateDuration} days`}
+                            <button type="submit" disabled={loading} className="w-full py-4 bg-amber-500 text-white rounded-[1.5rem] font-extrabold uppercase tracking-[0.2em] text-xs shadow-xl shadow-amber-500/20 hover:brightness-110 transition-all disabled:opacity-30">
+                                {loading ? 'Processing...' : `Confirm ${deactivateDuration} Day Pause`}
                             </button>
                         </form>
                     )}
 
                     {/* Delete Account */}
                     {section === 'delete' && (
-                        <form onSubmit={handleDeleteAccount} className="space-y-4">
-                            <div className="p-4 bg-red-50 border border-red-100 rounded-xl text-sm text-red-800">
-                                <p className="font-semibold mb-1">⚠️ This action is permanent</p>
-                                <ul className="list-disc list-inside space-y-1 text-red-700 text-xs">
-                                    <li>All your posts, messages, and data will be removed</li>
-                                    <li>Your connections will no longer see your profile</li>
-                                    <li>This cannot be undone</li>
+                        <form onSubmit={handleDeleteAccount} className="space-y-6">
+                            <div className="p-6 bg-red-500/5 border border-red-500/10 rounded-[2rem] text-sm text-red-600 space-y-4">
+                                <p className="font-extrabold uppercase tracking-widest text-[11px] mb-2 flex items-center gap-2">
+                                    <Trash2 className="w-4 h-4" /> Terminal Exception
+                                </p>
+                                <ul className="space-y-2 text-[11px] font-medium leading-relaxed opacity-80">
+                                    <li>• All legacy contributions and messages will be purged</li>
+                                    <li>• Your identity will be removed from all alumni logs</li>
+                                    <li>• This action is irreversible on the blockchain ledger</li>
                                 </ul>
                             </div>
                             <div>
-                                <label className={labelClass}>Confirm Password</label>
-                                <input type="password" value={deletePassword} onChange={e => setDeletePassword(e.target.value)} className={inputClass} placeholder="Enter your password" required />
+                                <label className={labelClass}>Authorize Dissolution</label>
+                                <input type="password" value={deletePassword} onChange={e => setDeletePassword(e.target.value)} className={inputClass} placeholder="Enter target password" required />
                             </div>
                             <div>
-                                <label className={labelClass}>Type <span className="text-red-600 font-black">DELETE</span> to confirm</label>
-                                <input type="text" value={deleteConfirmText} onChange={e => setDeleteConfirmText(e.target.value)} className={`${inputClass} border-red-200 focus:border-red-400 focus:ring-red-100`} placeholder="DELETE" required />
+                                <label className={labelClass}>Final Consent (Type <span className="text-red-500 font-black italic">DELETE</span>)</label>
+                                <input type="text" value={deleteConfirmText} onChange={e => setDeleteConfirmText(e.target.value)} className={`${inputClass} border-red-500/20 focus:border-red-500 focus:ring-red-500/10 text-red-500`} placeholder="Confirmation String" required />
                             </div>
-                            <button type="submit" disabled={loading || deleteConfirmText !== 'DELETE'} className="w-full py-3 bg-red-600 text-white rounded-xl font-semibold hover:bg-red-700 transition-colors disabled:opacity-50 text-sm">
-                                {loading ? 'Deleting Account...' : 'Permanently Delete Account'}
+                            <button type="submit" disabled={loading || deleteConfirmText !== 'DELETE'} className="w-full py-4 bg-red-500 text-white rounded-[1.5rem] font-extrabold uppercase tracking-[0.2em] text-xs shadow-xl shadow-red-500/20 hover:brightness-110 transition-all disabled:opacity-30">
+                                {loading ? 'Dissolving...' : 'Permanently Purge Account'}
                             </button>
                         </form>
                     )}

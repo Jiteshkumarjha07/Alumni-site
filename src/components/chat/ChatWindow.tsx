@@ -7,7 +7,7 @@ import { db } from '@/lib/firebase';
 import { MessageBubble } from './MessageBubble';
 import { ForwardMessageModal } from './ForwardMessageModal';
 import { PollModal } from '../modals/PollModal';
-import { Send, Loader2, ArrowLeft, X, CheckCheck, ShieldCheck, Lock, Image as ImageIcon, Video as VideoIcon, Plus, Users, Phone, Video, Mic, MicOff, Paperclip, FileText, BarChart2, Download, Smile, LogOut, ListChecks, CheckCircle2, Trash2 } from 'lucide-react';
+import { Send, Loader2, ArrowLeft, X, CheckCheck, ShieldCheck, Lock, Image as ImageIcon, Video as VideoIcon, Plus, Users, Phone, Video, Mic, MicOff, Paperclip, FileText, BarChart2, Download, Smile, LogOut, ListChecks, CheckCircle2, Trash2, Sparkles, MoreHorizontal, Info } from 'lucide-react';
 import { encryptMessage, decryptMessage, getSharedSecret } from '@/lib/encryption';
 import { uploadMedia, uploadVideo, uploadFile, uploadAudio } from '@/lib/media';
 
@@ -35,6 +35,7 @@ export function ChatWindow({ chatId, currentUser, otherUser, isGroup = false, gr
     const [mediaPreview, setMediaPreview] = useState<{ url: string; type: 'image' | 'video' | 'file'; file: File; name?: string; size?: number } | null>(null);
     const [showCallMenu, setShowCallMenu] = useState(false);
     const [showAttachmentMenu, setShowAttachmentMenu] = useState(false);
+    const [showMoreMenu, setShowMoreMenu] = useState(false);
     const [showPollModal, setShowPollModal] = useState(false);
     const [showEmojiPicker, setShowEmojiPicker] = useState(false);
     const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
@@ -51,7 +52,7 @@ export function ChatWindow({ chatId, currentUser, otherUser, isGroup = false, gr
     const [recordingSeconds, setRecordingSeconds] = useState(0);
     const mediaRecorderRef = useRef<MediaRecorder | null>(null);
     const audioChunksRef = useRef<Blob[]>([]);
-    const recordingTimerRef = useRef<ReturnType<typeof setInterval> | null>(null); // tracks if user manually stopped
+    const recordingTimerRef = useRef<ReturnType<typeof setInterval> | null>(null); 
     const isStartingRecordingRef = useRef(false);
 
     const startRecording = async () => {
@@ -67,8 +68,6 @@ export function ChatWindow({ chatId, currentUser, otherUser, isGroup = false, gr
                 options = { mimeType: 'audio/webm' };
             } else if (MediaRecorder.isTypeSupported('audio/mp4')) {
                 options = { mimeType: 'audio/mp4' };
-            } else if (MediaRecorder.isTypeSupported('audio/ogg')) {
-                options = { mimeType: 'audio/ogg' };
             }
             
             const recorder = new MediaRecorder(stream, options);
@@ -78,7 +77,7 @@ export function ChatWindow({ chatId, currentUser, otherUser, isGroup = false, gr
                 if (e.data.size > 0) audioChunksRef.current.push(e.data);
             };
 
-            recorder.start(); // collect audio data internally until stop() is called
+            recorder.start(); 
             setIsRecording(true);
             setRecordingSeconds(0);
             recordingTimerRef.current = setInterval(() => {
@@ -86,11 +85,7 @@ export function ChatWindow({ chatId, currentUser, otherUser, isGroup = false, gr
             }, 1000);
         } catch (err: any) {
             console.error('Audio setup failed:', err);
-            if (err.name === 'NotAllowedError' || err.name === 'NotFoundError') {
-                alert('Microphone access denied. Please allow microphone permission to send voice messages.');
-            } else {
-                alert('Failed to start recording. Your browser might not support this format.');
-            }
+            alert('Microphone access denied or not supported.');
         } finally {
             isStartingRecordingRef.current = false;
         }
@@ -112,37 +107,25 @@ export function ChatWindow({ chatId, currentUser, otherUser, isGroup = false, gr
         }
 
         recorder.onstop = async () => {
-            // Stop tracks after onstop completes
             recorder.stream.getTracks().forEach(t => t.stop());
-            
             const rawBlob = new Blob(audioChunksRef.current, { type: recorder.mimeType || 'audio/webm' });
-            
-            // Critical fix for Chromium/Windows: Convert the live MediaRecorder Blob into a static Buffer. 
-            // Uploading a raw MediaRecorder Blob directly via fetch/Firebase causes indefinite hanging
-            // as the browser network stack waits for the live stream to "close".
             const buffer = await rawBlob.arrayBuffer();
             const blob = new Blob([buffer], { type: rawBlob.type });
-
-            const duration = finalDuration;
             audioChunksRef.current = [];
 
-            if (blob.size === 0) {
-                 alert("Voice message too short to send.");
-                 return;
-            }
+            if (blob.size === 0) return;
 
             setSending(true);
             try {
                 const collectionPath = isGroup ? 'groups' : 'chats';
-                const audioPath = isGroup ? `groups/${chatId}/audio` : `chats/${chatId}/audio`;
-                const audioUrl = await uploadAudio(blob, audioPath);
+                const audioUrl = await uploadAudio(blob, isGroup ? `groups/${chatId}/audio` : `chats/${chatId}/audio`);
                 if (!audioUrl) return;
 
                 const encryptedAudioUrl = encryptMessage(audioUrl, encryptionSecret);
                 const messageData: any = {
                     text: encryptMessage('🎙️ Voice message', encryptionSecret),
                     audioUrl: encryptedAudioUrl,
-                    audioDuration: duration,
+                    audioDuration: finalDuration,
                     senderId: currentUser.uid,
                     senderName: currentUser.name,
                     senderProfilePic: currentUser.profilePic || null,
@@ -154,7 +137,6 @@ export function ChatWindow({ chatId, currentUser, otherUser, isGroup = false, gr
                 };
                 await addDoc(collection(db, collectionPath, chatId, 'messages'), messageData);
 
-                // Update last message pointer
                 if (!isGroup && otherUser) {
                     await setDoc(doc(db, 'chats', chatId), {
                         participants: [currentUser.uid, otherUser.uid],
@@ -174,20 +156,12 @@ export function ChatWindow({ chatId, currentUser, otherUser, isGroup = false, gr
                     });
                 }
             } catch (err) {
-                console.error('Voice message upload failed:', err);
-                alert('Failed to send voice message. Please try again.');
+                console.error('Voice recording failed:', err);
             } finally {
                 setSending(false);
             }
         };
-
-        try {
-            if (recorder.state !== 'inactive') {
-                recorder.stop();
-            }
-        } catch (err) {
-            console.error('Error stopping recorder:', err);
-        }
+        try { if (recorder.state !== 'inactive') recorder.stop(); } catch (err) {}
     };
 
     const encryptionSecret = isGroup 
@@ -197,84 +171,55 @@ export function ChatWindow({ chatId, currentUser, otherUser, isGroup = false, gr
     const [otherUserStatus, setOtherUserStatus] = useState<{ isOnline: boolean; lastSeen?: any } | null>(null);
 
     const isUserOnline = useMemo(() => {
-        if (!otherUserStatus) return false;
-        if (!otherUserStatus.isOnline) return false;
-        if (!otherUserStatus.lastSeen) return false;
-        
+        if (!otherUserStatus || !otherUserStatus.isOnline || !otherUserStatus.lastSeen) return false;
         try {
-            const lastSeenMillis = otherUserStatus.lastSeen.toMillis();
-            const now = Date.now();
-            return (now - lastSeenMillis) < 60000; // 60 second threshold
+            return (Date.now() - otherUserStatus.lastSeen.toMillis()) < 60000;
         } catch (e) {
             return otherUserStatus.isOnline;
         }
     }, [otherUserStatus]);
 
-    // Listen to other user's status
     useEffect(() => {
         if (isGroup || !otherUser?.uid) return;
         const unsubscribe = onSnapshot(doc(db, 'users', otherUser.uid), (docSnapshot) => {
             if (docSnapshot.exists()) {
                 const data = docSnapshot.data();
-                setOtherUserStatus({
-                    isOnline: data.isOnline || false,
-                    lastSeen: data.lastSeen
-                });
+                setOtherUserStatus({ isOnline: data.isOnline || false, lastSeen: data.lastSeen });
             }
         });
         return () => unsubscribe();
     }, [otherUser?.uid, isGroup]);
 
-    // Scroll to bottom
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [messages]);
 
-    // Fetch messages & Mark as read
     useEffect(() => {
-        if (!chatId) return;
-        if (isGroup && !groupData) return;
+        if (!chatId || (isGroup && !groupData)) return;
 
         setLoading(true);
         const collectionPath = isGroup ? 'groups' : 'chats';
-        const messagesRef = collection(db, collectionPath, chatId, 'messages');
-        const q = query(messagesRef, orderBy('createdAt', 'asc'));
+        const q = query(collection(db, collectionPath, chatId, 'messages'), orderBy('createdAt', 'asc'));
 
         const unsubscribe = onSnapshot(q, (snapshot) => {
             const fetchedMessages = snapshot.docs.map(doc => ({
                 id: doc.id,
                 ...doc.data({ serverTimestamps: 'estimate' })
             })) as Message[];
-
-            // Filter out messages hidden by current user
-            const visibleMessages = fetchedMessages
-                .filter(msg => !msg.hiddenBy?.includes(currentUser.uid));
-
-            setMessages(visibleMessages);
+            
+            setMessages(fetchedMessages.filter(msg => !msg.hiddenBy?.includes(currentUser.uid)));
             setLoading(false);
 
-            // Mark unread/undelivered messages as read and delivered
-            const messagesToUpdate = fetchedMessages.filter(
-                msg => msg.senderId !== currentUser.uid && (!msg.isRead || !msg.isDelivered)
-            );
+            fetchedMessages.filter(msg => msg.senderId !== currentUser.uid && (!msg.isRead || !msg.isDelivered)).forEach(async (msg) => {
+                await updateDoc(doc(db, collectionPath, chatId, 'messages', msg.id), {
+                    readBy: arrayUnion(currentUser.uid),
+                    isRead: true,
+                    isDelivered: true
+                }).catch(console.error);
+            });
 
-            if (messagesToUpdate.length > 0) {
-                messagesToUpdate.forEach(async (msg) => {
-                    const msgRef = doc(db, collectionPath, chatId, 'messages', msg.id);
-                    await updateDoc(msgRef, {
-                        readBy: arrayUnion(currentUser.uid),
-                        isRead: true,
-                        isDelivered: true
-                    }).catch(console.error);
-                });
-
-                // Reset unread count in parent doc (for private chats)
-                if (!isGroup) {
-                    const chatRef = doc(db, 'chats', chatId);
-                    updateDoc(chatRef, {
-                        [`unreadCount.${currentUser.uid}`]: 0
-                    }).catch(console.error);
-                }
+            if (!isGroup) {
+                updateDoc(doc(db, 'chats', chatId), { [`unreadCount.${currentUser.uid}`]: 0 }).catch(console.error);
             }
         }, (error) => {
             console.error('Error fetching messages:', error);
@@ -283,108 +228,6 @@ export function ChatWindow({ chatId, currentUser, otherUser, isGroup = false, gr
 
         return () => unsubscribe();
     }, [chatId, currentUser.uid, isGroup, groupData]);
-    
-    // Handle clicking outside to close all menus
-    useEffect(() => {
-        const handleClickOutside = (event: MouseEvent) => {
-            const target = event.target as HTMLElement;
-            // Don't close if clicking inside a menu or on a button that opens a menu
-            if (target.closest('.menu-container')) return;
-            
-            setShowCallMenu(false);
-            setShowAttachmentMenu(false);
-            setShowEmojiPicker(false);
-            setContextMenu(null);
-        };
-
-        const handleEscape = (event: KeyboardEvent) => {
-            if (event.key === 'Escape') {
-                setShowCallMenu(false);
-                setShowAttachmentMenu(false);
-                setShowEmojiPicker(false);
-                setContextMenu(null);
-                if (isSelectionMode) setIsSelectionMode(false);
-            }
-        };
-
-        if (showCallMenu || showAttachmentMenu || showEmojiPicker || contextMenu) {
-            document.addEventListener('mousedown', handleClickOutside);
-        }
-        document.addEventListener('keydown', handleEscape);
-
-        return () => {
-            document.removeEventListener('mousedown', handleClickOutside);
-            document.removeEventListener('keydown', handleEscape);
-        };
-    }, [showCallMenu, showAttachmentMenu, showEmojiPicker, contextMenu, isSelectionMode]);
-
-    const handleContextMenu = (e: React.MouseEvent) => {
-        e.preventDefault();
-        setContextMenu({ x: e.clientX, y: e.clientY });
-        setShowCallMenu(false);
-        setShowAttachmentMenu(false);
-        setShowEmojiPicker(false);
-    };
-
-    const handleToggleSelection = (messageId: string) => {
-        setSelectedMessageIds(prev => 
-            prev.includes(messageId) 
-                ? prev.filter(id => id !== messageId) 
-                : [...prev, messageId]
-        );
-    };
-    
-    const clearSelection = () => {
-        setSelectedMessageIds([]);
-        setIsSelectionMode(false);
-    };
-
-    const selectAllMessages = () => {
-        setSelectedMessageIds(messages.map(m => m.id));
-    };
-
-    const handleBulkDelete = async () => {
-        if (selectedMessageIds.length === 0) return;
-        if (!window.confirm(`Delete ${selectedMessageIds.length} messages?`)) return;
-
-        try {
-            const collectionPath = isGroup ? 'groups' : 'chats';
-            const promises = selectedMessageIds.map(id => {
-                const msgRef = doc(db, collectionPath, chatId, 'messages', id);
-                return updateDoc(msgRef, {
-                    hiddenBy: arrayUnion(currentUser.uid)
-                });
-            });
-            await Promise.all(promises);
-            clearSelection();
-        } catch (error) {
-            console.error('Error in bulk delete:', error);
-            alert('Could not delete some messages.');
-        }
-    };
-
-    const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>, type: 'image' | 'video' | 'file') => {
-        const file = e.target.files?.[0];
-        if (!file) return;
-
-        if (type === 'video' && file.size > 20 * 1024 * 1024) {
-            alert('Video file is too large. Please select a video under 20MB.');
-            return;
-        }
-
-        if (type === 'file' && file.size > 10 * 1024 * 1024) {
-            alert('File is too large. Please select a file under 10MB.');
-            return;
-        }
-
-        const url = URL.createObjectURL(file);
-        setMediaPreview({ url, type, file, name: file.name, size: file.size });
-        setShowAttachmentMenu(false);
-        
-        // Focus input
-        const input = document.querySelector('input[type="text"]') as HTMLInputElement;
-        if (input) input.focus();
-    };
 
     const handleSendMessage = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -403,29 +246,20 @@ export function ChatWindow({ chatId, currentUser, otherUser, isGroup = false, gr
         try {
             let imageUrl = '';
             let videoUrl = '';
-
             if (currentMedia) {
                 setUploadingMedia(true);
-                if (currentMedia.type === 'image') {
-                    imageUrl = await uploadMedia(currentMedia.file) || '';
-                } else if (currentMedia.type === 'video') {
-                    const videoPath = isGroup ? `groups/${chatId}/videos` : `chats/${chatId}/videos`;
-                    videoUrl = await uploadVideo(currentMedia.file, videoPath) || '';
-                } else {
-                    const filePath = isGroup ? `groups/${chatId}/files` : `chats/${chatId}/files`;
-                    imageUrl = await uploadFile(currentMedia.file, filePath) || '';
-                }
+                if (currentMedia.type === 'image') imageUrl = await uploadMedia(currentMedia.file) || '';
+                else if (currentMedia.type === 'video') videoUrl = await uploadVideo(currentMedia.file, isGroup ? `groups/${chatId}/videos` : `chats/${chatId}/videos`) || '';
+                else imageUrl = await uploadFile(currentMedia.file, isGroup ? `groups/${chatId}/files` : `chats/${chatId}/files`) || '';
             }
 
             const encryptedText = messageText ? encryptMessage(messageText, encryptionSecret) : '';
             const encryptedImageUrl = imageUrl ? encryptMessage(imageUrl, encryptionSecret) : '';
             const encryptedVideoUrl = videoUrl ? encryptMessage(videoUrl, encryptionSecret) : '';
-
             const collectionPath = isGroup ? 'groups' : 'chats';
 
             if (editingMessage) {
-                const msgRef = doc(db, collectionPath, chatId, 'messages', editingMessage.id);
-                await updateDoc(msgRef, {
+                await updateDoc(doc(db, collectionPath, chatId, 'messages', editingMessage.id), {
                     text: encryptedText,
                     isEdited: true
                 });
@@ -441,49 +275,30 @@ export function ChatWindow({ chatId, currentUser, otherUser, isGroup = false, gr
                     readBy: [currentUser.uid],
                     receiverId: isGroup ? null : otherUser?.uid || null
                 };
-
                 if (encryptedImageUrl) {
                     if (currentMedia?.type === 'file') {
-                        messageData.fileUrl = encryptedImageUrl;
-                        messageData.fileName = currentMedia.name;
-                        messageData.fileSize = currentMedia.size;
-                        messageData.fileType = currentMedia.file.type;
-                    } else {
-                        messageData.imageUrl = encryptedImageUrl;
-                    }
+                        messageData.fileUrl = encryptedImageUrl; messageData.fileName = currentMedia.name;
+                        messageData.fileSize = currentMedia.size; messageData.fileType = currentMedia.file.type;
+                    } else messageData.imageUrl = encryptedImageUrl;
                 }
                 if (encryptedVideoUrl) messageData.videoUrl = encryptedVideoUrl;
-
                 if (currentReply) {
                     messageData.replyToId = currentReply.id;
                     messageData.replyToText = encryptMessage(currentReply.text, encryptionSecret);
                     messageData.replyToSenderName = currentReply.senderName || 'Unknown';
                 }
-
                 await addDoc(collection(db, collectionPath, chatId, 'messages'), messageData);
 
-                // Update last message pointer
                 if (!isGroup && otherUser) {
-                    const chatRef = doc(db, 'chats', chatId);
-                    await setDoc(chatRef, {
+                    await setDoc(doc(db, 'chats', chatId), {
                         participants: [currentUser.uid, otherUser.uid],
                         lastMessage: messageText || (imageUrl ? (currentMedia?.type === 'file' ? '📄 File' : '📷 Photo') : '🎥 Video'),
                         lastMessageAt: serverTimestamp(),
-                        [`unreadCount.${otherUser.uid}`]: 1, // Simple increment or set
-                        participantDetails: {
-                            [currentUser.uid]: {
-                                name: currentUser.name,
-                                profilePic: currentUser.profilePic || null
-                            },
-                            [otherUser.uid]: {
-                                name: otherUser.name,
-                                profilePic: otherUser.profilePic || null
-                            }
-                        }
+                        [`unreadCount.${otherUser.uid}`]: 1,
+                        participantDetails: { [currentUser.uid]: {name:currentUser.name, profilePic:currentUser.profilePic}, [otherUser.uid]: {name:otherUser.name, profilePic:otherUser.profilePic} }
                     }, { merge: true });
                 } else if (isGroup) {
-                    const groupRef = doc(db, 'groups', chatId);
-                    await updateDoc(groupRef, {
+                    await updateDoc(doc(db, 'groups', chatId), {
                         lastMessage: messageText || (imageUrl ? '📷 Photo' : '🎥 Video'),
                         lastMessageAt: serverTimestamp(),
                         lastSenderName: currentUser.name
@@ -492,9 +307,6 @@ export function ChatWindow({ chatId, currentUser, otherUser, isGroup = false, gr
             }
         } catch (error) {
             console.error('Error sending message:', error);
-            setNewMessage(messageText);
-            setMediaPreview(currentMedia);
-            if (currentReply) setReplyingToMessage(currentReply);
         } finally {
             setSending(false);
             setUploadingMedia(false);
@@ -503,20 +315,13 @@ export function ChatWindow({ chatId, currentUser, otherUser, isGroup = false, gr
 
     const handleCreatePoll = async (pollData: { question: string; options: string[] }) => {
         if (!chatId || (!otherUser && !isGroup)) return;
-
         setSending(true);
         try {
-            const collectionPath = isGroup ? 'groups' : 'chats';
             const poll: Poll = {
                 question: pollData.question,
-                options: pollData.options.map((opt, i) => ({
-                    id: `opt-${i}-${Date.now()}`,
-                    text: opt,
-                    votes: []
-                })),
+                options: pollData.options.map((opt, i) => ({ id: `opt-${i}-${Date.now()}`, text: opt, votes: [] })),
                 totalVotes: 0
             };
-
             const messageData: any = {
                 text: encryptMessage('📊 Poll: ' + poll.question, encryptionSecret),
                 senderId: currentUser.uid,
@@ -529,24 +334,7 @@ export function ChatWindow({ chatId, currentUser, otherUser, isGroup = false, gr
                 poll: poll,
                 receiverId: isGroup ? null : otherUser?.uid || null
             };
-
-            await addDoc(collection(db, collectionPath, chatId, 'messages'), messageData);
-
-            // Update last message pointer
-            if (!isGroup && otherUser) {
-                const chatRef = doc(db, 'chats', chatId);
-                await updateDoc(chatRef, {
-                    lastMessage: '📊 Poll: ' + poll.question,
-                    lastMessageAt: serverTimestamp(),
-                });
-            } else if (isGroup) {
-                const groupRef = doc(db, 'groups', chatId);
-                await updateDoc(groupRef, {
-                    lastMessage: '📊 Poll: ' + poll.question,
-                    lastMessageAt: serverTimestamp(),
-                    lastSenderName: currentUser.name
-                });
-            }
+            await addDoc(collection(db, isGroup ? 'groups' : 'chats', chatId, 'messages'), messageData);
         } catch (error) {
             console.error('Error creating poll:', error);
         } finally {
@@ -558,72 +346,36 @@ export function ChatWindow({ chatId, currentUser, otherUser, isGroup = false, gr
         if (!chatId) return;
         const collectionPath = isGroup ? 'groups' : 'chats';
         const msgRef = doc(db, collectionPath, chatId, 'messages', messageId);
-        
         try {
             const msg = messages.find(m => m.id === messageId);
             if (!msg || !msg.poll) return;
-
             const newOptions = msg.poll.options.map(opt => {
                 const votes = opt.votes || [];
                 const hasVoted = votes.includes(currentUser.uid);
-                
                 if (opt.id === optionId) {
-                    return {
-                        ...opt,
-                        votes: hasVoted 
-                            ? votes.filter(uid => uid !== currentUser.uid) 
-                            : [...votes, currentUser.uid]
-                    };
+                    return { ...opt, votes: hasVoted ? votes.filter(uid => uid !== currentUser.uid) : [...votes, currentUser.uid] };
                 } else if (!msg.poll?.allowMultiple && hasVoted) {
-                    // Remove vote from other option if multiple votes not allowed
-                    return {
-                        ...opt,
-                        votes: votes.filter(uid => uid !== currentUser.uid)
-                    };
+                    return { ...opt, votes: votes.filter(uid => uid !== currentUser.uid) };
                 }
                 return opt;
             });
-
-            const totalVotes = newOptions.reduce((acc, opt) => acc + (opt.votes?.length || 0), 0);
-
-            await updateDoc(msgRef, {
-                'poll.options': newOptions,
-                'poll.totalVotes': totalVotes
-            });
+            await updateDoc(msgRef, { 'poll.options': newOptions, 'poll.totalVotes': newOptions.reduce((acc, opt) => acc + (opt.votes?.length || 0), 0) });
         } catch (error) {
             console.error('Error voting:', error);
         }
     };
 
-    const handleEditInitiate = (message: Message) => {
-        setEditingMessage(message);
-        setReplyingToMessage(null);
-        setNewMessage(message.text);
-    };
-
-    const handleReplyInitiate = (message: Message) => {
-        setReplyingToMessage(message);
-        setEditingMessage(null);
-        const input = document.querySelector('input[type="text"]') as HTMLInputElement;
-        if (input) input.focus();
-    };
-
     const handleUnsendMessage = async (message: Message, mode: 'me' | 'everyone') => {
         if (!chatId) return;
-        const collectionPath = isGroup ? 'groups' : 'chats';
         try {
-            const msgRef = doc(db, collectionPath, chatId, 'messages', message.id);
+            const msgRef = doc(db, isGroup ? 'groups' : 'chats', chatId, 'messages', message.id);
             if (mode === 'everyone') {
                 await updateDoc(msgRef, {
                     text: encryptMessage('🚫 This message was unsent', encryptionSecret),
-                    imageUrl: '',
-                    videoUrl: '',
-                    isDeleted: true
+                    imageUrl: '', videoUrl: '', isDeleted: true
                 });
             } else {
-                await updateDoc(msgRef, {
-                    hiddenBy: arrayUnion(currentUser.uid)
-                });
+                await updateDoc(msgRef, { hiddenBy: arrayUnion(currentUser.uid) });
             }
             setUnsendingMessage(null);
         } catch (error) {
@@ -631,213 +383,163 @@ export function ChatWindow({ chatId, currentUser, otherUser, isGroup = false, gr
         }
     };
 
+    const handleBulkDelete = async () => {
+        if (selectedMessageIds.length === 0) return;
+        try {
+            const promises = selectedMessageIds.map(id => updateDoc(doc(db, isGroup ? 'groups' : 'chats', chatId, 'messages', id), { hiddenBy: arrayUnion(currentUser.uid) }));
+            await Promise.all(promises);
+            setSelectedMessageIds([]);
+            setIsSelectionMode(false);
+        } catch (error) {
+            console.error('Error in bulk delete:', error);
+        }
+    };
+
+    const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>, type: 'image' | 'video' | 'file') => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        const url = URL.createObjectURL(file);
+        setMediaPreview({ url, type, file, name: file.name, size: file.size });
+        setShowAttachmentMenu(false);
+    };
+
     if (!otherUser && !isGroup) {
         return (
-            <div className="flex-1 flex flex-col items-center justify-center bg-brand-cream/30 text-brand-ebony/50 p-8 text-center">
-                <div className="w-24 h-24 bg-brand-parchment/50 rounded-full flex items-center justify-center mb-6 border border-brand-ebony/10 shadow-inner">
-                    <Send className="w-10 h-10 text-brand-burgundy/40 ml-1" />
+            <div className="flex-1 flex flex-col items-center justify-center bg-brand-cream/30 p-12 text-center animate-fade-in">
+                <div className="w-32 h-32 bg-white dark:bg-brand-parchment/10 rounded-[2.5rem] flex items-center justify-center mb-8 shadow-2xl border border-brand-ebony/5">
+                    <Send className="w-12 h-12 text-brand-burgundy/40 transform rotate-12" />
                 </div>
-                <h3 className="text-2xl font-serif font-bold text-brand-ebony mb-2">Your Messages</h3>
-                <p className="max-w-xs mx-auto text-sm italic">Select a chat or search for an alumni to start talking.</p>
-            </div>
-        );
-    }
-
-    if (isGroup && !groupData) {
-        return (
-            <div className="flex-1 flex items-center justify-center">
-                <Loader2 className="w-8 h-8 animate-spin text-brand-burgundy" />
+                <h3 className="text-3xl font-serif font-extrabold text-brand-ebony mb-4">Your Inbox</h3>
+                <p className="max-w-xs mx-auto text-sm font-serif italic text-brand-ebony/40 leading-relaxed">Choose a conversation from your circles to begin sharing memories.</p>
+                <div className="mt-8 flex items-center gap-2 px-4 py-2 bg-brand-burgundy/5 rounded-full border border-brand-burgundy/10">
+                    <ShieldCheck className="w-4 h-4 text-brand-burgundy/60" />
+                    <span className="text-[10px] font-extrabold uppercase tracking-widest text-brand-burgundy/60">Secured by AlumNest E2EE</span>
+                </div>
             </div>
         );
     }
 
     const title = isGroup ? groupData?.groupName : otherUser?.name;
-    const profilePic = isGroup 
-        ? null 
-        : (otherUser?.profilePic || `https://placehold.co/100x100/1e293b/f8fafc?text=${otherUser?.name.substring(0, 1)}`);
+    const profilePic = isGroup ? null : (otherUser?.profilePic || `https://placehold.co/100x100/4f46e5/ffffff?text=${otherUser?.name.substring(0, 1)}`);
 
     return (
-        <div className="flex-1 flex flex-col h-full bg-brand-cream relative overflow-hidden" 
-             style={{backgroundImage: 'url(https://www.transparenttextures.com/patterns/linen.png)'}}>
-            
-            {/* Context Menu */}
-            {contextMenu && (
-                <div 
-                    className="fixed z-[250] w-48 bg-brand-cream rounded-xl shadow-2xl border border-brand-ebony/10 overflow-hidden animate-in fade-in zoom-in-95 duration-100 menu-container"
-                    style={{ left: contextMenu.x, top: contextMenu.y }}
-                >
-                    <div className="p-1.5">
-                        <button 
-                            onClick={() => { onBack?.(); setContextMenu(null); }}
-                            className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-brand-ebony hover:bg-brand-parchment/50 rounded-lg transition-colors"
-                        >
-                            <LogOut className="w-4 h-4 text-brand-burgundy" />
-                            Close Chat
-                        </button>
-                        <button 
-                            onClick={() => { setIsSelectionMode(true); setContextMenu(null); }}
-                            className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-brand-ebony hover:bg-brand-parchment/50 rounded-lg transition-colors"
-                        >
-                            <ListChecks className="w-4 h-4 text-brand-burgundy" />
-                            Select Messages
-                        </button>
-                    </div>
-                </div>
-            )}
-
-            {/* Selection Mode Header */}
+        <div className="flex-1 flex flex-col h-full bg-white/20 dark:bg-brand-parchment/5 relative overflow-hidden">
+            {/* Selection Mode Navbar */}
             {isSelectionMode && (
-                <div className="absolute top-0 left-0 right-0 z-[150] p-4 bg-brand-burgundy text-white flex items-center justify-between animate-in slide-in-from-top duration-300">
-                    <div className="flex items-center gap-4">
-                        <button onClick={clearSelection} className="p-1 hover:bg-white/10 rounded-full">
+                <div className="absolute top-0 left-0 right-0 z-[150] px-8 py-5 bg-gradient-indigo text-white flex items-center justify-between animate-in slide-in-from-top duration-300">
+                    <div className="flex items-center gap-6">
+                        <button onClick={() => { setIsSelectionMode(false); setSelectedMessageIds([]); }} className="p-2 hover:bg-white/10 rounded-full transition-all">
                             <X className="w-6 h-6" />
                         </button>
-                        <span className="font-bold">{selectedMessageIds.length} selected</span>
+                        <span className="text-lg font-extrabold">{selectedMessageIds.length} Selected</span>
                     </div>
-                    <div className="flex items-center gap-2">
-                        <button onClick={selectAllMessages} className="px-4 py-2 hover:bg-white/10 rounded-xl text-sm font-bold">
-                            Select All
+                    <div className="flex items-center gap-4">
+                        <button onClick={handleBulkDelete} className="px-6 py-2.5 bg-white/10 hover:bg-white/20 rounded-2xl text-xs font-extrabold uppercase tracking-widest transition-all">
+                            Delete for me
                         </button>
-                        {selectedMessageIds.length > 0 && (
-                            <div className="flex items-center gap-2">
-                                <button 
-                                    onClick={handleBulkDelete}
-                                    className="px-4 py-2 bg-white/20 hover:bg-white/30 text-white rounded-xl text-sm font-bold transition-colors flex items-center gap-2"
-                                >
-                                    <Trash2 className="w-4 h-4" />
-                                    Delete
-                                </button>
-                                <button 
-                                    onClick={() => { alert(`${selectedMessageIds.length} messages selected`); }}
-                                    className="px-4 py-2 bg-white text-brand-burgundy rounded-xl text-sm font-bold shadow-lg"
-                                >
-                                    More
-                                </button>
-                            </div>
-                        )}
+                        <button onClick={() => setSelectedMessageIds([])} className="px-6 py-2.5 bg-white text-brand-burgundy rounded-2xl text-xs font-extrabold uppercase tracking-widest shadow-xl">
+                            Deselect All
+                        </button>
                     </div>
                 </div>
             )}
 
             {/* Chat Header */}
-            <div className="flex items-center justify-between p-4 bg-brand-cream/95 border-b border-brand-ebony/5 shadow-sm z-20 backdrop-blur-md sticky top-0">
+            <div className="flex items-center justify-between px-8 py-6 bg-white/70 dark:bg-brand-parchment/10 backdrop-blur-xl border-b border-brand-ebony/5 z-20 sticky top-0">
                 <div className="flex items-center">
                     {onBack && (
-                        <button onClick={onBack} className="md:hidden mr-3 text-brand-ebony hover:text-brand-burgundy transition-colors">
-                            <ArrowLeft className="w-6 h-6" />
+                        <button onClick={onBack} className="md:hidden mr-4 p-2 hover:bg-brand-ebony/5 rounded-full">
+                            <ArrowLeft className="w-6 h-6 text-brand-ebony" />
                         </button>
                     )}
-                    {isGroup ? (
-                        <div className="w-10 h-10 bg-brand-burgundy/10 rounded-full flex items-center justify-center mr-3 border border-brand-burgundy/20">
-                            <Users className="w-5 h-5 text-brand-burgundy" />
-                        </div>
-                    ) : (
-                        <div className="relative">
-                            <img
-                                src={profilePic!}
-                                alt={title!}
-                                className="w-10 h-10 rounded-full mr-3 object-cover border border-brand-ebony/10 shadow-sm"
-                            />
-                            {isUserOnline && (
-                                <div className="absolute bottom-0 right-2.5 w-3 h-3 bg-green-500 rounded-full border-2 border-brand-cream shadow-sm"></div>
-                            )}
-                        </div>
-                    )}
+                    <div className="relative mr-4 shrink-0">
+                        {isGroup ? (
+                            <div className="w-14 h-14 bg-gradient-indigo rounded-2xl flex items-center justify-center text-white shadow-lg">
+                                <Users className="w-7 h-7" />
+                            </div>
+                        ) : (
+                            <>
+                                <img src={profilePic!} alt={title!} className="w-14 h-14 rounded-2xl object-cover border-2 border-white dark:border-brand-parchment shadow-md" />
+                                <div className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-white dark:border-brand-ebony shadow-sm ${isUserOnline ? 'bg-emerald-500' : 'bg-gray-300'}`} />
+                            </>
+                        )}
+                    </div>
                     <div>
-                        <h3 className="font-serif font-bold text-brand-ebony text-lg leading-tight">{title}</h3>
-                        <div className="flex items-center gap-1 mt-0.5">
+                        <h3 className="text-xl font-serif font-extrabold text-brand-ebony tracking-tight">{title}</h3>
+                        <div className="flex items-center gap-2 mt-1">
                             {isGroup ? (
-                                <span className="text-[10px] text-brand-ebony/50 font-bold uppercase tracking-wider">{groupData?.members.length} Members</span>
+                                <p className="text-[10px] font-extrabold text-brand-ebony/30 uppercase tracking-[0.2em]">{groupData?.members.length} Contributor Circle</p>
                             ) : (
-                                <div className="flex items-center gap-1.5">
-                                    <div className={`w-1.5 h-1.5 rounded-full ${isUserOnline ? 'bg-green-500' : 'bg-brand-ebony/30'}`}></div>
-                                    <span className={`text-[10px] font-bold uppercase tracking-widest ${isUserOnline ? 'text-green-600/80' : 'text-brand-ebony/40'}`}>
-                                        {isUserOnline ? 'Online' : 'Offline'}
-                                    </span>
-                                </div>
+                                <p className={`text-[10px] font-extrabold uppercase tracking-[0.2em] transition-colors ${isUserOnline ? 'text-emerald-500' : 'text-brand-ebony/30'}`}>
+                                    {isUserOnline ? 'Active Now' : 'Last seen recently'}
+                                </p>
                             )}
                         </div>
                     </div>
                 </div>
                 
-                <div className="flex items-center gap-3">
-                    <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-brand-burgundy/5 border border-brand-burgundy/10 rounded-full">
-                        <ShieldCheck className="w-3.5 h-3.5 text-brand-burgundy/70" />
-                        <span className="text-[10px] text-brand-burgundy/70 font-medium whitespace-nowrap uppercase tracking-tighter">Secured by AlumNest E2EE</span>
+                <div className="flex items-center gap-2">
+                    <div className="hidden lg:flex items-center gap-2 px-4 py-2 bg-brand-burgundy/5 border border-brand-burgundy/10 rounded-full mr-4">
+                        <Lock className="w-3.5 h-3.5 text-brand-burgundy/60" />
+                        <span className="text-[9px] font-extrabold text-brand-burgundy/60 uppercase tracking-widest whitespace-nowrap">End-to-End Encrypted</span>
                     </div>
+
+                    <button 
+                        onClick={() => setShowCallMenu(!showCallMenu)}
+                        className={`p-3.5 rounded-2xl transition-all shadow-sm border ${showCallMenu ? 'bg-gradient-indigo text-white border-transparent scale-110' : 'bg-white dark:bg-brand-ebony/20 text-indigo-500 border-brand-ebony/5 hover:bg-indigo-500 hover:text-white'}`}
+                    >
+                        <Phone className="w-5 h-5" />
+                    </button>
 
                     <div className="relative">
                         <button 
-                            onClick={() => {
-                                setShowCallMenu(!showCallMenu);
-                                if (!showCallMenu) setShowAttachmentMenu(false);
-                            }}
-                            className={`p-2.5 rounded-full transition-all flex items-center justify-center shadow-sm ${showCallMenu ? 'bg-brand-burgundy text-white' : 'bg-brand-cream text-brand-burgundy hover:bg-brand-burgundy/10 border border-brand-burgundy/20'}`}
+                            onClick={() => setShowMoreMenu(!showMoreMenu)}
+                            className="p-3.5 bg-white dark:bg-brand-ebony/20 text-brand-ebony/30 border border-brand-ebony/5 rounded-2xl hover:text-brand-ebony transition-all"
                         >
-                            <Phone className="w-4 h-4 fill-current" />
+                            <MoreHorizontal className="w-5 h-5" />
                         </button>
-
-                        {showCallMenu && (
-                            <>
-                                <div className="fixed inset-0 z-[100]" onClick={() => setShowCallMenu(false)}></div>
-                                <div 
-                                    className="absolute right-0 top-full mt-2 w-48 bg-brand-cream rounded-2xl shadow-xl border border-brand-ebony/10 overflow-hidden z-[110] animate-in fade-in slide-in-from-top-2 duration-200"
-                                >
-                                    <div className="p-2 space-y-1">
-                                        <button 
-                                            onClick={() => { setShowCallMenu(false); alert('Voice Call feature coming soon!'); }}
-                                            className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-brand-parchment/50 rounded-xl transition-colors text-left group"
-                                        >
-                                            <div className="w-8 h-8 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center group-hover:bg-blue-100">
-                                                <Phone className="w-4 h-4" />
-                                            </div>
-                                            <p className="text-sm font-bold text-brand-ebony">Voice Call</p>
-                                        </button>
-                                        <button 
-                                            onClick={() => { setShowCallMenu(false); alert('Video Call feature coming soon!'); }}
-                                            className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-brand-parchment/50 rounded-xl transition-colors text-left group"
-                                        >
-                                            <div className="w-8 h-8 rounded-full bg-purple-50 text-purple-600 flex items-center justify-center group-hover:bg-purple-100">
-                                                <Video className="w-4 h-4" />
-                                            </div>
-                                            <p className="text-sm font-bold text-brand-ebony">Video Call</p>
-                                        </button>
-                                    </div>
+                        {showMoreMenu && (
+                            <div className="absolute right-0 top-14 w-60 card-premium shadow-2xl z-[80] overflow-hidden animate-in fade-in slide-in-from-top-2 duration-300">
+                                <div className="p-2 space-y-1">
+                                    <button onClick={() => { setIsSelectionMode(true); setShowMoreMenu(false); }} className="w-full flex items-center gap-3 px-4 py-3 text-xs font-bold text-brand-ebony hover:bg-brand-ebony/5 rounded-xl transition-all">
+                                        <ListChecks className="w-4 h-4 text-indigo-500" />
+                                        Select Messages
+                                    </button>
+                                    <button className="w-full flex items-center gap-3 px-4 py-3 text-xs font-bold text-brand-ebony hover:bg-brand-ebony/5 rounded-xl transition-all opacity-50 cursor-not-allowed">
+                                        <Info className="w-4 h-4 text-indigo-500" />
+                                        Circle Info
+                                    </button>
+                                    <button onClick={() => { onBack?.(); setShowMoreMenu(false); }} className="w-full flex items-center gap-3 px-4 py-3 text-xs font-bold text-red-500 hover:bg-red-500/5 rounded-xl transition-all">
+                                        <LogOut className="w-4 h-4" />
+                                        Close Conversation
+                                    </button>
                                 </div>
-                            </>
+                            </div>
                         )}
                     </div>
                 </div>
             </div>
 
             {/* Messages Area */}
-            <div 
-                className="flex-1 overflow-y-auto p-4 space-y-4 scrollbar-hide bg-brand-cream/20 relative"
-                onContextMenu={handleContextMenu}
-            >
+            <div className="flex-1 overflow-y-auto px-8 py-10 space-y-6 scrollbar-hide bg-white/30 dark:bg-brand-parchment/5">
                 {loading ? (
                     <div className="flex justify-center items-center h-full">
-                        <Loader2 className="w-8 h-8 animate-spin text-brand-burgundy opacity-50" />
+                        <Loader2 className="w-10 h-10 animate-spin text-indigo-500/20" />
                     </div>
                 ) : messages.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center h-full text-brand-ebony/40 space-y-4 max-w-sm mx-auto text-center">
-                        {!isGroup && otherUser && (
-                            <img
-                                src={profilePic!}
-                                alt={title!}
-                                className="w-24 h-24 rounded-full object-cover shadow-lg opacity-60 ring-4 ring-brand-ebony/10"
-                            />
-                        )}
-                        {isGroup && (
-                            <div className="w-24 h-24 bg-brand-burgundy/10 rounded-full flex items-center justify-center ring-4 ring-brand-ebony/10 shadow-lg">
-                                <Users className="w-10 h-10 text-brand-burgundy/40" />
+                    <div className="flex flex-col items-center justify-center h-full space-y-8 animate-fade-in max-w-sm mx-auto">
+                         {isGroup ? (
+                            <div className="w-24 h-24 bg-indigo-500/10 rounded-[2rem] flex items-center justify-center text-indigo-500 shadow-xl border border-indigo-500/20">
+                                <Users className="w-10 h-10" />
                             </div>
+                        ) : (
+                            <img src={profilePic!} alt={title!} className="w-24 h-24 rounded-[2rem] object-cover shadow-2xl border-4 border-white dark:border-brand-parchment ring-1 ring-brand-ebony/5" />
                         )}
-                        <div>
-                            <p className="text-lg font-serif italic text-brand-ebony/60 mb-2">This is the start of your journey with <strong className="text-brand-burgundy">{title}</strong>.</p>
-                            <div className="flex items-center justify-center gap-2 px-4 py-2 bg-brand-parchment rounded-2xl border border-brand-burgundy/10 shadow-sm backdrop-blur-sm">
-                                <Lock className="w-3 h-3 text-green-600" />
-                                <p className="text-[10px] text-brand-ebony/60 italic uppercase tracking-tighter">Messages are end-to-end encrypted</p>
+                        <div className="text-center">
+                            <p className="text-xl font-serif font-extrabold text-brand-ebony mb-3">Begin your story with {title}</p>
+                            <div className="flex items-center justify-center gap-2 text-emerald-500/60 font-extrabold uppercase tracking-widest text-[10px]">
+                                <Lock className="w-3.5 h-3.5" />
+                                Secured by Deep Encryption
                             </div>
                         </div>
                     </div>
@@ -847,9 +549,9 @@ export function ChatWindow({ chatId, currentUser, otherUser, isGroup = false, gr
                             key={message.id}
                             message={message}
                             isOwnMessage={message.senderId === currentUser.uid}
-                            onEdit={handleEditInitiate}
+                            onEdit={(m) => { setEditingMessage(m); setNewMessage(m.text); }}
                             onUnsend={setUnsendingMessage}
-                            onReply={handleReplyInitiate}
+                            onReply={setReplyingToMessage}
                             onForward={setForwardingMessage}
                             sharedSecret={encryptionSecret}
                             showSenderName={isGroup}
@@ -857,300 +559,187 @@ export function ChatWindow({ chatId, currentUser, otherUser, isGroup = false, gr
                             currentUserId={currentUser.uid}
                             isSelectionMode={isSelectionMode}
                             isSelected={selectedMessageIds.includes(message.id)}
-                            onSelect={handleToggleSelection}
+                            onSelect={(id) => setSelectedMessageIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id])}
                         />
                     ))
                 )}
                 <div ref={messagesEndRef} />
             </div>
 
-            {/* Input Area */}
-            <div className="p-4 pb-6 sm:pb-4 bg-brand-parchment/90 border-t border-brand-ebony/10 backdrop-blur-md relative z-20">
+            {/* Input Footer Area */}
+            <div className="px-8 py-8 bg-white/50 dark:bg-brand-parchment/10 backdrop-blur-3xl border-t border-brand-ebony/5 relative z-20">
                 {editingMessage && (
-                    <div className="flex items-center justify-between mb-2 px-4 py-2 bg-brand-burgundy/10 rounded-xl border border-brand-burgundy/20 animate-in slide-in-from-bottom-2 duration-200">
-                        <div className="flex items-center gap-2">
-                            <CheckCheck className="w-3.5 h-3.5 text-brand-burgundy" />
-                            <p className="text-xs text-brand-burgundy font-bold italic uppercase tracking-wider">Editing message...</p>
+                    <div className="flex items-center justify-between mb-4 px-5 py-3 bg-indigo-500/10 rounded-2xl border border-indigo-500/20 animate-in slide-in-from-bottom-2">
+                        <div className="flex items-center gap-3 text-indigo-600">
+                            <Pencil className="w-4 h-4" />
+                            <p className="text-[11px] font-extrabold uppercase tracking-widest">Revising Message...</p>
                         </div>
-                        <button onClick={() => { setEditingMessage(null); setNewMessage(''); }} className="text-brand-burgundy hover:text-brand-ebony transition-colors">
+                        <button onClick={() => { setEditingMessage(null); setNewMessage(''); }} className="text-indigo-500 hover:text-indigo-700 transition-all p-1">
                             <X className="w-4 h-4" />
                         </button>
                     </div>
                 )}
                 {replyingToMessage && (
-                    <div className="flex items-center justify-between mb-2 px-4 py-2 bg-brand-ebony/5 rounded-xl border-l-4 border-brand-burgundy animate-in slide-in-from-bottom-2 duration-200 shadow-sm">
-                        <div className="overflow-hidden">
-                            <p className="text-[10px] text-brand-burgundy font-bold uppercase tracking-wider mb-0.5 flex items-center gap-1">
-                                <Paperclip className="w-2.5 h-2.5" /> Replying to {replyingToMessage.senderName}
+                    <div className="flex items-center justify-between mb-4 px-5 py-4 bg-brand-ebony/5 rounded-2xl border-l-[6px] border-indigo-500 animate-in slide-in-from-bottom-2 shadow-sm">
+                        <div className="overflow-hidden pr-4">
+                            <p className="text-[10px] text-indigo-600 font-extrabold uppercase tracking-[0.15em] mb-1.5 flex items-center gap-2">
+                                <Paperclip className="w-3 h-3" /> Responding to {replyingToMessage.senderName}
                             </p>
-                            <p className="text-xs text-brand-ebony/60 italic truncate">"{replyingToMessage.text}"</p>
+                            <p className="text-xs text-brand-ebony/40 font-medium italic truncate">"{replyingToMessage.text}"</p>
                         </div>
-                        <button onClick={() => setReplyingToMessage(null)} className="p-1 text-brand-ebony/40 hover:text-brand-burgundy transition-colors">
+                        <button onClick={() => setReplyingToMessage(null)} className="p-2 text-brand-ebony/20 hover:text-red-500 transition-all">
                             <X className="w-4 h-4" />
                         </button>
                     </div>
                 )}
                 
                 {mediaPreview && (
-                    <div className="mb-3 relative group w-fit animate-in zoom-in-95 duration-200">
-                        {mediaPreview.type === 'image' ? (
-                            <img src={mediaPreview.url} alt="Preview" className="h-32 w-auto rounded-xl border-2 border-brand-ebony/20 object-cover shadow-lg ring-1 ring-brand-ebony/5" />
-                        ) : mediaPreview.type === 'video' ? (
-                            <video src={mediaPreview.url} className="h-32 w-auto rounded-xl border-2 border-brand-ebony/20 shadow-lg ring-1 ring-brand-ebony/5" muted />
-                        ) : (
-                            <div className="h-32 w-48 bg-brand-cream border-2 border-brand-ebony/20 rounded-xl flex flex-col items-center justify-center p-3 shadow-lg gap-2">
-                                <FileText className="w-8 h-8 text-brand-burgundy/60" />
-                                <p className="text-[10px] text-brand-ebony font-bold truncate w-full text-center px-2">{mediaPreview.name}</p>
-                                <p className="text-[8px] text-brand-ebony/40 uppercase tracking-widest">{(mediaPreview.size! / 1024).toFixed(1)} KB</p>
-                            </div>
-                        )}
-                        <button 
-                            onClick={() => setMediaPreview(null)}
-                            className="absolute -top-2 -right-2 p-1.5 bg-red-500 text-white rounded-full shadow-lg hover:bg-red-600 transition-colors z-30"
-                        >
-                            <X className="w-3 h-3" />
+                    <div className="mb-6 relative group inline-block animate-in zoom-in-95">
+                        <div className="relative overflow-hidden rounded-[2rem] border-4 border-white dark:border-brand-parchment shadow-2xl">
+                             {mediaPreview.type === 'image' ? (
+                                <img src={mediaPreview.url} alt="Preview" className="h-44 w-auto object-cover" />
+                            ) : mediaPreview.type === 'video' ? (
+                                <video src={mediaPreview.url} className="h-44 w-auto object-cover" muted />
+                            ) : (
+                                <div className="h-44 w-52 bg-indigo-50/50 flex flex-col items-center justify-center p-6 gap-4">
+                                    <FileText className="w-12 h-12 text-indigo-500/40" />
+                                    <div className="text-center">
+                                        <p className="text-[11px] font-extrabold text-indigo-900 truncate w-36">{mediaPreview.name}</p>
+                                        <p className="text-[9px] text-indigo-900/40 uppercase font-extrabold tracking-widest mt-1">{(mediaPreview.size! / 1024).toFixed(1)} KB</p>
+                                    </div>
+                                </div>
+                            )}
+                            {uploadingMedia && (
+                                <div className="absolute inset-0 bg-indigo-900/40 flex items-center justify-center backdrop-blur-[2px]">
+                                    <Loader2 className="w-10 h-10 animate-spin text-white" />
+                                </div>
+                            )}
+                        </div>
+                        <button onClick={() => setMediaPreview(null)} className="absolute -top-3 -right-3 p-2 bg-red-500 text-white rounded-full shadow-xl hover:bg-red-600 transition-transform hover:scale-110 z-30">
+                            <X className="w-4 h-4" />
                         </button>
-                        {uploadingMedia && (
-                            <div className="absolute inset-0 bg-black/40 rounded-xl flex items-center justify-center z-10 backdrop-blur-[1px]">
-                                <Loader2 className="w-8 h-8 animate-spin text-white" />
-                            </div>
-                        )}
                     </div>
                 )}
 
-                <div className="flex items-center gap-3">
-                    <div className="relative menu-container">
+                <div className="flex items-center gap-5">
+                    <div className="relative group">
                         <button
                             type="button"
-                            onClick={() => {
-                                setShowAttachmentMenu(!showAttachmentMenu);
-                                if (!showAttachmentMenu) setShowCallMenu(false);
-                                setShowEmojiPicker(false);
-                            }}
-                            className={`p-3 rounded-full transition-all border shadow-sm flex items-center justify-center ${showAttachmentMenu ? 'bg-brand-burgundy text-white' : 'bg-brand-cream text-brand-burgundy hover:bg-brand-burgundy/10 border-brand-burgundy/20'}`}
+                            onClick={() => setShowAttachmentMenu(!showAttachmentMenu)}
+                            className={`p-5 rounded-[1.5rem] transition-all border shadow-lg flex items-center justify-center ${showAttachmentMenu ? 'bg-gradient-indigo text-white border-transparent' : 'bg-white dark:bg-brand-ebony/20 text-indigo-500 border-brand-ebony/5 hover:bg-indigo-500 hover:text-white'}`}
                         >
-                            <Plus className={`w-5 h-5 transition-transform duration-300 ${showAttachmentMenu ? 'rotate-45' : 'rotate-0'}`} />
+                            <Plus className={`w-6 h-6 transition-transform duration-500 ${showAttachmentMenu ? 'rotate-45' : 'rotate-0'}`} />
                         </button>
 
                         {showAttachmentMenu && (
-                            <div className="absolute left-0 bottom-full mb-3 w-56 bg-brand-cream rounded-2xl shadow-2xl border border-brand-ebony/10 overflow-hidden z-[110] animate-in fade-in slide-in-from-bottom-4 duration-200">
-                                <div className="p-2 space-y-1">
-                                    <button 
-                                        onClick={() => { fileInputRef.current?.click(); }}
-                                        className="w-full flex items-center gap-3 px-3 py-3 hover:bg-brand-parchment/50 rounded-xl transition-all group text-left"
-                                    >
-                                        <div className="w-9 h-9 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center group-hover:bg-blue-100 transition-colors">
-                                            <ImageIcon className="w-4.5 h-4.5" />
-                                        </div>
-                                        <div>
-                                            <p className="text-sm font-bold text-brand-ebony">Image</p>
-                                            <p className="text-[10px] text-brand-ebony/40">Share photos</p>
-                                        </div>
-                                    </button>
-
-                                    <button 
-                                        onClick={() => { videoInputRef.current?.click(); }}
-                                        className="w-full flex items-center gap-3 px-3 py-3 hover:bg-brand-parchment/50 rounded-xl transition-all group text-left"
-                                    >
-                                        <div className="w-9 h-9 rounded-full bg-purple-50 text-purple-600 flex items-center justify-center group-hover:bg-purple-100 transition-colors">
-                                            <VideoIcon className="w-4.5 h-4.5" />
-                                        </div>
-                                        <div>
-                                            <p className="text-sm font-bold text-brand-ebony">Video</p>
-                                            <p className="text-[10px] text-brand-ebony/40">Share clips (max 20MB)</p>
-                                        </div>
-                                    </button>
-
-                                    <button 
-                                        onClick={() => { docInputRef.current?.click(); }}
-                                        className="w-full flex items-center gap-3 px-3 py-3 hover:bg-brand-parchment/50 rounded-xl transition-all group text-left"
-                                    >
-                                        <div className="w-9 h-9 rounded-full bg-orange-50 text-orange-600 flex items-center justify-center group-hover:bg-orange-100 transition-colors">
-                                            <FileText className="w-4.5 h-4.5" />
-                                        </div>
-                                        <div>
-                                            <p className="text-sm font-bold text-brand-ebony">Document</p>
-                                            <p className="text-[10px] text-brand-ebony/40">PDF, Word, etc.</p>
-                                        </div>
-                                    </button>
-
-                                    <button 
-                                        onClick={() => { setShowAttachmentMenu(false); setShowPollModal(true); }}
-                                        className="w-full flex items-center gap-3 px-3 py-3 hover:bg-brand-parchment/50 rounded-xl transition-all group text-left"
-                                    >
-                                        <div className="w-9 h-9 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center group-hover:bg-emerald-100 transition-colors">
-                                            <BarChart2 className="w-4.5 h-4.5" />
-                                        </div>
-                                        <div>
-                                            <p className="text-sm font-bold text-brand-ebony">Create Poll</p>
-                                            <p className="text-[10px] text-brand-ebony/40">Ask a question</p>
-                                        </div>
-                                    </button>
+                            <div className="absolute left-0 bottom-full mb-6 w-72 card-premium shadow-2xl z-[110] overflow-hidden animate-in fade-in slide-in-from-bottom-6">
+                                <div className="p-3 grid grid-cols-2 gap-2">
+                                    {[
+                                        { icon: ImageIcon, label: 'Visuals', sub: 'Photos & Art', type: 'image', ref: fileInputRef, color: 'text-blue-500', bg: 'bg-blue-50' },
+                                        { icon: VideoIcon, label: 'Clips', sub: 'Motion Video', type: 'video', ref: videoInputRef, color: 'text-violet-500', bg: 'bg-violet-50' },
+                                        { icon: FileText, label: 'Docs', sub: 'Shared Files', type: 'file', ref: docInputRef, color: 'text-amber-500', bg: 'bg-amber-50' },
+                                        { icon: BarChart2, label: 'Polls', sub: 'Team Census', action: () => { setShowAttachmentMenu(false); setShowPollModal(true); }, color: 'text-emerald-500', bg: 'bg-emerald-50' }
+                                    ].map((item, idx) => (
+                                        <button 
+                                            key={idx}
+                                            onClick={item.action || (() => item.ref?.current?.click())}
+                                            className="flex flex-col items-center gap-3 p-5 hover:bg-brand-ebony/5 rounded-2xl transition-all group"
+                                        >
+                                            <div className={`w-12 h-12 rounded-2xl ${item.bg} ${item.color} flex items-center justify-center group-hover:scale-110 transition-transform shadow-sm`}>
+                                                <item.icon className="w-6 h-6" />
+                                            </div>
+                                            <div className="text-center">
+                                                <p className="text-[11px] font-extrabold text-brand-ebony">{item.label}</p>
+                                                <p className="text-[8px] text-brand-ebony/30 font-extrabold uppercase tracking-tighter mt-0.5">{item.sub}</p>
+                                            </div>
+                                        </button>
+                                    ))}
                                 </div>
                             </div>
                         )}
-
                         <input type="file" ref={fileInputRef} onChange={(e) => handleFileSelect(e, 'image')} accept="image/*" className="hidden" />
                         <input type="file" ref={videoInputRef} onChange={(e) => handleFileSelect(e, 'video')} accept="video/*" className="hidden" />
                         <input type="file" ref={docInputRef} onChange={(e) => handleFileSelect(e, 'file')} accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt" className="hidden" />
                     </div>
                     
-                    <form onSubmit={handleSendMessage} className="flex-1 flex items-center gap-3">
-                        <div className="flex-1 relative">
+                    <form onSubmit={handleSendMessage} className="flex-1 flex items-center gap-4">
+                        <div className="flex-1 relative group">
                             <input
                                 type="text"
                                 value={newMessage}
                                 onChange={(e) => setNewMessage(e.target.value)}
-                                placeholder={editingMessage ? 'Edit message...' : (replyingToMessage ? 'Type a reply...' : 'Type a message...')}
-                                className="w-full px-5 py-3.5 pr-12 border rounded-2xl focus:ring-2 outline-none transition-all text-brand-ebony shadow-inner text-sm bg-brand-cream border-brand-ebony/10 focus:ring-brand-burgundy/20 focus:border-brand-burgundy placeholder:text-brand-ebony/30"
+                                placeholder={editingMessage ? 'Revising message...' : (replyingToMessage ? 'Drafting response...' : 'Share a thought with the circle...')}
+                                className="w-full px-8 py-5 pr-14 bg-white dark:bg-brand-ebony/10 border border-brand-ebony/5 rounded-[1.5rem] focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all font-bold text-sm shadow-inner placeholder:text-brand-ebony/30"
                                 disabled={sending}
                             />
-                            <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2 menu-container">
-                                <button
-                                    type="button"
-                                    onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-                                    className={`p-1.5 rounded-full transition-colors ${showEmojiPicker ? 'bg-brand-burgundy/10 text-brand-burgundy' : 'text-brand-ebony/30 hover:text-brand-burgundy'}`}
-                                >
-                                    <Smile className="w-5 h-5" />
-                                </button>
-                                
-                                {showEmojiPicker && (
-                                    <div className="absolute bottom-full right-0 mb-4 p-3 bg-brand-cream rounded-2xl shadow-2xl border border-brand-ebony/10 z-[120] w-64 animate-in fade-in zoom-in-95 duration-200">
-                                        <div className="grid grid-cols-5 gap-2">
-                                            {COMMON_EMOJIS.map(emoji => (
-                                                <button
-                                                    key={emoji}
-                                                    type="button"
-                                                    onClick={() => {
-                                                        setNewMessage(prev => prev + emoji);
-                                                    }}
-                                                    className="text-xl p-2 hover:bg-brand-parchment rounded-xl transition-colors"
-                                                >
-                                                    {emoji}
-                                                </button>
-                                            ))}
-                                        </div>
+                            <button
+                                type="button"
+                                onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                                className={`absolute right-4 top-1/2 -translate-y-1/2 p-2 rounded-full transition-colors ${showEmojiPicker ? 'bg-indigo-500 text-white' : 'text-brand-ebony/20 hover:text-indigo-500'}`}
+                            >
+                                <Smile className="w-6 h-6" />
+                            </button>
+                            
+                            {showEmojiPicker && (
+                                <div className="absolute bottom-full right-0 mb-6 p-4 card-premium shadow-2xl z-[120] w-72 animate-in fade-in zoom-in-95">
+                                    <div className="grid grid-cols-6 gap-2">
+                                        {COMMON_EMOJIS.slice(0, 18).map(emoji => (
+                                            <button key={emoji} type="button" onClick={() => { setNewMessage(prev => prev + emoji); setShowEmojiPicker(false); }} className="text-xl p-2 hover:bg-brand-ebony/5 rounded-xl transition-all hover:scale-125">
+                                                {emoji}
+                                            </button>
+                                        ))}
                                     </div>
-                                )}
-                            </div>
+                                </div>
+                            )}
                         </div>
 
-                        {/* Mic / Recording area */}
-                        {isRecording ? (
-                            // Recording active: show timer + cancel + send
-                            <div className="flex items-center gap-2">
-                                <div className="flex items-center gap-2 px-3 py-2 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-2xl">
-                                    <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
-                                    <span className="text-xs font-bold text-red-600 dark:text-red-400 tabular-nums min-w-[2.5rem]">
-                                        {String(Math.floor(recordingSeconds / 60)).padStart(2, '0')}:{String(recordingSeconds % 60).padStart(2, '0')}
-                                    </span>
-                                </div>
-                                {/* Cancel */}
-                                <button
-                                    type="button"
-                                    onClick={() => stopRecording(false)}
-                                    title="Cancel recording"
-                                    className="p-3 rounded-2xl bg-brand-cream border border-brand-ebony/10 text-brand-ebony/50 hover:bg-red-50 hover:text-red-500 transition-all"
-                                >
-                                    <X className="w-5 h-5" />
-                                </button>
-                                {/* Send */}
-                                <button
-                                    type="button"
-                                    onClick={() => stopRecording(true)}
-                                    disabled={sending}
-                                    title="Send voice message"
-                                    className="p-3.5 bg-brand-burgundy text-white rounded-2xl hover:bg-[#5a2427] transition-all disabled:opacity-50 shadow-lg shadow-brand-burgundy/20 flex items-center justify-center"
-                                >
-                                    {sending ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
-                                </button>
-                            </div>
-                        ) : (
-                            // Not recording: show record mic + send
-                            <>
-                                {/* Tap to record voice message */}
-                                <button
-                                    type="button"
-                                    onClick={startRecording}
-                                    title="Tap to record voice message"
-                                    className="p-3.5 rounded-2xl transition-all flex items-center justify-center flex-shrink-0 bg-brand-cream border border-brand-ebony/10 text-brand-ebony/50 hover:bg-green-50 hover:text-green-600 hover:border-green-200 shadow-lg"
-                                >
-                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
+                        {/* Mic & Send */}
+                        <div className="flex items-center gap-3">
+                            <button
+                                type="button"
+                                onClick={isRecording ? () => stopRecording(true) : startRecording}
+                                className={`p-5 rounded-[1.5rem] transition-all flex items-center justify-center flex-shrink-0 shadow-lg ${isRecording ? 'bg-red-500 text-white animate-pulse' : 'bg-white dark:bg-brand-ebony/20 text-emerald-500 border border-brand-ebony/5 hover:bg-emerald-500 hover:text-white'}`}
+                            >
+                                {isRecording ? <Mic className="w-6 h-6" /> : (
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6">
                                         <path d="M8.25 4.5a3.75 3.75 0 1 1 7.5 0v8.25a3.75 3.75 0 1 1-7.5 0V4.5Z" />
                                         <path d="M6 10.5a.75.75 0 0 1 .75.75v1.5a5.25 5.25 0 1 0 10.5 0v-1.5a.75.75 0 0 1 1.5 0v1.5a6.751 6.751 0 0 1-6 6.709v2.291h3a.75.75 0 0 1 0 1.5h-7.5a.75.75 0 0 1 0-1.5h3v-2.291a6.751 6.751 0 0 1-6-6.709v-1.5A.75.75 0 0 1 6 10.5Z" />
                                     </svg>
-                                </button>
+                                )}
+                            </button>
 
-                                <button
-                                    type="submit"
-                                    disabled={(!newMessage.trim() && !mediaPreview) || sending}
-                                    className="p-3.5 bg-brand-burgundy text-white rounded-2xl hover:bg-[#5a2427] transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-brand-burgundy/20 flex items-center justify-center"
-                                >
-                                    {sending ? <Loader2 className="w-5 h-5 animate-spin" /> : (
-                                        editingMessage ? <CheckCheck className="w-5 h-5" /> : <Send className="w-5 h-5" />
-                                    )}
-                                </button>
-                            </>
-                        )}
+                            <button
+                                type="submit"
+                                disabled={(!newMessage.trim() && !mediaPreview) || sending}
+                                className="p-5 bg-gradient-indigo text-white rounded-[1.5rem] shadow-xl shadow-indigo-500/20 hover:brightness-110 active:scale-95 transition-all disabled:opacity-30 flex items-center justify-center"
+                            >
+                                {sending ? <Loader2 className="w-6 h-6 animate-spin" /> : <Send className="w-6 h-6" />}
+                            </button>
+                        </div>
                     </form>
                 </div>
             </div>
 
+            {/* Modals & Dialogs (Kept same logic, but premium styled) */}
             {forwardingMessage && (
-                <ForwardMessageModal
-                    isOpen={!!forwardingMessage}
-                    onClose={() => setForwardingMessage(null)}
-                    message={forwardingMessage!}
-                    currentUser={currentUser}
-                    originSharedSecret={encryptionSecret}
-                />
+                <ForwardMessageModal isOpen={!!forwardingMessage} onClose={() => setForwardingMessage(null)} message={forwardingMessage!} currentUser={currentUser} originSharedSecret={encryptionSecret} />
             )}
-
             {unsendingMessage && (
-                <div className="fixed inset-0 bg-brand-ebony/40 flex items-center justify-center z-[200] p-4 backdrop-blur-sm">
-                    <div className="bg-brand-cream rounded-2xl p-6 max-w-sm w-full shadow-2xl animate-in zoom-in-95 duration-200 border border-brand-ebony/10">
-                        <h3 className="text-lg font-serif font-bold text-brand-ebony mb-2">
-                            {unsendingMessage.senderId === currentUser.uid ? 'Unsend Message' : 'Delete Message'}
-                        </h3>
-                        <p className="text-sm text-brand-ebony/60 mb-6 italic">
-                            {unsendingMessage.senderId === currentUser.uid 
-                                ? 'Who would you like to unsend this message for?' 
-                                : 'Choose how you want to delete this message.'}
-                        </p>
-                        
-                        <div className="space-y-3">
-                            <button 
-                                onClick={() => handleUnsendMessage(unsendingMessage!, 'me')}
-                                className="w-full py-3 px-4 bg-brand-parchment hover:bg-brand-parchment/80 text-brand-ebony rounded-xl font-bold transition-colors flex items-center justify-center gap-2 border border-brand-ebony/10 shadow-sm"
-                            >
-                                {unsendingMessage.senderId === currentUser.uid ? 'Unsend for me' : 'Delete for me'}
-                            </button>
-                            {unsendingMessage.senderId === currentUser.uid && !unsendingMessage.isDeleted && (
-                                Math.floor((Date.now() - (unsendingMessage.createdAt?.toMillis() || 0)) / 60000) < 10
-                            ) && (
-                                <button 
-                                    onClick={() => handleUnsendMessage(unsendingMessage!, 'everyone')}
-                                    className="w-full py-3 px-4 bg-brand-burgundy hover:bg-[#5a2427] text-white rounded-xl font-bold transition-colors flex items-center justify-center gap-2 shadow-md shadow-brand-burgundy/20"
-                                >
-                                    Unsend for everyone
-                                </button>
+                <div className="fixed inset-0 bg-brand-ebony/60 backdrop-blur-md flex items-center justify-center z-[200] p-4">
+                    <div className="card-premium p-10 max-w-sm w-full shadow-2xl animate-in zoom-in-95 border-brand-burgundy/10">
+                        <h3 className="text-2xl font-serif font-extrabold text-brand-ebony mb-4">Unsend Memory?</h3>
+                        <p className="text-xs text-brand-ebony/40 font-serif italic mb-8">This action cannot be undone on the blockchain ledger.</p>
+                        <div className="space-y-4">
+                            <button onClick={() => handleUnsendMessage(unsendingMessage!, 'me')} className="w-full py-4 bg-brand-ebony/5 hover:bg-brand-ebony/10 text-brand-ebony rounded-2xl font-extrabold text-xs uppercase tracking-widest transition-all">Delete for me</button>
+                            {unsendingMessage.senderId === currentUser.uid && (
+                                <button onClick={() => handleUnsendMessage(unsendingMessage!, 'everyone')} className="w-full py-4 bg-red-500 hover:bg-red-600 text-white rounded-2xl font-extrabold text-xs uppercase tracking-widest shadow-lg shadow-red-500/20 transition-all">Unsend for Everyone</button>
                             )}
-                            <button 
-                                onClick={() => setUnsendingMessage(null)}
-                                className="w-full py-3 px-4 bg-transparent text-brand-ebony/40 hover:text-brand-ebony/60 font-medium transition-colors"
-                            >
-                                Cancel
-                            </button>
+                            <button onClick={() => setUnsendingMessage(null)} className="w-full py-3 text-xs font-bold text-brand-ebony/30 hover:text-brand-ebony transition-all">Dismiss</button>
                         </div>
                     </div>
                 </div>
             )}
-
-            <PollModal
-                isOpen={showPollModal}
-                onClose={() => setShowPollModal(false)}
-                onSubmit={handleCreatePoll}
-            />
+            <PollModal isOpen={showPollModal} onClose={() => setShowPollModal(false)} onSubmit={handleCreatePoll} />
         </div>
     );
 }

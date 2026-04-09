@@ -9,6 +9,7 @@ import { GlobalMessaging } from '@/components/chat/GlobalMessaging';
 import { MessagingProvider } from '@/contexts/MessagingContext';
 import { Sidebar } from './Sidebar';
 import { MobileNav } from './MobileNav';
+import { BrandHeader } from './BrandHeader';
 
 const variants: Variants = {
     initial: (direction: number) => ({
@@ -36,14 +37,7 @@ const variants: Variants = {
 export function LayoutClient({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
     const { userData } = useAuth();
-    // Disable swiping on interactive elements
-    const handleCapture = (e: React.TouchEvent | React.MouseEvent) => {
-        const target = e.target as HTMLElement;
-        const interactiveElements = ['A', 'BUTTON', 'INPUT', 'TEXTAREA', 'SELECT'];
-        if (interactiveElements.includes(target.tagName) || target.closest('[data-interactive]')) {
-            e.stopPropagation();
-        }
-    };
+    
     const [isMobile, setIsMobile] = React.useState(false);
     
     React.useEffect(() => {
@@ -61,15 +55,18 @@ export function LayoutClient({ children }: { children: React.ReactNode }) {
         setPrevPath(pathname);
     }, [pathname]);
 
-    // Apply fluid padding and spacing to the main container
-    // Fixed sidebar space on md: screens, fluid padding for all
+    const isAuthPage = pathname === '/login' || pathname === '/signup';
+    const isAdminPage = pathname.startsWith('/admin');
+    const showNav = userData && !isAuthPage && !isAdminPage;
+
     return (
         <SwipeProvider>
             {userData && <GlobalMessaging />}
             <MessagingProvider>
                 <div className="flex flex-col min-h-screen">
+                    {showNav && <BrandHeader />}
                     <Sidebar />
-                    <main className={`min-h-screen ${(userData && !pathname.startsWith('/admin')) ? 'md:pt-[84px]' : ''} ${isMobile && !pathname.startsWith('/admin') ? 'pb-24' : 'pb-8'} relative z-0`}>
+                    <main className={`min-h-screen ${showNav ? 'md:pt-28 md:pl-[340px] md:pr-12' : ''} ${isMobile && !isAdminPage ? 'pb-24' : 'pb-8'} relative z-0`}>
                 <div className="mx-auto w-full overflow-x-hidden">
                     {isMobile ? (
                         <AnimatePresence initial={false} custom={direction}>

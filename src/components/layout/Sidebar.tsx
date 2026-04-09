@@ -1,13 +1,15 @@
 'use client';
 
+import React, { useState } from 'react';
 import Link from 'next/link';
-import { Home, Users, Briefcase, Calendar, Settings, MessageSquare, LogOut } from 'lucide-react';
-import { BrandLogo } from '../brand/BrandLogo';
+import { Home, Users, Briefcase, Calendar, Settings, MessageSquare, LogOut, Store } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useMessaging } from '@/contexts/MessagingContext';
 import { usePathname } from 'next/navigation';
+import { InstituteSwitcher } from './InstituteSwitcher';
+import { ComingSoonModal } from '../modals/ComingSoonModal';
 
-const navigation = [
+const topNavigation = [
     { name: 'Home',           href: '/',         icon: Home },
     { name: 'Messages',       href: '/messages', icon: MessageSquare },
     { name: 'Events',         href: '/events',   icon: Calendar },
@@ -19,113 +21,138 @@ export function Sidebar() {
     const { userData, signOut } = useAuth();
     const { totalUnreadCount } = useMessaging();
     const pathname = usePathname();
+    const [isMarketplaceOpen, setIsMarketplaceOpen] = useState(false);
 
     if (!userData || pathname.startsWith('/admin') || pathname === '/login' || pathname === '/signup') return null;
 
     return (
         <>
-            {/* Stable Logo on the Top Left */}
-            <div className="hidden md:flex fixed top-4 left-6 z-50 pointer-events-auto">
-                <Link href="/" className="flex items-center gap-3 hover:scale-105 transition-transform duration-200 active:scale-95">
-                    <div className="w-10 h-10 rounded-full bg-gradient-indigo flex items-center justify-center shadow-lg shadow-brand-burgundy/20">
-                        <BrandLogo size="xs" showText={false} variant="white" />
-                    </div>
-                    <div className="flex flex-col">
-                        <span className="text-xl font-extrabold tracking-[0.1em] uppercase text-gradient-indigo leading-none block">
-                            Alumnest
-                        </span>
-                        <span className="text-[9px] text-brand-ebony/40 font-bold tracking-widest uppercase mt-0.5 ml-0.5">
-                            For the Tribe
-                        </span>
-                    </div>
-                </Link>
-            </div>
+            <ComingSoonModal 
+                isOpen={isMarketplaceOpen} 
+                onClose={() => setIsMarketplaceOpen(false)} 
+                featureName="Marketplace" 
+            />
 
-            {/* Expandable Nav Ribbon in the Center */}
-            <div className="hidden md:block fixed top-3 left-1/2 -translate-x-1/2 z-50 transition-all duration-300 pointer-events-none">
-                {/* The actual navbar. We use pointer-events-auto so the wrapper doesn't block clicks beneath it */}
+            {/* --- TOP RIBBON (Social Navigation) --- */}
+            <div className="hidden md:block fixed top-6 left-[340px] right-12 z-50 pointer-events-none transition-all duration-300">
                 <div 
-                    className={`group pointer-events-auto mx-auto flex items-center justify-between px-3 py-2.5 rounded-full transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] sidebar-glass border border-brand-ebony/10 shadow-[0_4px_24px_rgba(79,70,229,0.12)] origin-top hover:shadow-[0_8px_32px_rgba(79,70,229,0.20)]`}
+                    className="group pointer-events-auto flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-full sidebar-glass border border-brand-ebony/10 shadow-[0_8px_32px_rgba(79,70,229,0.12)] hover:shadow-[0_12px_48px_rgba(79,70,229,0.20)] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)]"
                 >
-                    {/* Navigation Items */}
-                    <nav className="flex items-center gap-1.5 justify-center">
-                        {navigation.map((item) => {
+                    <nav className="flex items-center gap-1.5">
+                        {topNavigation.map((item) => {
                             const isActive = pathname === item.href;
                             return (
                                 <Link
                                     key={item.name}
                                     href={item.href}
-                                    className={`relative flex items-center px-3 py-2.5 rounded-full transition-all duration-300 ease-in-out
+                                    className={`relative flex items-center px-4 py-2.5 rounded-full transition-all duration-300 group/link
                                         ${isActive 
-                                            ? 'bg-gradient-indigo text-white shadow-md' 
+                                            ? 'bg-gradient-indigo text-white shadow-lg shadow-indigo-500/30' 
                                             : 'text-brand-ebony/50 hover:bg-brand-parchment dark:hover:bg-white/10 hover:text-brand-ebony'
                                         }
                                     `}
                                 >
                                     <div className="relative shrink-0 flex items-center justify-center">
-                                        <item.icon className={`w-[18px] h-[18px] ${isActive ? 'text-white' : ''}`} />
-                                        
-                                        {/* Unread Badge for Messages */}
+                                        <item.icon className={`w-[19px] h-[19px] ${isActive ? 'text-white' : ''}`} />
                                         {item.name === 'Messages' && totalUnreadCount > 0 && (
-                                            <span className="absolute -top-1.5 -right-1.5 flex h-3.5 w-3.5">
+                                            <span className="absolute -top-1.5 -right-1.5 flex h-4 w-4">
                                                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-60" />
-                                                <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-red-500 border border-brand-cream text-[8px] text-white items-center justify-center font-bold">
+                                                <span className="relative inline-flex rounded-full h-4 w-4 bg-red-500 border-2 border-white text-[8px] text-white items-center justify-center font-black">
                                                     {totalUnreadCount > 9 ? '9+' : totalUnreadCount}
                                                 </span>
                                             </span>
                                         )}
                                     </div>
                                     
-                                    {/* Label text that expands on group hover */}
-                                    <div className="w-0 opacity-0 overflow-hidden group-hover:w-[65px] group-hover:opacity-100 transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)]">
-                                        <span className={`block pl-2 text-xs font-bold tracking-wide whitespace-nowrap ${isActive ? 'text-white' : ''}`}>
-                                            {item.name}
-                                        </span>
-                                    </div>
+                                    {/* Togo/Expand behavior: Active is always shown, others expand on group hover */}
+                                    <span className={`overflow-hidden transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] 
+                                        ${isActive 
+                                            ? 'ml-2.5 w-auto opacity-100' 
+                                            : 'ml-0 w-0 opacity-0 group-hover:ml-2.5 group-hover:w-[65px] group-hover:opacity-100'
+                                        }
+                                        text-xs font-bold tracking-wide whitespace-nowrap
+                                    `}>
+                                        {item.name}
+                                    </span>
                                 </Link>
                             );
                         })}
                     </nav>
-
-                    {/* Right side: Profile and Settings */}
-                    <div className="flex items-center shrink-0 gap-1.5 pl-3 ml-3 border-l border-brand-ebony/10">
-                        <Link 
-                            href="/settings"
-                            className="p-2.5 text-brand-ebony/40 hover:bg-brand-parchment dark:hover:bg-white/10 hover:text-brand-ebony rounded-full transition-colors flex items-center"
-                        >
-                            <Settings className="w-[18px] h-[18px]" />
-                            <div className="w-0 opacity-0 overflow-hidden group-hover:w-[60px] group-hover:opacity-100 transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)]">
-                                <span className="block pl-2 text-xs font-bold whitespace-nowrap">Settings</span>
-                            </div>
-                        </Link>
-
-                        <Link 
-                            href="/profile"
-                            className="flex items-center p-1 rounded-full hover:bg-brand-parchment dark:hover:bg-white/10 transition-colors border border-transparent hover:border-brand-burgundy/20"
-                        >
-                            <img
-                                src={userData.profilePic || `https://placehold.co/80x80/4f46e5/ffffff?text=${userData.name.substring(0, 1)}`}
-                                alt={userData.name}
-                                className="w-8 h-8 rounded-full object-cover shrink-0"
-                            />
-                            <div className="w-0 opacity-0 overflow-hidden group-hover:w-auto min-w-0 group-hover:min-w-[65px] group-hover:opacity-100 transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)]">
-                                <span className="block px-2 text-xs font-bold text-brand-ebony truncate">
-                                    {userData.name.split(' ')[0]}
-                                </span>
-                            </div>
-                        </Link>
-                        
-                        {/* Logout Button reveals entirely on hover */}
-                        <button 
-                            onClick={() => signOut()}
-                            className="w-0 opacity-0 overflow-hidden group-hover:w-9 group-hover:opacity-100 transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] flex items-center justify-center p-2 text-red-500/70 hover:text-red-500 hover:bg-red-500/10 rounded-full"
-                            title="Log out"
-                        >
-                            <LogOut className="w-[18px] h-[18px] shrink-0" />
-                        </button>
-                    </div>
                 </div>
             </div>
+
+            {/* --- FIXED FULL SIDEBAR (Identity & Marketplace) --- */}
+            <aside className="hidden md:flex fixed top-28 bottom-6 left-6 z-50 flex-col items-center pointer-events-none">
+                <div 
+                    className="pointer-events-auto flex flex-col h-full w-72 sidebar-glass border border-brand-ebony/10 shadow-[0_8px_32px_rgba(0,0,0,0.06)] rounded-[2.5rem] py-8 px-4"
+                >
+                    {/* Marketplace Section */}
+                    <div className="mb-4">
+                        <p className="px-5 text-[10px] font-black text-brand-ebony/30 uppercase tracking-[0.2em] mb-4">Portals</p>
+                        <button
+                            onClick={() => setIsMarketplaceOpen(true)}
+                            className="relative w-full flex items-center p-4 rounded-2xl text-brand-ebony/60 hover:text-brand-ebony hover:bg-brand-parchment dark:hover:bg-white/10 transition-all"
+                        >
+                            <div className="w-11 h-11 bg-indigo-500/10 rounded-xl flex items-center justify-center shrink-0">
+                                <Store className="w-5 h-5 text-indigo-500" />
+                            </div>
+                            <div className="flex flex-col items-start ml-4 overflow-hidden">
+                                <span className="text-sm font-bold truncate">Marketplace</span>
+                                <span className="text-[10px] text-indigo-500/60 font-black tracking-wider uppercase">In Development</span>
+                            </div>
+                        </button>
+                    </div>
+
+                    <div className="flex-1" />
+
+                    {/* Bottom Governance Section */}
+                    <div className="space-y-6 pt-6 border-t border-brand-ebony/5">
+                        {/* Institute Switcher */}
+                        <div>
+                            <p className="px-1 text-[10px] font-black text-brand-ebony/30 uppercase tracking-[0.2em] mb-4">Governance</p>
+                            <InstituteSwitcher />
+                        </div>
+
+                        {/* Profile Info */}
+                        <div className="bg-brand-ebony/5 dark:bg-white/5 rounded-3xl p-4 border border-brand-ebony/5">
+                            <div className="flex items-center mb-4">
+                                <img
+                                    src={userData.profilePic || `https://placehold.co/80x80/4f46e5/ffffff?text=${userData.name.substring(0, 1)}`}
+                                    alt={userData.name}
+                                    className="w-11 h-11 rounded-2xl object-cover shadow-sm bg-white"
+                                />
+                                <div className="ml-3 overflow-hidden">
+                                    <p className="text-sm font-black text-brand-ebony truncate leading-none mb-1">{userData.name}</p>
+                                    <p className="text-[10px] text-brand-ebony/40 font-bold uppercase tracking-widest">Active Member</p>
+                                </div>
+                            </div>
+                            
+                            <div className="grid grid-cols-2 gap-2">
+                                <Link 
+                                    href="/profile"
+                                    className="flex items-center justify-center gap-2 py-2.5 bg-white dark:bg-brand-ebony rounded-xl border border-brand-ebony/10 text-brand-ebony/60 hover:text-brand-ebony transition-all text-[10px] font-black uppercase tracking-wider"
+                                >
+                                    Archives
+                                </Link>
+                                <Link 
+                                    href="/settings"
+                                    className="flex items-center justify-center gap-2 py-2.5 bg-white dark:bg-brand-ebony rounded-xl border border-brand-ebony/10 text-brand-ebony/60 hover:text-brand-ebony transition-all text-[10px] font-black uppercase tracking-wider"
+                                >
+                                    Settings
+                                </Link>
+                            </div>
+
+                            <button 
+                                onClick={() => signOut()}
+                                className="mt-4 w-full py-3 flex items-center justify-center gap-2 text-red-500/70 hover:text-red-500 hover:bg-red-500/10 rounded-xl transition-all text-[10px] font-black uppercase tracking-[0.2em]"
+                            >
+                                <LogOut className="w-3.5 h-3.5" />
+                                Terminate Session
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </aside>
         </>
     );
 }

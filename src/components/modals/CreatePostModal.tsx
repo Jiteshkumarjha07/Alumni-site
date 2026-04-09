@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { X, Image as ImageIcon, Loader2 } from 'lucide-react';
+import { X, Image as ImageIcon, Loader2, Send, Sparkles } from 'lucide-react';
 import { uploadMedia } from '@/lib/media';
 import { Portal } from '../ui/Portal';
 
@@ -31,18 +31,14 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
     const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) {
-            // Validate file size (max 5MB)
             if (file.size > 5 * 1024 * 1024) {
                 alert('Image size should be less than 5MB');
                 return;
             }
-
-            // Validate file type
             if (!file.type.startsWith('image/')) {
                 alert('Please select an image file');
                 return;
             }
-
             setImageFile(file);
             setImagePreview(URL.createObjectURL(file));
         }
@@ -55,7 +51,6 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
 
     const handleSubmit = async () => {
         if (!content.trim() && !imageFile) {
-            alert('Please add some content or an image');
             return;
         }
 
@@ -67,8 +62,6 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
             }
 
             await onSubmit(content.trim(), imageUrl);
-
-            // Reset form
             setContent('');
             setImageFile(null);
             setImagePreview('');
@@ -83,111 +76,126 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
 
     return (
         <Portal>
-            <div className="fixed inset-0 bg-brand-ebony/60 dark:bg-black/60 backdrop-blur-sm flex items-start sm:items-center justify-center z-[100] sm:p-4">
-                <div className="bg-brand-cream sm:rounded-2xl sm:max-w-lg w-full h-full sm:h-auto sm:max-h-[90vh] flex flex-col shadow-2xl border-t sm:border border-brand-gold/20 overflow-hidden slide-up-animation">
+            <div className="fixed inset-0 bg-brand-cream/40 dark:bg-black/60 backdrop-blur-md flex items-start sm:items-center justify-center z-[100] sm:p-4 animate-in fade-in duration-300">
+                <div className="card-premium sm:max-w-xl w-full h-full sm:h-auto sm:max-h-[90vh] flex flex-col shadow-2xl overflow-hidden animate-in zoom-in-95 slide-in-from-bottom-5 duration-400 ease-out border-brand-burgundy/10">
+                    
                     {/* Header */}
-                    <div className="flex items-center justify-between p-4 sm:p-6 border-b border-brand-gold/10 sticky top-0 bg-brand-parchment/95 backdrop-blur-md z-10 pt-[max(1rem,env(safe-area-inset-top))]">
-                        <h2 className="text-xl sm:text-2xl font-serif font-bold text-brand-ebony underline decoration-brand-gold/30 underline-offset-8">Create Post</h2>
+                    <div className="flex items-center justify-between p-5 sm:p-6 border-b border-brand-ebony/5 relative z-10 bg-white/40 dark:bg-brand-parchment/40 backdrop-blur-sm">
+                        <div className="flex items-center gap-3">
+                            <div className="w-1.5 h-6 bg-gradient-indigo rounded-full"></div>
+                            <h2 className="text-2xl font-serif font-extrabold text-brand-ebony tracking-tight flex items-center gap-2">
+                                Create Post
+                                <Sparkles className="w-4 h-4 text-brand-gold animate-pulse" />
+                            </h2>
+                        </div>
                         <button
                             onClick={onClose}
                             disabled={loading}
-                            className="p-2 hover:bg-brand-burgundy/10 text-brand-ebony/40 hover:text-brand-burgundy rounded-full transition disabled:opacity-50"
+                            className="p-2 hover:bg-brand-burgundy/10 text-brand-ebony/40 hover:text-brand-burgundy rounded-xl transition-all disabled:opacity-50"
                         >
-                            <X className="w-6 h-6" />
+                            <X className="w-5 h-5" />
                         </button>
                     </div>
 
-                    <div className="flex-1 overflow-y-auto">
+                    <div className="flex-1 overflow-y-auto scrollbar-hide">
                         {/* User Info */}
-                        <div className="p-4 sm:p-6 flex items-center gap-4">
-                            <div className="relative">
+                        <div className="p-5 sm:p-6 flex items-center gap-4">
+                            <div className="relative shrink-0">
                                 <img
-                                    src={currentUser.profilePic || `https://placehold.co/48x48/EFEFEFF/3B82F6?text=${currentUser.name.substring(0, 1)}`}
+                                    src={currentUser.profilePic || `https://placehold.co/48x48/4f46e5/ffffff?text=${currentUser.name.substring(0, 1)}`}
                                     alt={currentUser.name}
-                                    className="w-12 h-12 rounded-full object-cover border-2 border-brand-gold/20 shadow-sm"
+                                    className="w-11 h-11 rounded-full object-cover ring-2 ring-brand-burgundy/10 shadow-sm"
                                 />
-                                <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-brand-cream rounded-full"></div>
                             </div>
-                            <div className="flex flex-col">
-                                <p className="font-bold text-brand-ebony text-lg leading-tight">{currentUser.name}</p>
-                                <p className="text-xs font-bold text-brand-ebony/40 uppercase tracking-widest mt-0.5">Posting to alumni network</p>
+                            <div>
+                                <p className="font-bold text-brand-ebony text-md leading-none mb-1">{currentUser.name}</p>
+                                <p className="text-[10px] font-bold text-brand-ebony/40 uppercase tracking-[0.2em]">Sharing with the community</p>
                             </div>
                         </div>
 
-                        {/* Content */}
-                        <div className="px-4 sm:px-6 pb-6">
+                        {/* Content Area */}
+                        <div className="px-5 sm:px-6 pb-6">
                             <textarea
                                 value={content}
                                 onChange={(e) => setContent(e.target.value)}
-                                placeholder="What's on your mind?"
-                                className="w-full min-h-[160px] p-5 bg-white/50 dark:bg-black/20 border border-brand-gold/20 rounded-2xl focus:ring-2 focus:ring-brand-burgundy/20 focus:border-brand-burgundy outline-none resize-none text-brand-ebony placeholder-brand-ebony/30 transition-all font-sans text-lg leading-relaxed"
+                                placeholder="Share your story, updates, or news..."
+                                className="w-full min-h-[180px] p-0 bg-transparent border-none focus:ring-0 outline-none resize-none text-brand-ebony placeholder-brand-ebony/20 transition-all font-sans text-lg leading-relaxed"
                                 disabled={loading}
+                                autoFocus
                             />
 
-                            {/* Image Preview */}
+                            {/* Image Preview Area */}
                             {imagePreview && (
-                                <div className="mt-4 relative group">
+                                <div className="mt-4 relative rounded-2xl overflow-hidden border border-brand-ebony/10 shadow-xl group">
                                     <img
                                         src={imagePreview}
                                         alt="Preview"
-                                        className="w-full rounded-xl max-h-96 object-cover border border-brand-gold/20 shadow-lg"
+                                        className="w-full max-h-[400px] object-cover group-hover:scale-[1.02] transition-transform duration-500"
                                     />
+                                    <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity"></div>
                                     <button
                                         onClick={handleRemoveImage}
                                         disabled={loading}
-                                        className="absolute top-3 right-3 p-2.5 bg-brand-ebony/80 hover:bg-brand-ebony text-white rounded-full transition-all disabled:opacity-50 shadow-md transform hover:scale-110"
+                                        className="absolute top-4 right-4 p-2 bg-black/60 hover:bg-black text-white rounded-xl transition-all disabled:opacity-50 shadow-lg backdrop-blur-md"
                                     >
                                         <X className="w-5 h-5" />
                                     </button>
                                 </div>
                             )}
 
-                            {/* Image Upload Button */}
+                            {/* Image Upload Hint if no image */}
                             {!imagePreview && (
-                                <label className="mt-4 flex items-center justify-center gap-3 p-8 border-2 border-dashed border-brand-gold/20 rounded-2xl hover:border-brand-burgundy/40 hover:bg-brand-burgundy/5 transition-all cursor-pointer group">
-                                    <ImageIcon className="w-6 h-6 text-brand-ebony/20 group-hover:text-brand-burgundy transition-colors" />
-                                    <span className="text-sm font-bold text-brand-ebony/60 group-hover:text-brand-burgundy transition-colors tracking-wide uppercase">Add a photo to your update</span>
-                                    <input
-                                        type="file"
-                                        accept="image/*"
-                                        onChange={handleImageChange}
-                                        className="hidden"
-                                        disabled={loading}
-                                    />
-                                </label>
+                                <div className="mt-6 flex items-center gap-4">
+                                     <label className="flex items-center gap-2.5 px-5 py-2.5 bg-brand-burgundy/5 text-brand-burgundy hover:bg-brand-burgundy/10 rounded-xl cursor-pointer transition-all border border-brand-burgundy/10 group">
+                                        <ImageIcon className="w-4 h-4 group-hover:scale-110 transition-transform" />
+                                        <span className="text-xs font-bold uppercase tracking-widest">Add Photo</span>
+                                        <input
+                                            type="file"
+                                            accept="image/*"
+                                            onChange={handleImageChange}
+                                            className="hidden"
+                                            disabled={loading}
+                                        />
+                                    </label>
+                                    <p className="text-[10px] text-brand-ebony/30 font-bold uppercase tracking-widest">Max 5MB • High Quality preferred</p>
+                                </div>
                             )}
-
-                            <div className="flex items-center justify-between mt-3 px-1">
-                                <p className="text-[10px] text-brand-ebony/40 font-bold uppercase tracking-tighter">Maximum image size: 5MB • PNG, JPG</p>
-                                <p className={`text-[10px] font-bold uppercase tracking-widest ${content.length > 2000 ? 'text-red-500' : 'text-brand-ebony/20'}`}>{content.length} characters</p>
-                            </div>
                         </div>
                     </div>
 
-                    {/* Actions */}
-                    <div className="flex items-center justify-end gap-4 p-4 sm:p-6 border-t border-brand-gold/10 bg-brand-parchment/80 sticky bottom-0 backdrop-blur-sm pb-[max(1rem,env(safe-area-inset-bottom))]">
-                    <button
-                        onClick={onClose}
-                        disabled={loading}
-                        className="px-6 py-2.5 text-brand-ebony/60 hover:text-brand-ebony font-bold text-xs tracking-widest uppercase hover:bg-brand-ebony/5 rounded-xl transition-all disabled:opacity-50"
-                    >
-                        Cancel
-                    </button>
-                    <button
-                        onClick={handleSubmit}
-                        disabled={loading || (!content.trim() && !imageFile)}
-                        className="px-10 py-3 bg-brand-burgundy text-white rounded-xl font-bold text-xs tracking-widest uppercase hover:bg-[#5a2427] transition-all shadow-lg shadow-brand-burgundy/20 disabled:opacity-50 disabled:cursor-not-allowed min-w-[140px] active:scale-95"
-                    >
-                        {loading ? (
-                            <span className="flex items-center justify-center gap-2">
-                                <Loader2 className="w-4 h-4 animate-spin" />
-                                <span>Posting...</span>
-                            </span>
-                        ) : (
-                            'Post Now'
-                        )}
-                    </button>
-                </div>
+                    {/* Actions Bar */}
+                    <div className="p-5 sm:p-6 border-t border-brand-ebony/5 bg-white/40 dark:bg-brand-parchment/40 backdrop-blur-sm flex items-center justify-between">
+                         <div className="hidden sm:block">
+                             <p className={`text-[10px] font-bold uppercase tracking-widest ${content.length > 2000 ? 'text-red-500' : 'text-brand-ebony/20'}`}>
+                                {content.length} / 2000
+                             </p>
+                         </div>
+                         
+                         <div className="flex items-center gap-3 w-full sm:w-auto">
+                            <button
+                                onClick={onClose}
+                                disabled={loading}
+                                className="flex-1 sm:flex-none px-6 py-3 text-brand-ebony/50 hover:text-brand-ebony font-bold text-xs tracking-widest uppercase transition-all disabled:opacity-50"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={handleSubmit}
+                                disabled={loading || (!content.trim() && !imageFile)}
+                                className="flex-1 sm:flex-none px-8 py-3 bg-gradient-indigo text-white rounded-xl font-bold text-xs tracking-[0.2em] uppercase hover:shadow-[0_4px_15px_rgba(99,102,241,0.4)] transition-all disabled:opacity-30 disabled:cursor-not-allowed group relative overflow-hidden active:scale-95"
+                            >
+                                <div className="relative z-10 flex items-center justify-center gap-2">
+                                    {loading ? (
+                                        <Loader2 className="w-4 h-4 animate-spin" />
+                                    ) : (
+                                        <Send className="w-4 h-4 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
+                                    )}
+                                    <span>{loading ? 'Posting...' : 'Share Post'}</span>
+                                </div>
+                                <div className="absolute inset-0 bg-white/10 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
+                            </button>
+                         </div>
+                    </div>
                 </div>
             </div>
         </Portal>

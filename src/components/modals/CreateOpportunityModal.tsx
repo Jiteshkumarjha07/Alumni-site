@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { X } from 'lucide-react';
+import { X, Briefcase, MapPin, Calendar, Clock, Sparkles, Send, Loader2, Check } from 'lucide-react';
 import { Portal } from '../ui/Portal';
 
 interface CreateOpportunityModalProps {
@@ -49,7 +49,6 @@ export const CreateOpportunityModal: React.FC<CreateOpportunityModalProps> = ({
         setLoading(true);
         try {
             await onSubmit(formData);
-            // Reset form
             setFormData({
                 title: '',
                 company: '',
@@ -63,158 +62,173 @@ export const CreateOpportunityModal: React.FC<CreateOpportunityModalProps> = ({
             onClose();
         } catch (error) {
             console.error('Error creating opportunity:', error);
-            alert('Failed to create opportunity. Please try again.');
         } finally {
             setLoading(false);
         }
     };
 
+    const labelClass = "block text-[10px] font-extrabold text-brand-ebony/40 uppercase tracking-[0.2em] mb-2 px-1";
+    const inputClass = "w-full px-6 py-4 bg-brand-ebony/5 border border-brand-ebony/5 rounded-2xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all font-bold text-sm text-brand-ebony placeholder:text-brand-ebony/25 shadow-inner";
+
     return (
         <Portal>
-            <div className="fixed inset-0 bg-brand-ebony/60 dark:bg-black/60 backdrop-blur-sm flex items-start sm:items-center justify-center z-[100] sm:p-6">
-                <div className="bg-brand-cream w-full sm:max-w-2xl h-full sm:h-auto sm:max-h-[85dvh] sm:rounded-2xl flex flex-col shadow-2xl sm:border sm:border-brand-gold/20 overflow-hidden slide-up-animation">
+            <div className="fixed inset-0 bg-brand-ebony/60 dark:bg-black/80 backdrop-blur-md flex items-center justify-center z-[200] p-4">
+                <div className="card-premium w-full max-w-2xl max-h-[90vh] overflow-y-auto border-brand-burgundy/10 shadow-2xl animate-in fade-in zoom-in-95 duration-300">
                     {/* Header */}
-                    <div className="flex-shrink-0 flex items-center justify-between gap-4 p-4 sm:p-6 border-b border-brand-gold/10 bg-brand-parchment/30 pt-[max(1rem,env(safe-area-inset-top))] text-left">
-                        <h2 className="text-xl sm:text-2xl font-serif font-bold text-brand-ebony underline decoration-brand-gold/30 underline-offset-8">Post an Opportunity</h2>
-                        <button
-                            onClick={onClose}
-                            disabled={loading}
-                            className="p-2 -mr-2 hover:bg-brand-burgundy/10 rounded-full transition text-brand-ebony/40 hover:text-brand-burgundy flex-shrink-0"
-                        >
-                            <X className="w-5 h-5 sm:w-6 sm:h-6" />
+                    <div className="flex items-center justify-between p-8 border-b border-brand-ebony/5 sticky top-0 bg-white dark:bg-brand-parchment/10 backdrop-blur-xl z-20">
+                        <div className="flex items-center gap-4">
+                            <div className="w-12 h-12 bg-gradient-indigo rounded-2xl flex items-center justify-center text-white shadow-lg">
+                                <Briefcase className="w-6 h-6" />
+                            </div>
+                            <div>
+                                <h2 className="text-2xl font-serif font-extrabold text-brand-ebony flex items-center gap-2">
+                                    Project Portal
+                                    <Sparkles className="w-4 h-4 text-brand-gold" />
+                                </h2>
+                                <p className="text-[10px] font-extrabold text-brand-ebony/30 uppercase tracking-[0.2em] mt-1">Deploy new professional paths</p>
+                            </div>
+                        </div>
+                        <button onClick={onClose} className="p-3 hover:bg-brand-ebony/5 rounded-full transition-all text-brand-ebony/30">
+                            <X className="w-6 h-6" />
                         </button>
                     </div>
 
-                    {/* Form */}
-                    <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6 pb-20 sm:pb-6">
-                    <div>
-                        <label className="block text-sm font-bold text-brand-ebony/70 uppercase tracking-widest mb-2">
-                            Job Title *
-                        </label>
-                        <input
-                            type="text"
-                            value={formData.title}
-                            onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                            className="w-full px-4 py-3 bg-white/50 dark:bg-black/20 border border-brand-gold/20 rounded-xl focus:ring-2 focus:ring-brand-burgundy/20 focus:border-brand-burgundy outline-none transition text-brand-ebony placeholder-brand-ebony/30"
-                            placeholder="e.g., Senior Software Engineer"
-                        />
-                    </div>
-
-                    <div>
-                        <label className="block text-sm font-bold text-brand-ebony/70 uppercase tracking-widest mb-2">
-                            Company *
-                        </label>
-                        <input
-                            type="text"
-                            value={formData.company}
-                            onChange={(e) => setFormData({ ...formData, company: e.target.value })}
-                            className="w-full px-4 py-3 bg-white/50 dark:bg-black/20 border border-brand-gold/20 rounded-xl focus:ring-2 focus:ring-brand-burgundy/20 focus:border-brand-burgundy outline-none transition text-brand-ebony placeholder-brand-ebony/30"
-                            placeholder="e.g., Tech Corp"
-                        />
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
-                            <label className="block text-sm font-bold text-brand-ebony/70 uppercase tracking-widest mb-2">
-                                Job Type *
-                            </label>
-                            <select
-                                value={formData.type}
-                                onChange={(e) => setFormData({ ...formData, type: e.target.value as any })}
-                                className="w-full px-4 py-3 bg-white/50 dark:bg-black/20 dark:bg-brand-ebony/5 border border-brand-gold/20 rounded-xl focus:ring-2 focus:ring-brand-burgundy/20 focus:border-brand-burgundy outline-none transition text-brand-ebony"
-                            >
-                                <option value="Full-time" className="bg-brand-cream text-brand-ebony">Full-time</option>
-                                <option value="Part-time" className="bg-brand-cream text-brand-ebony">Part-time</option>
-                                <option value="Freelance/Contract" className="bg-brand-cream text-brand-ebony">Freelance/Contract</option>
-                                <option value="Internship" className="bg-brand-cream text-brand-ebony">Internship</option>
-                            </select>
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-bold text-brand-ebony/70 uppercase tracking-widest mb-2">
-                                Location
-                            </label>
-                            <input
-                                type="text"
-                                value={formData.location}
-                                onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                                className="w-full px-4 py-3 bg-white/50 dark:bg-black/20 border border-brand-gold/20 rounded-xl focus:ring-2 focus:ring-brand-burgundy/20 focus:border-brand-burgundy outline-none transition text-brand-ebony placeholder-brand-ebony/30"
-                                placeholder="e.g., Remote, New York, NY"
-                            />
-                        </div>
-                    </div>
-
-                    <div>
-                        <label className="block text-sm font-bold text-brand-ebony/70 uppercase tracking-widest mb-2">
-                            Description *
-                        </label>
-                        <textarea
-                            value={formData.description}
-                            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                            className="w-full px-4 py-3 bg-white/50 dark:bg-black/20 border border-brand-gold/20 rounded-xl focus:ring-2 focus:ring-brand-burgundy/20 focus:border-brand-burgundy outline-none transition text-brand-ebony placeholder-brand-ebony/30 resize-none"
-                            rows={4}
-                            placeholder="Job description, requirements, etc."
-                        />
-                    </div>
-
-                    <div>
-                        <label className="block text-sm font-bold text-brand-ebony/70 uppercase tracking-widest mb-2">
-                            Contact Information
-                        </label>
-                        <input
-                            type="text"
-                            value={formData.contact}
-                            onChange={(e) => setFormData({ ...formData, contact: e.target.value })}
-                            className="w-full px-4 py-3 bg-white/50 dark:bg-black/20 border border-brand-gold/20 rounded-xl focus:ring-2 focus:ring-brand-burgundy/20 focus:border-brand-burgundy outline-none transition text-brand-ebony placeholder-brand-ebony/30"
-                            placeholder="Email or application link"
-                        />
-                    </div>
-
-                    <div className="flex flex-col sm:flex-row sm:items-center gap-6 p-4 bg-brand-gold/5 rounded-xl border border-brand-gold/10">
-                        <label className="flex items-center gap-3 cursor-pointer group">
-                            <input
-                                type="checkbox"
-                                checked={formData.isPermanent}
-                                onChange={(e) => setFormData({ ...formData, isPermanent: e.target.checked })}
-                                className="w-5 h-5 text-brand-burgundy border-brand-gold/30 rounded focus:ring-brand-burgundy transition-all"
-                            />
-                            <span className="text-sm font-bold text-brand-ebony/80 uppercase tracking-widest group-hover:text-brand-burgundy transition-colors">No expiry date</span>
-                        </label>
-
-                        {!formData.isPermanent && (
-                            <div className="flex-1">
-                                <label className="block text-xs font-bold text-brand-ebony/50 uppercase tracking-widest mb-1 ml-1">
-                                    Expiry Date
-                                </label>
+                    {/* Form Content */}
+                    <div className="p-8 space-y-8">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                            <div className="space-y-3">
+                                <label className={labelClass}>Venture Title</label>
                                 <input
-                                    type="date"
-                                    value={formData.expiryDate}
-                                    onChange={(e) => setFormData({ ...formData, expiryDate: e.target.value })}
-                                    className="w-full px-4 py-2 bg-white/50 dark:bg-black/20 border border-brand-gold/20 rounded-lg focus:ring-2 focus:ring-brand-burgundy/20 focus:border-brand-burgundy outline-none transition text-brand-ebony"
-                                    min={new Date().toISOString().split('T')[0]}
+                                    type="text"
+                                    value={formData.title}
+                                    onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                                    className={inputClass}
+                                    placeholder="e.g. Lead Dev Architect"
                                 />
                             </div>
-                        )}
-                    </div>
-                </div>
 
-                {/* Actions */}
-                <div className="flex-shrink-0 flex flex-col-reverse sm:flex-row sm:justify-end gap-3 p-4 sm:p-5 border-t border-brand-gold/10 bg-brand-cream">
-                    <button
-                        onClick={onClose}
-                        disabled={loading}
-                        className="w-full sm:w-auto px-6 py-2.5 border border-brand-gold/20 rounded-xl font-bold text-brand-ebony/70 hover:bg-brand-gold/5 transition tracking-wide disabled:opacity-50"
-                    >
-                        Cancel
-                    </button>
-                    <button
-                        onClick={handleSubmit}
-                        disabled={loading}
-                        className="w-full sm:w-auto px-8 py-2.5 bg-brand-burgundy text-white rounded-xl font-bold hover:bg-[#5a2427] transition disabled:opacity-50 disabled:cursor-not-allowed shadow-md shadow-brand-burgundy/20 tracking-wide"
-                    >
-                        {loading ? 'Posting...' : 'Post Opportunity'}
-                    </button>
-                </div>
+                            <div className="space-y-3">
+                                <label className={labelClass}>Organization</label>
+                                <input
+                                    type="text"
+                                    value={formData.company}
+                                    onChange={(e) => setFormData({ ...formData, company: e.target.value })}
+                                    className={inputClass}
+                                    placeholder="e.g. Global Tech Collective"
+                                />
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                            <div className="space-y-3">
+                                <label className={labelClass}>Engagement Type</label>
+                                <select
+                                    value={formData.type}
+                                    onChange={(e) => setFormData({ ...formData, type: e.target.value as any })}
+                                    className={`${inputClass} appearance-none cursor-pointer`}
+                                >
+                                    <option value="Full-time">Full-time Deployment</option>
+                                    <option value="Part-time">Part-time Engagement</option>
+                                    <option value="Freelance/Contract">Contract Collaboration</option>
+                                    <option value="Internship">Developmental Residency</option>
+                                </select>
+                            </div>
+
+                            <div className="space-y-3">
+                                <label className={labelClass}>Headquarters / Remote</label>
+                                <div className="relative">
+                                    <input
+                                        type="text"
+                                        value={formData.location}
+                                        onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                                        className={inputClass}
+                                        placeholder="Global / City, Nation"
+                                    />
+                                    <MapPin className="absolute right-5 top-1/2 -translate-y-1/2 w-4 h-4 text-brand-ebony/20" />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="space-y-3">
+                            <label className={labelClass}>Mission Briefing & Requirements</label>
+                            <textarea
+                                value={formData.description}
+                                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                                className={`${inputClass} min-h-[160px] resize-none leading-relaxed pt-5`}
+                                placeholder="Detail the core objectives and the expertise required for this legacy path..."
+                            />
+                        </div>
+
+                        <div className="space-y-3">
+                            <label className={labelClass}>Relay Protocol (Contact)</label>
+                            <div className="relative">
+                                <input
+                                    type="text"
+                                    value={formData.contact}
+                                    onChange={(e) => setFormData({ ...formData, contact: e.target.value })}
+                                    className={inputClass}
+                                    placeholder="Email address or secure application portal"
+                                />
+                                <Send className="absolute right-5 top-1/2 -translate-y-1/2 w-4 h-4 text-brand-ebony/20" />
+                            </div>
+                        </div>
+
+                        {/* Expiry / Status */}
+                        <div className="p-8 bg-brand-burgundy/5 rounded-[2.5rem] border border-brand-burgundy/10 shadow-inner">
+                            <div className="flex flex-col sm:flex-row sm:items-center gap-8">
+                                <label className="flex items-center gap-4 cursor-pointer group">
+                                    <div className="relative h-6 w-6">
+                                        <input
+                                            type="checkbox"
+                                            checked={formData.isPermanent}
+                                            onChange={(e) => setFormData({ ...formData, isPermanent: e.target.checked })}
+                                            className="peer h-6 w-6 cursor-pointer appearance-none rounded-lg border-2 border-brand-burgundy/30 transition-all checked:bg-brand-burgundy"
+                                        />
+                                        <Check className="pointer-events-none absolute left-1 top-1 h-4 w-4 text-white opacity-0 transition-opacity peer-checked:opacity-100" />
+                                    </div>
+                                    <span className="text-[11px] font-extrabold text-brand-ebony/60 uppercase tracking-widest group-hover:text-brand-burgundy transition-colors">Perpetual Listing</span>
+                                </label>
+
+                                {!formData.isPermanent && (
+                                    <div className="flex-1 space-y-2 animate-in slide-in-from-left-4">
+                                        <label className="flex items-center gap-2 text-[9px] font-extrabold text-brand-ebony/30 uppercase tracking-[0.2em] mb-1">
+                                            <Clock className="w-3 h-3" /> Expiry Deadline
+                                        </label>
+                                        <input
+                                            type="date"
+                                            value={formData.expiryDate}
+                                            onChange={(e) => setFormData({ ...formData, expiryDate: e.target.value })}
+                                            className={`${inputClass} py-3 text-xs`}
+                                            min={new Date().toISOString().split('T')[0]}
+                                        />
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Footer Actions */}
+                    <div className="p-8 border-t border-brand-ebony/5 flex gap-5 bg-white/50 dark:bg-brand-parchment/10">
+                        <button
+                            onClick={onClose}
+                            disabled={loading}
+                            className="px-8 py-4 text-xs font-extrabold text-brand-ebony/40 uppercase tracking-widest hover:text-brand-ebony transition-all"
+                        >
+                            Retract
+                        </button>
+                        <button
+                            onClick={handleSubmit}
+                            disabled={loading}
+                            className="flex-1 py-4 bg-gradient-indigo text-white rounded-2xl font-extrabold uppercase tracking-[0.2em] text-xs shadow-xl shadow-indigo-500/20 hover:brightness-110 active:scale-95 transition-all disabled:opacity-30 flex items-center justify-center gap-2"
+                        >
+                            {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : (
+                                <>
+                                    Establish Opportunity
+                                    <Check className="w-4 h-4" />
+                                </>
+                            )}
+                        </button>
+                    </div>
                 </div>
             </div>
         </Portal>

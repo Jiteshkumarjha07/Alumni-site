@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { X, Plus, Trash2, BarChart2 } from 'lucide-react';
+import { X, Plus, Trash2, BarChart2, Sparkles, Check } from 'lucide-react';
 
 interface PollModalProps {
     isOpen: boolean;
@@ -45,84 +45,105 @@ export function PollModal({ isOpen, onClose, onSubmit }: PollModalProps) {
         }
     };
 
+    const labelClass = "block text-[10px] font-extrabold text-brand-ebony/40 uppercase tracking-[0.2em] mb-2 px-1";
+    const inputClass = "w-full px-6 py-4 bg-brand-ebony/5 border border-brand-ebony/5 rounded-2xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all font-bold text-sm text-brand-ebony placeholder:text-brand-ebony/25 shadow-inner";
+
     return (
-        <div className="fixed inset-0 bg-brand-ebony/40 dark:bg-black/40 flex items-center justify-center z-[100] p-4 backdrop-blur-sm">
-            <div className="bg-brand-cream rounded-2xl p-6 max-w-md w-full shadow-2xl animate-in zoom-in-95 duration-200 border border-brand-ebony/10">
-                <div className="flex items-center justify-between mb-6">
-                    <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-brand-burgundy/10 rounded-full flex items-center justify-center">
-                            <BarChart2 className="w-5 h-5 text-brand-burgundy" />
+        <div className="fixed inset-0 bg-brand-ebony/60 dark:bg-black/80 backdrop-blur-md flex items-center justify-center z-[250] p-4">
+            <div className="card-premium max-w-lg w-full shadow-2xl animate-in fade-in zoom-in-95 duration-300 border-brand-burgundy/10 overflow-hidden">
+                {/* Header */}
+                <div className="p-8 border-b border-brand-ebony/5 flex items-center justify-between bg-white dark:bg-brand-parchment/10 backdrop-blur-xl">
+                    <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 bg-gradient-indigo rounded-2xl flex items-center justify-center text-white shadow-lg">
+                            <BarChart2 className="w-6 h-6" />
                         </div>
-                        <h3 className="text-xl font-serif font-bold text-brand-ebony">Create Poll</h3>
+                        <div>
+                            <h2 className="text-2xl font-serif font-extrabold text-brand-ebony flex items-center gap-2">
+                                Team Census
+                                <Sparkles className="w-4 h-4 text-brand-gold" />
+                            </h2>
+                            <p className="text-[10px] font-extrabold text-brand-ebony/30 uppercase tracking-[0.2em] mt-1">Gather collective intelligence</p>
+                        </div>
                     </div>
-                    <button onClick={onClose} className="text-brand-ebony/40 hover:text-brand-burgundy transition-colors">
+                    <button onClick={onClose} className="p-3 hover:bg-brand-ebony/5 rounded-full transition-all text-brand-ebony/30">
                         <X className="w-6 h-6" />
                     </button>
                 </div>
 
-                <form onSubmit={handleSubmit} className="space-y-4">
-                    <div>
-                        <label className="block text-xs font-bold text-brand-ebony/60 uppercase tracking-widest mb-1.5 ml-1">Question</label>
+                {/* Form Content */}
+                <form onSubmit={handleSubmit} className="p-8 space-y-8">
+                    <div className="space-y-3">
+                        <label className={labelClass}>Inquiry (Question)</label>
                         <input
                             type="text"
                             value={question}
                             onChange={(e) => setQuestion(e.target.value)}
-                            placeholder="What would you like to ask?"
-                            className="w-full px-4 py-3 bg-brand-parchment/50 border border-brand-ebony/10 rounded-xl focus:ring-2 focus:ring-brand-burgundy/20 focus:border-brand-burgundy outline-none transition-all placeholder:text-brand-ebony/30 text-brand-ebony font-medium"
+                            placeholder="What insight are you seeking?"
+                            className={inputClass}
                             required
                         />
                     </div>
 
-                    <div className="space-y-3">
-                        <label className="block text-xs font-bold text-brand-ebony/60 uppercase tracking-widest mb-1.5 ml-1">Options</label>
-                        {options.map((option, index) => (
-                            <div key={index} className="flex gap-2">
-                                <input
-                                    type="text"
-                                    value={option}
-                                    onChange={(e) => handleOptionChange(index, e.target.value)}
-                                    placeholder={`Option ${index + 1}`}
-                                    className="flex-1 px-4 py-3 bg-brand-parchment/50 border border-brand-ebony/10 rounded-xl focus:ring-2 focus:ring-brand-burgundy/20 focus:border-brand-burgundy outline-none transition-all placeholder:text-brand-ebony/30 text-brand-ebony text-sm"
-                                    required
-                                />
-                                {options.length > 2 && (
-                                    <button
-                                        type="button"
-                                        onClick={() => handleRemoveOption(index)}
-                                        className="p-3 text-brand-ebony/30 hover:text-red-500 transition-colors"
-                                    >
-                                        <Trash2 className="w-5 h-5" />
-                                    </button>
-                                )}
-                            </div>
-                        ))}
+                    <div className="space-y-4">
+                        <div className="flex justify-between items-center px-1">
+                            <label className={labelClass}>Response Vectors (Options)</label>
+                            <span className="text-[10px] font-extrabold text-brand-ebony/20 uppercase tracking-widest">{options.length}/10</span>
+                        </div>
+                        <div className="space-y-3 max-h-56 overflow-y-auto pr-2 custom-scrollbar scrollbar-hide">
+                            {options.map((option, index) => (
+                                <div key={index} className="flex gap-3 group/option animate-in slide-in-from-left-2 duration-200">
+                                    <div className="flex-1 relative">
+                                        <input
+                                            type="text"
+                                            value={option}
+                                            onChange={(e) => handleOptionChange(index, e.target.value)}
+                                            placeholder={`Option ${index + 1}`}
+                                            className={`${inputClass} !py-3`}
+                                            required
+                                        />
+                                        <div className="absolute left-[-2px] top-1/2 -translate-y-1/2 w-1 h-6 bg-indigo-500 rounded-full opacity-0 group-focus-within/option:opacity-100 transition-opacity" />
+                                    </div>
+                                    {options.length > 2 && (
+                                        <button
+                                            type="button"
+                                            onClick={() => handleRemoveOption(index)}
+                                            className="p-3 bg-brand-ebony/5 hover:bg-red-500/10 text-brand-ebony/20 hover:text-red-500 rounded-xl transition-all"
+                                        >
+                                            <Trash2 className="w-4 h-4" />
+                                        </button>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+
+                        {options.length < 10 && (
+                            <button
+                                type="button"
+                                onClick={handleAddOption}
+                                className="flex items-center gap-2 px-6 py-2 bg-indigo-500/5 hover:bg-indigo-500/10 text-indigo-500 rounded-xl transition-all text-[10px] font-extrabold uppercase tracking-widest ml-1"
+                            >
+                                <Plus className="w-3.5 h-3.5" />
+                                Extend Response Fields
+                            </button>
+                        )}
                     </div>
 
-                    {options.length < 10 && (
-                        <button
-                            type="button"
-                            onClick={handleAddOption}
-                            className="flex items-center gap-2 text-sm font-bold text-brand-burgundy hover:text-brand-burgundy/80 transition-colors ml-1"
-                        >
-                            <Plus className="w-4 h-4" />
-                            Add Option
-                        </button>
-                    )}
-
-                    <div className="pt-4 flex gap-3">
+                    {/* Footer Actions */}
+                    <div className="flex gap-4 pt-4">
                         <button
                             type="button"
                             onClick={onClose}
-                            className="flex-1 py-3 px-4 bg-brand-parchment hover:bg-brand-parchment/80 text-brand-ebony rounded-xl font-bold transition-colors border border-brand-ebony/10"
+                            className="flex-1 py-4 text-xs font-extrabold text-brand-ebony/40 uppercase tracking-widest hover:text-brand-ebony transition-all"
                         >
-                            Cancel
+                            Retract
                         </button>
                         <button
                             type="submit"
                             disabled={!question.trim() || options.filter(opt => opt.trim() !== '').length < 2}
-                            className="flex-1 py-3 px-4 bg-brand-burgundy hover:bg-[#5a2427] text-white rounded-xl font-bold transition-colors shadow-lg shadow-brand-burgundy/20 disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="flex-[2] py-4 bg-gradient-indigo text-white rounded-2xl font-extrabold uppercase tracking-[0.2em] text-xs shadow-xl shadow-indigo-500/20 hover:brightness-110 active:scale-95 transition-all disabled:opacity-30 flex items-center justify-center gap-2"
                         >
-                            Create Poll
+                            Establish Census
+                            <Check className="w-4 h-4" />
                         </button>
                     </div>
                 </form>

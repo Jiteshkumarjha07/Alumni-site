@@ -1,6 +1,6 @@
 'use client';
 
-import { X } from 'lucide-react';
+import { X, ShieldAlert, AlertTriangle, Info } from 'lucide-react';
 
 interface ConfirmDialogProps {
     isOpen: boolean;
@@ -26,35 +26,44 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
     if (!isOpen) return null;
 
     const variantStyles = {
-        danger: 'bg-red-600 hover:bg-red-700',
-        warning: 'bg-yellow-600 hover:bg-yellow-700',
-        info: 'bg-brand-burgundy hover:bg-[#5a2427]',
+        danger: 'bg-red-500 hover:bg-red-600 shadow-red-500/20',
+        warning: 'bg-brand-gold hover:bg-amber-500 shadow-brand-gold/20',
+        info: 'bg-gradient-indigo hover:shadow-indigo-500/20',
+    };
+
+    const StatusIcon = () => {
+        if (variant === 'danger') return <ShieldAlert className="w-5 h-5 text-red-500" />;
+        if (variant === 'warning') return <AlertTriangle className="w-5 h-5 text-brand-gold" />;
+        return <Info className="w-5 h-5 text-brand-burgundy" />;
     };
 
     return (
-        <div className="fixed inset-0 bg-brand-ebony/60 dark:bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-            <div className="bg-brand-parchment rounded-2xl max-w-md w-full border border-brand-ebony/10 shadow-2xl overflow-hidden">
+        <div className="fixed inset-0 bg-brand-ebony/60 dark:bg-black/60 backdrop-blur-md flex items-center justify-center z-[100] p-4 animate-in fade-in duration-300">
+            <div className="card-premium max-w-md w-full overflow-hidden animate-in zoom-in-95 duration-200 border-brand-burgundy/10 shadow-2xl">
                 {/* Header */}
-                <div className="flex items-center justify-between p-5 border-b border-brand-ebony/10 bg-brand-ebony/5">
-                    <h2 className="text-xl font-serif font-bold text-brand-ebony leading-none">{title}</h2>
+                <div className="flex items-center justify-between px-6 py-5 border-b border-brand-ebony/5 bg-white/40 dark:bg-brand-parchment/40 backdrop-blur-sm">
+                    <div className="flex items-center gap-3">
+                         <StatusIcon />
+                         <h2 className="text-xl font-serif font-extrabold text-brand-ebony tracking-tight">{title}</h2>
+                    </div>
                     <button
                         onClick={onClose}
-                        className="p-2 hover:bg-brand-burgundy/5 text-brand-ebony/60 rounded-full transition"
+                        className="p-2 hover:bg-brand-ebony/5 text-brand-ebony/40 rounded-xl transition-all"
                     >
                         <X className="w-5 h-5" />
                     </button>
                 </div>
 
                 {/* Content */}
-                <div className="p-6">
-                    <p className="text-brand-ebony leading-relaxed">{message}</p>
+                <div className="px-8 py-10 text-center">
+                    <p className="text-brand-ebony/70 leading-relaxed font-medium">{message}</p>
                 </div>
 
                 {/* Actions */}
-                <div className="flex justify-end gap-3 p-5 border-t border-brand-ebony/10 bg-brand-ebony/5">
+                <div className="flex items-center gap-3 px-6 py-5 border-t border-brand-ebony/5 bg-white/40 dark:bg-brand-parchment/40 backdrop-blur-sm">
                     <button
                         onClick={onClose}
-                        className="px-6 py-2.5 border border-brand-ebony/10 rounded-xl font-bold text-brand-ebony/60 hover:bg-white transition uppercase tracking-widest text-sm"
+                        className="flex-1 px-6 py-3 border border-brand-ebony/10 rounded-xl font-bold text-brand-ebony/40 hover:bg-brand-ebony/5 transition-all uppercase tracking-widest text-[10px]"
                     >
                         {cancelText}
                     </button>
@@ -63,7 +72,7 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
                             onConfirm();
                             onClose();
                         }}
-                        className={`px-6 py-2.5 text-white rounded-xl font-bold transition shadow-md uppercase tracking-widest text-sm ${variantStyles[variant]}`}
+                        className={`flex-1 px-6 py-3 text-white rounded-xl font-bold transition-all shadow-lg uppercase tracking-widest text-[10px] active:scale-95 ${variantStyles[variant]}`}
                     >
                         {confirmText}
                     </button>

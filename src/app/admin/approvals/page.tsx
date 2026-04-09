@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { collection, onSnapshot, deleteDoc, doc, serverTimestamp, setDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import { ShieldCheck, Plus, Loader2, Trash2, Mail, Building2 } from 'lucide-react';
+import { ShieldCheck, Plus, Loader2, Trash2, Mail, Building2, Sparkles, ChevronLeft } from 'lucide-react';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
@@ -59,7 +59,7 @@ export default function AdminApprovalsPage() {
 
         const connectionTimeout = setTimeout(() => {
             if (!instLoaded || !appLoaded) {
-                setError("CRITICAL ERROR: Unable to connect to Firebase. The database does not exist or your config is pointing to the wrong project. Check firebase-config.ts and the Firebase Console.");
+                setError("Connection timeout. Please check your config.");
                 setFetchLoading(false);
             }
         }, 8000);
@@ -87,38 +87,26 @@ export default function AdminApprovalsPage() {
         const emailClean = email.trim().toLowerCase();
         
         if (!isAuthenticEmailDomain(emailClean)) {
-            setError("Please use an authentic email domain (e.g., @gmail.com, @yahoo.com or an institutional email). Disposable or unverified domains are not allowed.");
+            setError("Invalid email domain. Please use an authentic provider.");
             return;
         }
 
         setLoading(true);
-        // Do not use setLoading to block the UI, letting the snapshot listener handle updates instantly
         setError(null);
         setSuccess(null);
 
         try {
-            // Write to database asynchronously without blocking
-            const writePromise = setDoc(doc(db, 'approvals', emailClean), {
+            await setDoc(doc(db, 'approvals', emailClean), {
                 email: emailClean,
                 instituteIds: selectedInstitutes,
                 updatedAt: serverTimestamp(),
             });
 
-            // Enforce a 15-second timeout to prevent infinite "buffering" if network drops or is blocked
-            const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error("Network timeout: Could not reach the database after 15 seconds.")), 15000));
-            await Promise.race([writePromise, timeoutPromise]);
-
-            setSuccess(`Approval added for ${emailClean}`);
+            setSuccess(`Access granted to ${emailClean}`);
             setEmail('');
             setSelectedInstitutes([]);
         } catch (err: any) {
-            console.error("Add approval error:", err);
-            const msg = (err as { message?: string }).message || '';
-            if (msg.includes('permission-denied')) {
-                setError("Permission Denied: Check your Firestore Rules for the 'approvals' collection.");
-            } else {
-                setError(msg || 'An unexpected error occurred.');
-            }
+            setError(err.message || 'An unexpected error occurred.');
         } finally {
             setLoading(false);
         }
@@ -126,147 +114,180 @@ export default function AdminApprovalsPage() {
 
     const handleDelete = async (emailToDelete: string) => {
         if (!confirm(`Remove approval for ${emailToDelete}?`)) return;
-        setLoading(true);
         try {
-            const deletePromise = deleteDoc(doc(db, 'approvals', emailToDelete));
-            const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error("Network timeout: Could not delete from database after 15 seconds.")), 15000));
-            await Promise.race([deletePromise, timeoutPromise]);
-            
+            await deleteDoc(doc(db, 'approvals', emailToDelete));
         } catch (err: any) {
             setError(err.message || "An unexpected error occurred.");
-        } finally {
-            setLoading(false);
         }
     };
 
     return (
-        <div className="p-4 md:p-8 relative overflow-hidden">
-            {/* Decorative Background Leaves */}
-            <div className="absolute top-0 left-0 w-64 h-64 opacity-5 pointer-events-none -translate-x-1/4 -translate-y-1/4 rotate-45">
-                <svg viewBox="0 0 200 200" className="w-full h-full fill-brand-ebony">
-                    <path d="M40,100 C40,100 80,40 160,40 C160,40 100,100 40,100 Z" />
-                </svg>
-            </div>
-            <div className="absolute bottom-0 right-0 w-64 h-64 opacity-5 pointer-events-none translate-x-1/4 translate-y-1/4 -rotate-12">
-                <svg viewBox="0 0 200 200" className="w-full h-full fill-brand-ebony">
-                    <path d="M40,100 C40,100 80,40 160,40 C160,40 100,100 40,100 Z" />
-                </svg>
-            </div>
-
-            <div className="max-w-4xl mx-auto relative z-10 text-brand-ebony">
-                <div className="flex items-center justify-between mb-8">
-                    <div>
-                        <h1 className="text-3xl font-serif font-bold text-brand-ebony flex items-center gap-2">
-                            <ShieldCheck className="w-8 h-8 text-brand-burgundy" />
-                            Email Approvals
-                        </h1>
-                        <p className="text-brand-ebony/60">Manage manual sign-up permissions for alumni.</p>
+        <div className="max-w-6xl mx-auto px-4 md:px-8 pt-8 pb-12 w-full animate-fade-up">
+            {/* Header Section */}
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
+                <div className="flex items-center gap-5">
+                    <div className="w-14 h-14 bg-gradient-indigo rounded-2xl flex items-center justify-center shadow-xl shadow-brand-burgundy/20">
+                         <ShieldCheck className="w-7 h-7 text-white" />
                     </div>
-                    <Link href="/admin/institutes" className="text-brand-burgundy hover:underline font-bold text-sm uppercase tracking-widest">
-                        Manage Institutes
+                    <div>
+                        <div className="flex items-center gap-3">
+                            <h1 className="text-3xl sm:text-4xl font-serif font-extrabold text-brand-ebony tracking-tight">
+                                Access Control
+                            </h1>
+                            <Sparkles className="w-5 h-5 text-brand-gold animate-pulse" />
+                        </div>
+                        <p className="text-brand-ebony/40 font-medium text-sm mt-1 uppercase tracking-widest text-[11px]">Identity Management • Enrollment Validation</p>
+                    </div>
+                </div>
+                <div className="flex items-center gap-3">
+                    <Link href="/admin/institutes" className="flex items-center gap-2 px-6 py-3 bg-white hover:bg-brand-parchment border border-brand-ebony/10 rounded-xl transition-all font-bold text-xs tracking-widest uppercase text-brand-ebony/70 hover:text-brand-burgundy">
+                        <ChevronLeft className="w-4 h-4" /> Institutes
+                    </Link>
+                    <Link href="/" className="px-6 py-3 bg-brand-ebony/5 hover:bg-brand-ebony/10 rounded-xl transition-all font-bold text-xs tracking-widest uppercase text-brand-ebony/40">
+                        Exit
                     </Link>
                 </div>
+            </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                    {/* Add Form */}
-                    <div className="lg:col-span-1">
-                        <div className="bg-brand-parchment/60 backdrop-blur-sm rounded-2xl shadow-xl p-6 border border-brand-ebony/10 sticky top-8 transition-colors duration-300">
-                            <h2 className="text-xl font-serif font-bold text-brand-ebony mb-4">Grant Access</h2>
-                            
-                            {error && <div className="mb-4 p-3 bg-red-50 text-red-600 text-sm rounded-lg">{error}</div>}
-                            {success && <div className="mb-4 p-3 bg-green-50 text-green-700 text-sm rounded-lg">{success}</div>}
-
-                            <form onSubmit={handleSubmit} className="space-y-6">
-                                <div>
-                                    <label className="block text-xs font-bold text-brand-ebony/70 mb-2 uppercase tracking-widest">Email Address</label>
-                                    <div className="relative">
-                                        <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-brand-ebony/30" />
-                                        <input
-                                            type="email"
-                                            placeholder="alumni@example.com"
-                                            value={email}
-                                            onChange={(e) => setEmail(e.target.value)}
-                                            className="w-full pl-10 pr-4 py-3 bg-brand-ebony/5 border border-brand-ebony/10 rounded-xl focus:ring-2 focus:ring-brand-burgundy/20 outline-none text-brand-ebony"
-                                            required
-                                        />
-                                    </div>
-                                </div>
-
-                                <div>
-                                    <label className="block text-xs font-bold text-brand-ebony/70 mb-2 uppercase tracking-widest">Select Institutes</label>
-                                    <div className="space-y-2 max-h-48 overflow-y-auto p-2 border border-brand-ebony/10 rounded-xl bg-brand-ebony/5">
-                                        {institutes.map(inst => (
-                                            <label key={inst.id} className="flex items-center gap-3 p-2 hover:bg-brand-ebony/5 rounded-lg cursor-pointer transition-colors">
-                                                <input
-                                                    type="checkbox"
-                                                    checked={selectedInstitutes.includes(inst.id)}
-                                                    onChange={() => handleToggleInstitute(inst.id)}
-                                                    className="w-4 h-4 rounded border-brand-ebony/20 text-brand-burgundy focus:ring-brand-burgundy"
-                                                />
-                                                <span className="text-sm font-medium text-brand-ebony">{inst.name}</span>
-                                            </label>
-                                        ))}
-                                    </div>
-                                </div>
-
-                                <button
-                                    type="submit"
-                                    disabled={loading}
-                                    className="w-full py-4 bg-brand-burgundy text-white rounded-xl font-bold hover:bg-[#5a2427] transition-all shadow-md disabled:opacity-50 flex items-center justify-center gap-2"
-                                >
-                                    {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <><Plus className="w-5 h-5" /> Approve Email</>}
-                                </button>
-                            </form>
-                        </div>
-                    </div>
-
-                    {/* List */}
-                    <div className="lg:col-span-2">
-                        <div className="bg-brand-parchment/60 backdrop-blur-sm rounded-2xl shadow-xl overflow-hidden border border-brand-ebony/10 transition-colors duration-300">
-                            <div className="p-6 border-b border-brand-ebony/10 bg-brand-ebony/5">
-                                <h2 className="text-xl font-serif font-bold text-brand-ebony">Approved Users</h2>
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+                {/* Form Card */}
+                <div className="lg:col-span-4">
+                    <div className="card-premium p-8 relative overflow-hidden group">
+                        <div className="absolute top-0 right-0 w-32 h-32 bg-brand-burgundy/5 rounded-full -translate-y-1/2 translate-x-1/2 blur-2xl z-0 pointer-events-none"></div>
+                        
+                        <h2 className="text-xl font-serif font-extrabold text-brand-ebony mb-6 relative z-10 flex items-center gap-2">
+                             Whitelist Email
+                        </h2>
+                        
+                        {error && (
+                            <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-red-600 text-[11px] font-bold uppercase tracking-wider animate-in fade-in relative z-10">
+                                {error}
                             </div>
-                            
-                            <div className="divide-y divide-brand-ebony/5">
-                                {fetchLoading ? (
-                                    <div className="p-12 text-center text-brand-ebony/40 font-serif italic">Loading approvals...</div>
-                                ) : approvals.length === 0 ? (
-                                    <div className="p-12 text-center text-brand-ebony/40 font-serif italic">No approved emails yet.</div>
-                                ) : (
-                                    approvals.map((app) => (
-                                        <div key={app.email} className="p-4 hover:bg-brand-parchment/10 transition-colors flex items-center justify-between group">
-                                            <div className="flex items-center gap-4">
-                                                <div className="w-10 h-10 rounded-full bg-brand-burgundy/5 flex items-center justify-center text-brand-burgundy">
-                                                    <Mail className="w-5 h-5" />
+                        )}
+                        {success && (
+                            <div className="mb-6 p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-emerald-600 text-[11px] font-bold uppercase tracking-wider animate-in fade-in relative z-10">
+                                {success}
+                            </div>
+                        )}
+
+                        <form onSubmit={handleSubmit} className="space-y-6 relative z-10">
+                            <div>
+                                <label className="block text-[10px] font-bold text-brand-ebony/40 mb-2 uppercase tracking-[0.2em]">Email Address</label>
+                                <div className="relative">
+                                    <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-brand-ebony/30" />
+                                    <input
+                                        type="email"
+                                        placeholder="alumni@uni.edu"
+                                        value={email}
+                                        onChange={(e) => setEmail(e.target.value)}
+                                        className="w-full pl-12 pr-5 py-4 bg-brand-ebony/5 border border-brand-ebony/10 rounded-2xl focus:ring-4 focus:ring-brand-burgundy/10 hover:border-brand-burgundy/30 transition-all outline-none text-brand-ebony font-medium"
+                                        required
+                                    />
+                                </div>
+                            </div>
+
+                            <div>
+                                <label className="block text-[10px] font-bold text-brand-ebony/40 mb-2 uppercase tracking-[0.2em]">Select Authorized Institutes</label>
+                                <div className="space-y-2 max-h-[220px] overflow-y-auto p-3 border border-brand-ebony/5 rounded-2xl bg-brand-ebony/5 scrollbar-hide">
+                                    {institutes.length === 0 ? (
+                                        <p className="text-[10px] text-brand-ebony/30 text-center py-4 font-bold uppercase italic tracking-widest">No institutes found</p>
+                                    ) : (
+                                        institutes.map(inst => (
+                                            <div 
+                                                key={inst.id} 
+                                                onClick={() => handleToggleInstitute(inst.id)}
+                                                className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all border ${
+                                                    selectedInstitutes.includes(inst.id) 
+                                                        ? 'bg-gradient-indigo text-white border-transparent shadow-sm' 
+                                                        : 'bg-white hover:bg-brand-parchment border-brand-ebony/10 text-brand-ebony'
+                                                }`}
+                                            >
+                                                <div className={`w-5 h-5 rounded flex items-center justify-center border transition-colors ${selectedInstitutes.includes(inst.id) ? 'bg-white/20 border-white/40' : 'bg-brand-ebony/5 border-brand-ebony/10'}`}>
+                                                    {selectedInstitutes.includes(inst.id) && <Plus className="w-3 h-3 text-white" />}
                                                 </div>
-                                                <div>
-                                                    <p className="font-bold text-brand-ebony">{app.email}</p>
-                                                    <div className="flex flex-wrap gap-2 mt-1">
-                                                        {app.instituteIds.map(id => {
-                                                            const inst = institutes.find(i => i.id === id);
-                                                            return (
-                                                                <span key={id} className="inline-flex items-center gap-1 px-2 py-0.5 bg-brand-gold/10 text-brand-gold font-bold text-[10px] uppercase tracking-wider rounded border border-brand-gold/20">
-                                                                    <Building2 className="w-3 h-3" />
-                                                                    {inst?.name || 'Unknown'}
-                                                                </span>
-                                                            );
-                                                        })}
+                                                <span className="text-xs font-bold truncate leading-none">{inst.name}</span>
+                                            </div>
+                                        ))
+                                    )}
+                                </div>
+                            </div>
+
+                            <button
+                                type="submit"
+                                disabled={loading}
+                                className="w-full py-4 bg-gradient-indigo text-white rounded-2xl font-bold hover:shadow-[0_8px_20px_rgba(99,102,241,0.3)] transition-all flex items-center justify-center gap-3 uppercase tracking-[0.2em] text-[11px] shimmer overflow-hidden relative"
+                            >
+                                {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <><Plus className="w-5 h-5" /> Grant Access</>}
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                {/* List Card */}
+                <div className="lg:col-span-8">
+                    <div className="card-premium overflow-hidden border-brand-ebony/5">
+                        <div className="px-8 py-6 border-b border-brand-ebony/5 flex items-center justify-between bg-white/50 dark:bg-brand-parchment/5">
+                            <div className="flex items-center gap-3">
+                                 <h2 className="text-xl font-serif font-extrabold text-brand-ebony">Whitelisted Accounts</h2>
+                                 <span className="bg-brand-ebony/5 text-brand-ebony/50 px-3 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-[0.2em] border border-brand-ebony/10">{approvals.length} Verified</span>
+                            </div>
+                        </div>
+                        
+                        <div className="divide-y divide-brand-ebony/5">
+                            {fetchLoading ? (
+                                <div className="p-20 text-center text-brand-ebony/20">
+                                    <Loader2 className="w-10 h-10 animate-spin mx-auto mb-4 opacity-10" />
+                                    <p className="font-serif italic text-lg">Acquiring enrollment logs...</p>
+                                </div>
+                            ) : approvals.length === 0 ? (
+                                <div className="p-20 text-center">
+                                    <div className="w-20 h-20 bg-brand-ebony/5 rounded-full flex items-center justify-center mx-auto mb-6 border border-brand-ebony/5">
+                                        <Mail className="w-10 h-10 text-brand-ebony/10" />
+                                    </div>
+                                    <p className="text-brand-ebony/40 text-sm font-bold uppercase tracking-widest">No active approvals</p>
+                                </div>
+                            ) : (
+                                <div className="grid grid-cols-1 gap-px bg-brand-ebony/5">
+                                    {approvals.map((app) => (
+                                        <div key={app.email} className="bg-white dark:bg-brand-parchment/5 p-6 hover:bg-brand-burgundy/5 transition-all group relative">
+                                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                                                <div className="flex items-center gap-5 min-w-0 flex-1">
+                                                    <div className="w-12 h-12 rounded-2xl bg-brand-burgundy/5 flex items-center justify-center text-brand-burgundy border border-brand-burgundy/10 group-hover:bg-gradient-indigo group-hover:text-white transition-all shadow-sm shrink-0">
+                                                        <Mail className="w-6 h-6" />
+                                                    </div>
+                                                    <div className="min-w-0 shrink-1">
+                                                        <p className="font-extrabold text-brand-ebony truncate leading-tight mb-2 group-hover:text-brand-burgundy transition-colors">{app.email}</p>
+                                                        <div className="flex flex-wrap gap-2">
+                                                            {app.instituteIds.map(id => {
+                                                                const inst = institutes.find(i => i.id === id);
+                                                                return (
+                                                                    <span key={id} className="inline-flex items-center gap-1.5 px-3 py-1 bg-brand-gold/10 text-brand-gold font-bold text-[9px] uppercase tracking-wider rounded-lg border border-brand-gold/20">
+                                                                        <Building2 className="w-3 h-3" />
+                                                                        {inst?.name || 'Unknown organization'}
+                                                                    </span>
+                                                                );
+                                                            })}
+                                                        </div>
                                                     </div>
                                                 </div>
+                                                <button 
+                                                    onClick={() => handleDelete(app.email)}
+                                                    className="p-3 text-brand-ebony/20 hover:text-red-500 hover:bg-red-500/10 rounded-2xl transition-all opacity-0 group-hover:opacity-100 self-end sm:self-center"
+                                                >
+                                                    <Trash2 className="w-5 h-5" />
+                                                </button>
                                             </div>
-                                            <button 
-                                                onClick={() => handleDelete(app.email)}
-                                                className="p-2 text-brand-ebony/20 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all opacity-0 group-hover:opacity-100"
-                                            >
-                                                <Trash2 className="w-5 h-5" />
-                                            </button>
                                         </div>
-                                    ))
-                                )}
-                            </div>
+                                    ))}
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>
+            </div>
+            
+            <div className="mt-16 text-center">
+                 <p className="text-[10px] font-bold text-brand-ebony/20 uppercase tracking-[0.4em]">Alumnest Identity Core • Whitelist Managed</p>
             </div>
         </div>
     );

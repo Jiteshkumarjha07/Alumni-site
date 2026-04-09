@@ -8,7 +8,7 @@ import {
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { Notification } from '@/types';
-import { Bell, Heart, MessageCircle, UserPlus, CheckCheck, X, Check } from 'lucide-react';
+import { Bell, Heart, MessageCircle, UserPlus, CheckCheck, X, Check, Sparkles } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
@@ -26,11 +26,11 @@ function timeAgo(ts: any): string {
 }
 
 function NotifIcon({ type }: { type: string }) {
-  if (type === 'like') return <Heart className="w-4 h-4 text-red-400" fill="currentColor" />;
-  if (type === 'comment') return <MessageCircle className="w-4 h-4 text-blue-400" />;
+  if (type === 'like') return <Heart className="w-4 h-4 text-pink-500" fill="currentColor" />;
+  if (type === 'comment') return <MessageCircle className="w-4 h-4 text-brand-burgundy" />;
   if (type === 'connection_request') return <UserPlus className="w-4 h-4 text-brand-gold" />;
-  if (type === 'connection_accepted') return <Check className="w-4 h-4 text-green-400" />;
-  return <Bell className="w-4 h-4 text-slate-400" />;
+  if (type === 'connection_accepted') return <Check className="w-4 h-4 text-emerald-500" />;
+  return <Bell className="w-4 h-4 text-brand-ebony/30" />;
 }
 
 export function NotificationBell() {
@@ -42,7 +42,6 @@ export function NotificationBell() {
 
   useEffect(() => {
     if (!userData?.uid) return;
-    // Simple query — no orderBy/limit so no composite index needed
     const q = query(
       collection(db, 'notifications'),
       where('userId', '==', userData.uid)
@@ -63,7 +62,6 @@ export function NotificationBell() {
     return () => unsub();
   }, [userData?.uid]);
 
-  // Close on outside click
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (panelRef.current && !panelRef.current.contains(e.target as Node)) {
@@ -133,117 +131,119 @@ export function NotificationBell() {
   };
 
   const handleNotificationClick = async (notif: Notification) => {
-    // Mark as read (background)
-    if (!notif.isRead) {
-      markRead(notif.id);
-    }
-
-    // Close panel
+    if (!notif.isRead) markRead(notif.id);
     setOpen(false);
-
-    // Navigate to link or profile
     const destination = notif.link || `/profile/${notif.sourceUserUid}`;
     router.push(destination);
   };
 
   return (
     <div className="relative" ref={panelRef}>
-      {/* Bell button */}
       <button
         onClick={() => setOpen(v => !v)}
-        className="relative flex items-center justify-center w-10 h-10 rounded-xl bg-brand-burgundy/10 hover:bg-brand-burgundy/20 border border-brand-burgundy/20 text-brand-burgundy transition-all shadow-sm"
+        className={`relative flex items-center justify-center w-10 h-10 rounded-xl transition-all shadow-sm border ${
+          open ? 'bg-gradient-indigo text-white border-transparent' : 'bg-brand-burgundy/5 hover:bg-brand-burgundy/10 border-brand-burgundy/10 text-brand-burgundy'
+        }`}
         title="Notifications"
       >
         <Bell className="w-5 h-5" />
         {unread > 0 && (
-          <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] px-1 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center leading-none">
-            {unread > 99 ? '99+' : unread}
+          <span className="absolute -top-1 -right-1 flex h-4 w-4">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-60" />
+            <span className="relative inline-flex rounded-full h-4 w-4 bg-red-500 border border-white dark:border-brand-parchment text-[9px] text-white items-center justify-center font-bold">
+              {unread > 9 ? '9+' : unread}
+            </span>
           </span>
         )}
       </button>
 
-      {/* Drop-down panel */}
       {open && (
-        <div className="absolute right-0 top-12 z-50 w-[calc(100vw-32px)] sm:w-[380px] max-h-[520px] flex flex-col bg-brand-parchment border border-brand-ebony/20 rounded-2xl shadow-2xl overflow-hidden animate-in fade-in slide-in-from-top-2">
+        <div className="absolute right-0 mt-3 z-50 w-[calc(100vw-32px)] sm:w-[400px] max-h-[520px] flex flex-col card-premium shadow-2xl overflow-hidden animate-in fade-in slide-in-from-top-3 duration-300 border-brand-burgundy/10">
           {/* Header */}
-          <div className="flex items-center justify-between px-4 py-3 border-b border-brand-ebony/10 flex-shrink-0 bg-brand-parchment/95 backdrop-blur-md">
-            <div className="flex items-center gap-2">
-              <Bell className="w-4 h-4 text-brand-burgundy" />
-              <span className="text-brand-ebony font-bold text-sm">Notifications</span>
-              {unread > 0 && (
-                <span className="bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">{unread}</span>
-              )}
+          <div className="flex items-center justify-between px-5 py-4 border-b border-brand-ebony/5 flex-shrink-0 bg-white/40 dark:bg-brand-parchment/40 backdrop-blur-md">
+            <div className="flex items-center gap-2.5">
+              <div className="w-7 h-7 bg-brand-burgundy/10 rounded-lg flex items-center justify-center">
+                 <Bell className="w-4 h-4 text-brand-burgundy" />
+              </div>
+              <div>
+                <span className="text-brand-ebony font-extrabold text-md tracking-tight">Notifications</span>
+                <p className="text-[10px] font-bold text-brand-ebony/30 uppercase tracking-widest mt-0.5">Stay updated with your circle</p>
+              </div>
             </div>
             <div className="flex items-center gap-2">
               <button
                 onClick={markAllRead}
-                className="text-xs text-brand-ebony/40 hover:text-brand-burgundy flex items-center gap-1 transition-colors"
+                className="p-1.5 text-brand-ebony/40 hover:text-brand-burgundy hover:bg-brand-burgundy/10 rounded-lg transition-all"
                 title="Mark all as read"
               >
-                <CheckCheck className="w-3.5 h-3.5" />
-                Mark all read
+                <CheckCheck className="w-4 h-4" />
               </button>
-              <button onClick={() => setOpen(false)} className="text-brand-ebony/40 hover:text-brand-ebony transition-colors">
+              <button onClick={() => setOpen(false)} className="p-1.5 text-brand-ebony/40 hover:text-brand-ebony hover:bg-brand-ebony/5 rounded-lg transition-all">
                 <X className="w-4 h-4" />
               </button>
             </div>
           </div>
 
           {/* List */}
-          <div className="overflow-y-auto flex-1">
+          <div className="overflow-y-auto flex-1 scrollbar-hide bg-white/10 dark:bg-brand-parchment/10">
             {notifications.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-12 text-slate-500">
-                <Bell className="w-10 h-10 mb-3 opacity-30" />
-                <p className="text-sm">No notifications yet</p>
+              <div className="flex flex-col items-center justify-center py-16 text-center px-6">
+                <div className="w-16 h-16 bg-brand-ebony/5 rounded-full flex items-center justify-center mb-4 border border-brand-ebony/5">
+                   <Bell className="w-8 h-8 text-brand-ebony/10" />
+                </div>
+                <p className="text-lg font-serif font-bold text-brand-ebony/60 italic mb-1">Silence is golden</p>
+                <p className="text-xs text-brand-ebony/40 font-medium">You're all caught up for now.</p>
               </div>
             ) : (
               notifications.map((notif) => (
                 <div
                   key={notif.id}
                   onClick={() => handleNotificationClick(notif)}
-                  className={`flex items-start gap-3 px-4 py-3 border-b border-brand-ebony/5 hover:bg-brand-burgundy/10 transition-all cursor-pointer group/item relative ${
-                    !notif.isRead ? 'bg-brand-burgundy/[0.03]' : ''
+                  className={`flex items-start gap-4 px-5 py-4 border-b border-brand-ebony/5 hover:bg-white dark:hover:bg-brand-ebony/20 transition-all cursor-pointer group/item relative ${
+                    !notif.isRead ? 'bg-brand-burgundy/[0.02]' : ''
                   }`}
                 >
                   {!notif.isRead && (
-                    <div className="absolute left-0 top-0 bottom-0 w-1 bg-brand-burgundy" />
+                    <div className="absolute left-0 top-3 bottom-3 w-1 bg-gradient-indigo rounded-r-full" />
                   )}
+                  
                   {/* Avatar */}
-                  <Link href={`/profile/${notif.sourceUserUid}`} onClick={e => e.stopPropagation()}>
+                  <div className="relative shrink-0">
                     <img
-                      src={notif.sourceUserProfilePic || `https://placehold.co/40x40/3D2B27/fff?text=${notif.sourceUserName?.charAt(0) || '?'}`}
+                      src={notif.sourceUserProfilePic || `https://placehold.co/40x40/4f46e5/fff?text=${notif.sourceUserName?.charAt(0) || '?'}`}
                       alt={notif.sourceUserName}
-                      className="w-10 h-10 rounded-full object-cover border border-white/10 flex-shrink-0 hover:opacity-80 transition-opacity"
+                      className="w-10 h-10 rounded-full object-cover border-2 border-white dark:border-brand-parchment shadow-sm group-hover/item:scale-105 transition-transform"
                     />
-                  </Link>
+                    <div className="absolute -bottom-1 -right-1 p-1 bg-white dark:bg-[#0f172a] rounded-full shadow-sm ring-2 ring-transparent group-hover/item:ring-brand-burgundy/10 transition-all">
+                      <NotifIcon type={notif.type} />
+                    </div>
+                  </div>
 
                   {/* Content */}
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between gap-2">
-                      <p className="text-sm text-brand-ebony leading-snug">
-                        <span className="font-bold group-hover/item:text-brand-burgundy transition-colors">
-                          {notif.sourceUserName}
-                        </span>{' '}
-                        <span className="text-brand-ebony/60">{notif.message}</span>
-                      </p>
-                      <div className="flex items-center gap-1.5 flex-shrink-0 mt-0.5">
-                        <NotifIcon type={notif.type} />
-                      </div>
-                    </div>
-                    <p className="text-[11px] text-slate-500 mt-0.5">{timeAgo(notif.createdAt)}</p>
+                    <p className="text-sm text-brand-ebony leading-relaxed">
+                      <span className="font-extrabold group-hover/item:text-brand-burgundy transition-colors">
+                        {notif.sourceUserName}
+                      </span>{' '}
+                      <span className="text-brand-ebony/60 font-medium">{notif.message}</span>
+                    </p>
+                    <p className="text-[10px] font-bold text-brand-ebony/30 uppercase tracking-widest mt-1.5 flex items-center gap-2">
+                       {timeAgo(notif.createdAt)}
+                       {notif.isRead === false && <span className="w-1 h-1 rounded-full bg-brand-burgundy"></span>}
+                    </p>
 
                     {/* Connection request actions */}
                     {notif.type === 'connection_request' && (
-                      <div className="flex gap-2 mt-2">
+                      <div className="flex gap-2 mt-4">
                         <button
                           onClick={(e) => { e.stopPropagation(); handleAccept(notif); }}
-                          className="text-xs font-bold text-white bg-brand-burgundy hover:bg-[#5a2427] px-3 py-1 rounded-full transition-colors"
+                          className="text-[10px] font-bold text-white bg-gradient-indigo px-4 py-2 rounded-xl shadow-md hover:shadow-indigo-500/20 transition-all uppercase tracking-widest"
                         >
                           Accept
                         </button>
                         <button
                           onClick={(e) => { e.stopPropagation(); handleIgnore(notif); }}
-                          className="text-xs font-bold text-white/60 hover:bg-white/10 px-3 py-1 rounded-full transition-colors"
+                          className="text-[10px] font-bold text-brand-ebony/40 bg-brand-ebony/5 hover:bg-brand-ebony/10 px-4 py-2 rounded-xl transition-all uppercase tracking-widest"
                         >
                           Decline
                         </button>
@@ -252,8 +252,8 @@ export function NotificationBell() {
 
                     {/* Context Hint */}
                     {notif.link && notif.type !== 'connection_request' && notif.type !== 'connection_accepted' && (
-                      <div className="inline-flex items-center mt-2 text-[10px] font-bold uppercase tracking-widest text-brand-gold group-hover/item:translate-x-1 transition-transform">
-                        View detail <span className="ml-1">→</span>
+                      <div className="inline-flex items-center mt-3 text-[10px] font-bold uppercase tracking-widest text-brand-burgundy group-hover/item:translate-x-1 transition-transform">
+                        Explore detail <ArrowRight size={10} className="ml-1" />
                       </div>
                     )}
                   </div>
@@ -261,8 +261,33 @@ export function NotificationBell() {
               ))
             )}
           </div>
+          
+          <div className="px-5 py-3 bg-brand-burgundy/5 border-t border-brand-ebony/5 text-center">
+             <Link href="/settings" onClick={() => setOpen(false)} className="text-[10px] font-bold text-brand-burgundy/60 hover:text-brand-burgundy uppercase tracking-[0.2em] transition-colors">
+                Notification Settings
+             </Link>
+          </div>
         </div>
       )}
     </div>
   );
+}
+
+function ArrowRight({ size, className }: { size: number, className: string }) {
+    return (
+        <svg 
+            width={size} 
+            height={size} 
+            viewBox="0 0 24 24" 
+            fill="none" 
+            stroke="currentColor" 
+            strokeWidth="3" 
+            strokeLinecap="round" 
+            strokeLinejoin="round" 
+            className={className}
+        >
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+            <polyline points="12 5 19 12 12 19"></polyline>
+        </svg>
+    )
 }
