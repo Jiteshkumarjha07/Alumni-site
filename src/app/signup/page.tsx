@@ -6,7 +6,7 @@ import { db } from '@/lib/firebase';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { uploadMedia } from '@/lib/media';
-import { Eye, EyeOff, Loader2, Camera, ArrowLeft, CheckCircle2, AlertCircle, Building2 } from 'lucide-react';
+import { Eye, EyeOff, Loader2, Camera, ArrowLeft, CheckCircle2, Building2 } from 'lucide-react';
 import Link from 'next/link';
 import { LocationAutocomplete } from '@/components/ui/LocationAutocomplete';
 
@@ -36,7 +36,6 @@ export default function SignUpPage() {
 
     useEffect(() => {
         console.log("Signup page loaded. Firebase context ready.");
-        // We no longer fetch all institutes on mount
     }, []);
 
     const checkApproval = async () => {
@@ -53,18 +52,18 @@ export default function SignUpPage() {
             const emailClean = formData.email.trim().toLowerCase();
             
             if (!isAuthenticEmailDomain(emailClean)) {
-                setLocalError("Please use an authentic email domain (e.g., @gmail.com, @yahoo.com or an institutional email). Disposable or unverified domains are not allowed.");
+                setLocalError("Please use an authentic email domain. Disposable or unverified domains are not allowed.");
                 setIsApproved(false);
                 setCheckLoading(false);
                 return;
             }
 
             const checkPromise = getDoc(doc(db, 'approvals', emailClean));
-            const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error("Network timeout: Could not reach the database after 15 seconds. Your connection may be blocked or slow.")), 15000));
+            const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error("Network timeout")), 15000));
             const approvalDoc = (await Promise.race([checkPromise, timeoutPromise])) as any;
             
             if (!approvalDoc.exists()) {
-                setLocalError("This email is not approved for any institute. Please contact your administrator.");
+                setLocalError("This email is not approved. Please contact your administrator.");
                 setIsApproved(false);
                 return;
             }
@@ -78,7 +77,6 @@ export default function SignUpPage() {
                 return;
             }
 
-            // Fetch approved institutes details in parallel for much faster response
             const instPromises = instituteIds.map((id: string) => getDoc(doc(db, 'institutes', id)));
             const instPromiseAll = Promise.all(instPromises);
             const instDocs = (await Promise.race([instPromiseAll, timeoutPromise])) as any[];
@@ -97,19 +95,7 @@ export default function SignUpPage() {
             setIsApproved(true);
         } catch (err: any) {
             console.error("DEBUG: Approval check error raw:", err);
-            
-            const errorCode = err.code || '';
-            const errorMessage = err.message || '';
-            
-            if (errorCode === 'permission-denied' || errorMessage.includes('permission-denied')) {
-                setLocalError("Permission Denied: The database is blocking approval checks. Please update your Firestore Rules as per Step 6 of FIREBASE_SETUP.md.");
-            } else if (errorCode === 'unavailable') {
-                setLocalError("Firebase Service Unavailable: Please check your internet connection.");
-            } else if (errorMessage.includes('timeout')) {
-                setLocalError("Network Timeout: The database did not respond in 15 seconds. This could be due to your network blocking Firestore or an uninitialized database.");
-            } else {
-                setLocalError(`Error (${errorCode || 'unknown'}): ${errorMessage || "Failed to verify email approval."}`);
-            }
+            setLocalError("Failed to verify email approval.");
         } finally {
             setCheckLoading(false);
         }
@@ -118,18 +104,14 @@ export default function SignUpPage() {
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) {
-            // Validate file size (max 5MB)
             if (file.size > 5 * 1024 * 1024) {
                 alert('Image size should be less than 5MB');
                 return;
             }
-
-            // Validate file type
             if (!file.type.startsWith('image/')) {
                 alert('Please select an image file');
                 return;
             }
-
             setProfilePicFile(file);
             setPreviewUrl(URL.createObjectURL(file));
         }
@@ -161,7 +143,7 @@ export default function SignUpPage() {
                 instituteId: selectedInst.id,
                 instituteName: selectedInst.name,
                 instituteIds: institutes.map(i => i.id),
-                profilePic: profilePicUrl || `https://placehold.co/100x100/EFEFEFF/003366?text=${formData.name.substring(0, 2).toUpperCase()}`,
+                profilePic: profilePicUrl || `https://placehold.co/100x100/4f46e5/ffffff?text=${formData.name.substring(0, 2).toUpperCase()}`,
             });
 
             router.push('/');
@@ -173,188 +155,174 @@ export default function SignUpPage() {
     };
 
     return (
-        <div className="flex items-center justify-center p-4 relative overflow-hidden">
-            {/* Decorative Background Leaves */}
-            <div className="absolute top-0 left-0 w-64 h-64 opacity-5 pointer-events-none -translate-x-1/4 -translate-y-1/4 rotate-45">
-                <svg viewBox="0 0 200 200" className="w-full h-full fill-brand-ebony">
-                    <path d="M40,100 C40,100 80,40 160,40 C160,40 100,100 40,100 Z" />
-                </svg>
-            </div>
-            <div className="absolute bottom-0 right-0 w-64 h-64 opacity-5 pointer-events-none translate-x-1/4 translate-y-1/4 -rotate-12">
-                <svg viewBox="0 0 200 200" className="w-full h-full fill-brand-ebony">
-                    <path d="M40,100 C40,100 80,40 160,40 C160,40 100,100 40,100 Z" />
-                </svg>
-            </div>
+        <div className="flex items-center justify-center min-h-screen p-4 relative overflow-hidden">
+            {/* Dark premium background gradient specific to auth */}
+            <div className="absolute inset-0 bg-gradient-to-br from-brand-cream to-brand-parchment z-[-1]" />
+            <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-brand-burgundy rounded-full mix-blend-multiply filter blur-[128px] opacity-20 dark:opacity-40 animate-pulse-subtle" />
+            <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-brand-gold rounded-full mix-blend-multiply filter blur-[128px] opacity-10 dark:opacity-20 animate-pulse-subtle" style={{ animationDelay: '1s' }} />
 
-            <div className="max-w-2xl w-full relative z-10 transition-all duration-500 py-12">
+            <div className="max-w-2xl w-full relative z-10 animate-fade-up py-8">
                 {/* Back Button */}
-                <Link href="/login" className="inline-flex items-center gap-2 text-brand-ebony/60 hover:text-brand-burgundy mb-6 font-medium transition-colors">
+                <Link href="/login" className="inline-flex items-center gap-2 text-brand-ebony/50 hover:text-brand-ebony mb-8 font-semibold transition-colors text-sm uppercase tracking-wider backdrop-blur-md bg-white/10 px-4 py-2 rounded-full border border-brand-ebony/10">
                     <ArrowLeft className="w-4 h-4" />
                     Back to Login
                 </Link>
 
                 {/* Card */}
-                <div className="bg-brand-parchment/80 rounded-2xl shadow-xl p-8 border border-brand-ebony/10 backdrop-blur-sm">
+                <div className="card-premium p-8 sm:p-10">
                     {/* Header */}
-                    <div className="text-center mb-8">
-                        <Link href="/" className="block transition-transform hover:scale-105 active:scale-95 mb-4">
-                            <BrandLogo size="lg" className="mx-auto" />
+                    <div className="text-center mb-10">
+                        <Link href="/" className="inline-block transition-transform duration-300 hover:scale-[1.03] active:scale-95 mb-6">
+                            <div className="p-3 bg-gradient-indigo rounded-2xl shadow-xl flex items-center justify-center glow-indigo mx-auto w-16 h-16">
+                                <BrandLogo size="md" showText={false} variant="white" />
+                            </div>
                         </Link>
-                        <h1 className="text-3xl font-serif font-bold text-brand-ebony mb-2">Join Alumni Network</h1>
-                        <p className="text-brand-ebony/60">Create your account to connect with fellow alumni</p>
+                        <h1 className="text-3xl font-serif font-bold text-brand-ebony mb-2">Join The Network</h1>
+                        <p className="text-brand-ebony/60 text-sm font-medium">Create your premium alumni account</p>
                     </div>
 
                     {/* Error Message */}
                     {(error || localError) && (
-                        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-                            <p className="text-sm text-red-600">{error || localError}</p>
+                        <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-xl flex items-center gap-3">
+                            <div className="w-1.5 h-1.5 rounded-full bg-red-500 flex-shrink-0" />
+                            <p className="text-sm text-red-600 dark:text-red-400 font-medium">{error || localError}</p>
                         </div>
                     )}
 
                     {/* Form */}
-                    <form onSubmit={handleSubmit} className="space-y-4">
+                    <form onSubmit={handleSubmit} className="space-y-6">
                         {/* Phase 1: Email Verification */}
-                        <div className="space-y-4">
-                            <div>
-                                <label className="block text-sm font-bold text-brand-ebony/70 mb-1 uppercase tracking-widest">
-                                    Email Address <span className="text-red-500">*</span>
-                                </label>
-                                <div className="flex flex-col sm:flex-row gap-3">
-                                    <input
-                                        type="email"
-                                        placeholder="your.email@example.com"
-                                        value={formData.email}
-                                        onChange={(e) => {
-                                            setFormData({ ...formData, email: e.target.value });
-                                            setIsApproved(false); // Reset approval if email changes
-                                        }}
-                                        className="flex-1 px-4 py-3 bg-white/50 border border-brand-ebony/10 rounded-xl focus:ring-2 focus:ring-brand-burgundy/20 focus:border-brand-burgundy transition outline-none text-brand-ebony placeholder-brand-ebony/40 disabled:opacity-50"
-                                        required
-                                        disabled={isApproved || checkLoading}
-                                    />
-                                    {!isApproved && (
-                                        <button
-                                            type="button"
-                                            onClick={checkApproval}
-                                            disabled={checkLoading}
-                                            className="px-6 py-3 bg-brand-burgundy text-white rounded-xl font-bold hover:bg-[#5a2427] transition-all shadow-md disabled:opacity-50 whitespace-nowrap min-w-[140px]"
-                                        >
-                                            {checkLoading ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : 'Check Approval'}
-                                        </button>
-                                    )}
-                                    {isApproved && (
-                                        <button
-                                            type="button"
-                                            onClick={() => {
-                                                setIsApproved(false);
-                                                setInstitutes([]);
-                                            }}
-                                            className="px-4 py-3 bg-brand-ebony/5 text-brand-ebony/60 rounded-xl font-bold hover:bg-brand-ebony/10 transition-all text-xs uppercase tracking-widest"
-                                        >
-                                            Change
-                                        </button>
-                                    )}
-                                </div>
-                                {isApproved && (
-                                    <p className="mt-2 text-xs text-green-600 font-bold flex items-center gap-1">
-                                        <CheckCircle2 className="w-3 h-3" />
-                                        Email verified. You are approved for {institutes.length} institute(s).
-                                    </p>
+                        <div className="space-y-2">
+                            <label className="block text-[11px] font-bold text-brand-ebony/60 uppercase tracking-[0.15em]">
+                                Email Address <span className="text-brand-burgundy">*</span>
+                            </label>
+                            <div className="flex flex-col sm:flex-row gap-3">
+                                <input
+                                    type="email"
+                                    placeholder="your.email@example.com"
+                                    value={formData.email}
+                                    onChange={(e) => {
+                                        setFormData({ ...formData, email: e.target.value });
+                                        setIsApproved(false);
+                                    }}
+                                    className="flex-1 px-4 py-3.5 input-premium rounded-xl font-medium text-sm disabled:opacity-50"
+                                    required
+                                    disabled={isApproved || checkLoading}
+                                />
+                                {!isApproved ? (
+                                    <button
+                                        type="button"
+                                        onClick={checkApproval}
+                                        disabled={checkLoading}
+                                        className="px-6 py-3.5 bg-gradient-indigo text-white rounded-xl font-bold hover:shadow-[0_0_20px_rgba(99,102,241,0.4)] transition-all disabled:opacity-50 whitespace-nowrap min-w-[140px] text-xs uppercase tracking-widest"
+                                    >
+                                        {checkLoading ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : 'Verify'}
+                                    </button>
+                                ) : (
+                                    <button
+                                        type="button"
+                                        onClick={() => { setIsApproved(false); setInstitutes([]); }}
+                                        className="px-6 py-3.5 bg-white/5 border border-brand-ebony/10 text-brand-ebony/60 rounded-xl font-bold hover:bg-white/10 transition-all text-xs uppercase tracking-widest whitespace-nowrap min-w-[140px]"
+                                    >
+                                        Change
+                                    </button>
                                 )}
                             </div>
+                            {isApproved && (
+                                <p className="mt-2 text-xs text-brand-burgundy font-bold flex items-center gap-1.5 px-1 animate-fade-up">
+                                    <CheckCircle2 className="w-4 h-4" />
+                                    Email verified. Approved for {institutes.length} institute(s).
+                                </p>
+                            )}
                         </div>
 
                         {/* Phase 2: Rest of the Form */}
                         {isApproved && (
-                            <div className="space-y-4 animate-in fade-in slide-in-from-top-4 duration-500">
-                                {/* Institute Selection (Only if multiple) */}
+                            <div className="space-y-6 pt-4 border-t border-brand-ebony/10 animate-fade-up">
+                                {/* Institute Selection */}
                                 {institutes.length > 1 && (
-                                    <div className="p-4 bg-brand-burgundy/5 rounded-xl border border-brand-burgundy/10 mb-6">
-                                        <label className="block text-xs font-bold text-brand-ebony/70 mb-3 uppercase tracking-widest">
+                                    <div className="p-5 bg-brand-burgundy/5 rounded-xl border border-brand-burgundy/20">
+                                        <label className="block text-[11px] font-bold text-brand-ebony/70 mb-4 uppercase tracking-[0.15em]">
                                             Select Your Primary Institute
                                         </label>
-                                        <div className="grid grid-cols-1 gap-2">
+                                        <div className="grid grid-cols-1 gap-2.5">
                                             {institutes.map(inst => (
                                                 <button
                                                     key={inst.id}
                                                     type="button"
                                                     onClick={() => setSelectedInstituteId(inst.id)}
-                                                    className={`w-full text-left p-3 rounded-lg border transition-all flex items-center justify-between group ${
+                                                    className={`w-full text-left p-3.5 rounded-xl border transition-all flex items-center justify-between group ${
                                                         selectedInstituteId === inst.id 
-                                                            ? 'bg-brand-burgundy border-brand-burgundy text-white shadow-md' 
-                                                            : 'bg-white/50 border-brand-ebony/10 text-brand-ebony hover:border-brand-burgundy/30'
+                                                            ? 'bg-gradient-indigo border-transparent text-white shadow-lg shadow-brand-burgundy/20' 
+                                                            : 'bg-white/5 border-brand-ebony/10 text-brand-ebony/80 hover:border-brand-burgundy/40 hover:bg-brand-burgundy/5'
                                                     }`}
                                                 >
-                                                    <div className="flex items-center gap-3">
-                                                        <div className={`w-8 h-8 rounded-full flex items-center justify-center ${selectedInstituteId === inst.id ? 'bg-white/20' : 'bg-brand-burgundy/5'}`}>
-                                                            <Building2 className={`w-4 h-4 ${selectedInstituteId === inst.id ? 'text-white' : 'text-brand-burgundy'}`} />
+                                                    <div className="flex items-center gap-3.5">
+                                                        <div className={`w-9 h-9 rounded-full flex items-center justify-center transition-colors ${selectedInstituteId === inst.id ? 'bg-white/20' : 'bg-brand-ebony/5'}`}>
+                                                            <Building2 className={`w-4 h-4 ${selectedInstituteId === inst.id ? 'text-white' : 'text-brand-ebony/50'}`} />
                                                         </div>
-                                                        <span className="font-bold text-sm">{inst.name}</span>
+                                                        <span className="font-semibold text-sm tracking-wide">{inst.name}</span>
                                                     </div>
-                                                    {selectedInstituteId === inst.id && <CheckCircle2 className="w-4 h-4" />}
+                                                    {selectedInstituteId === inst.id && <CheckCircle2 className="w-5 h-5 text-white" />}
                                                 </button>
                                             ))}
                                         </div>
                                     </div>
                                 )}
                                 {institutes.length === 1 && (
-                                    <div className="flex items-center gap-3 p-4 bg-brand-ebony/5 rounded-xl border border-brand-ebony/5 mb-6">
-                                        <div className="w-10 h-10 rounded-full bg-brand-burgundy/5 flex items-center justify-center text-brand-burgundy">
-                                            <Building2 className="w-5 h-5" />
+                                    <div className="flex items-center gap-4 p-5 bg-white/5 rounded-xl border border-brand-ebony/10">
+                                        <div className="w-11 h-11 rounded-full bg-brand-burgundy/10 flex items-center justify-center">
+                                            <Building2 className="w-5 h-5 text-brand-burgundy" />
                                         </div>
                                         <div>
-                                            <p className="text-[10px] text-brand-ebony/40 uppercase tracking-widest font-bold">Joining Institute</p>
-                                            <p className="font-bold text-brand-ebony">{institutes[0].name}</p>
+                                            <p className="text-[10px] text-brand-ebony/40 uppercase tracking-[0.15em] font-bold mb-0.5">Joining Institute</p>
+                                            <p className="font-semibold text-brand-ebony tracking-wide">{institutes[0].name}</p>
                                         </div>
                                     </div>
                                 )}
 
                                 {/* Profile Picture */}
-                                <div className="flex flex-col items-center py-4 border-y border-brand-ebony/5 my-6">
+                                <div className="flex flex-col items-center py-6 border-y border-brand-ebony/5 my-6 backdrop-blur-sm bg-white/5 rounded-xl border">
                                     <div className="relative group">
-                                        <div className="w-24 h-24 rounded-full overflow-hidden bg-gray-200 border-4 border-white shadow-md">
+                                        <div className="w-24 h-24 rounded-full overflow-hidden bg-brand-parchment border-4 border-white dark:border-brand-ebony/20 shadow-xl relative z-10 transition-transform duration-300 group-hover:scale-105">
                                             {previewUrl ? (
                                                 <img src={previewUrl} alt="Preview" className="w-full h-full object-cover" />
                                             ) : (
-                                                <div className="w-full h-full flex items-center justify-center text-gray-400">
-                                                    <svg className="w-12 h-12" fill="currentColor" viewBox="0 0 20 20">
-                                                        <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
-                                                    </svg>
+                                                <div className="w-full h-full flex items-center justify-center">
+                                                    <Camera className="w-8 h-8 text-brand-ebony/20" />
                                                 </div>
                                             )}
                                         </div>
-                                        <label className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-40 rounded-full opacity-0 group-hover:opacity-100 transition cursor-pointer">
+                                        <label className="absolute inset-0 flex items-center justify-center bg-black/40 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 cursor-pointer z-20">
                                             <Camera className="w-8 h-8 text-white" />
                                             <input type="file" accept="image/*" onChange={handleFileChange} className="hidden" />
                                         </label>
                                     </div>
-                                    <label className="mt-3 cursor-pointer text-brand-burgundy hover:text-[#5a2427] text-sm font-bold uppercase tracking-widest">
-                                        Upload Photo
+                                    <label className="mt-4 cursor-pointer text-brand-burgundy hover:text-indigo-500 text-xs font-bold uppercase tracking-[0.15em] transition-colors">
+                                        Upload Avatar
                                         <input type="file" accept="image/*" onChange={handleFileChange} className="hidden" />
                                     </label>
-                                    <p className="text-[10px] text-brand-ebony/40 mt-1 uppercase tracking-widest font-bold">Max size: 5MB</p>
+                                    <p className="text-[10px] text-brand-ebony/40 mt-1.5 uppercase tracking-widest font-bold">Max size: 5MB</p>
                                 </div>
 
                                 {/* Personal Info */}
-
-                                {/* Personal Info */}
                                 <div>
-                                    <label className="block text-sm font-bold text-brand-ebony/70 mb-1 uppercase tracking-widest">
-                                        Full Name <span className="text-red-500">*</span>
+                                    <label className="block text-[11px] font-bold text-brand-ebony/60 mb-2 uppercase tracking-[0.15em]">
+                                        Full Name <span className="text-brand-burgundy">*</span>
                                     </label>
                                     <input
                                         type="text"
                                         placeholder="John Doe"
                                         value={formData.name}
                                         onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                                        className="w-full px-4 py-3 bg-white/50 border border-brand-ebony/10 rounded-xl focus:ring-2 focus:ring-brand-burgundy/20 focus:border-brand-burgundy transition outline-none text-brand-ebony placeholder-brand-ebony/40"
+                                        className="w-full px-4 py-3.5 input-premium rounded-xl font-medium text-sm"
                                         required
                                     />
                                 </div>
 
                                 <div>
-                                    <label className="block text-sm font-bold text-brand-ebony/70 mb-1 uppercase tracking-widest">
-                                        Password <span className="text-red-500">*</span>
+                                    <label className="block text-[11px] font-bold text-brand-ebony/60 mb-2 uppercase tracking-[0.15em]">
+                                        Password <span className="text-brand-burgundy">*</span>
                                     </label>
                                     <div className="relative">
                                         <input
@@ -362,31 +330,31 @@ export default function SignUpPage() {
                                             placeholder="Minimum 6 characters"
                                             value={formData.password}
                                             onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                                            className="w-full px-4 py-3 bg-white/50 border border-brand-ebony/10 rounded-xl focus:ring-2 focus:ring-brand-burgundy/20 focus:border-brand-burgundy transition outline-none pr-12 text-brand-ebony placeholder-brand-ebony/40"
+                                            className="w-full px-4 py-3.5 input-premium rounded-xl font-medium text-sm pr-12"
                                             required
                                             minLength={6}
                                         />
                                         <button
                                             type="button"
                                             onClick={() => setShowPassword(!showPassword)}
-                                            className="absolute right-3 top-1/2 -translate-y-1/2 text-brand-ebony/40 hover:text-brand-burgundy transition-colors"
+                                            className="absolute right-4 top-1/2 -translate-y-1/2 text-brand-ebony/40 hover:text-brand-burgundy transition-colors"
                                         >
-                                            {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                                            {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                                         </button>
                                     </div>
                                 </div>
 
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 z-20 relative">
                                     <div>
-                                        <label className="block text-sm font-bold text-brand-ebony/70 mb-1 uppercase tracking-widest">
-                                            Batch Year <span className="text-red-500">*</span>
+                                        <label className="block text-[11px] font-bold text-brand-ebony/60 mb-2 uppercase tracking-[0.15em]">
+                                            Batch Year <span className="text-brand-burgundy">*</span>
                                         </label>
                                         <input
                                             type="number"
                                             placeholder="e.g., 2020"
                                             value={formData.batch}
                                             onChange={(e) => setFormData({ ...formData, batch: parseInt(e.target.value) })}
-                                            className="w-full px-4 py-3 bg-white/50 border border-brand-ebony/10 rounded-xl focus:ring-2 focus:ring-brand-burgundy/20 focus:border-brand-burgundy transition outline-none text-brand-ebony placeholder-brand-ebony/40"
+                                            className="w-full px-4 py-3.5 input-premium rounded-xl font-medium text-sm"
                                             required
                                             min={1950}
                                             max={new Date().getFullYear()}
@@ -394,23 +362,23 @@ export default function SignUpPage() {
                                     </div>
 
                                     <div>
-                                        <label className="block text-sm font-bold text-brand-ebony/70 mb-1 uppercase tracking-widest">
-                                            Profession <span className="text-red-500">*</span>
+                                        <label className="block text-[11px] font-bold text-brand-ebony/60 mb-2 uppercase tracking-[0.15em]">
+                                            Profession <span className="text-brand-burgundy">*</span>
                                         </label>
                                         <input
                                             type="text"
                                             placeholder="e.g., Software Engineer"
                                             value={formData.profession}
                                             onChange={(e) => setFormData({ ...formData, profession: e.target.value })}
-                                            className="w-full px-4 py-3 bg-white/50 border border-brand-ebony/10 rounded-xl focus:ring-2 focus:ring-brand-burgundy/20 focus:border-brand-burgundy transition outline-none text-brand-ebony placeholder-brand-ebony/40"
+                                            className="w-full px-4 py-3.5 input-premium rounded-xl font-medium text-sm"
                                             required
                                         />
                                     </div>
                                 </div>
 
-                                <div>
-                                    <label className="block text-sm font-bold text-brand-ebony/70 mb-1 uppercase tracking-widest">
-                                        Location <span className="text-red-500">*</span>
+                                <div className="z-10 relative">
+                                    <label className="block text-[11px] font-bold text-brand-ebony/60 mb-2 uppercase tracking-[0.15em]">
+                                        Location <span className="text-brand-burgundy">*</span>
                                     </label>
                                     <LocationAutocomplete
                                         value={formData.location}
@@ -418,38 +386,50 @@ export default function SignUpPage() {
                                     />
                                 </div>
 
-                                <button
-                                    type="submit"
-                                    disabled={loading}
-                                    className="w-full py-4 bg-brand-burgundy text-white rounded-xl font-bold hover:bg-[#5a2427] transition-all shadow-md shadow-brand-burgundy/20 hover:shadow-lg disabled:opacity-50 mt-6 uppercase tracking-widest text-sm"
-                                >
-                                    {loading ? (
-                                        <span className="flex items-center justify-center gap-2">
-                                            <Loader2 className="w-5 h-5 animate-spin" />
-                                            Creating Account...
+                                <div className="pt-4">
+                                    <button
+                                        type="submit"
+                                        disabled={loading}
+                                        className="w-full py-4 bg-gradient-indigo text-white rounded-xl font-bold hover:shadow-[0_0_20px_rgba(99,102,241,0.4)] transition-all active:scale-[0.98] disabled:opacity-50 tracking-[0.15em] text-xs uppercase shimmer overflow-hidden relative"
+                                    >
+                                        <span className="relative z-10 flex items-center justify-center gap-2">
+                                            {loading ? (
+                                                <>
+                                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                                    Creating Account...
+                                                </>
+                                            ) : (
+                                                'Create Account'
+                                            )}
                                         </span>
-                                    ) : (
-                                        'Complete Registration'
-                                    )}
-                                </button>
+                                    </button>
+                                </div>
                             </div>
                         )}
                     </form>
 
+                    {/* Divider */}
+                    <div className="my-8 flex items-center gap-4">
+                        <div className="flex-1 h-px bg-gradient-to-r from-transparent via-brand-ebony/10 to-brand-ebony/10" />
+                        <span className="text-[10px] uppercase font-bold tracking-widest text-brand-ebony/30">or</span>
+                        <div className="flex-1 h-px bg-gradient-to-l from-transparent via-brand-ebony/10 to-brand-ebony/10" />
+                    </div>
+
                     {/* Login Link */}
-                    <div className="text-center mt-6">
-                        <p className="text-brand-ebony/60">
+                    <div className="text-center">
+                        <p className="text-sm text-brand-ebony/60 font-medium">
                             Already have an account?{' '}
-                            <Link href="/login" className="text-brand-burgundy hover:underline font-bold">
+                            <Link href="/login" className="text-brand-burgundy hover:text-indigo-500 font-bold ml-1 transition-colors relative group">
                                 Log In
+                                <span className="absolute bottom-0 left-0 w-full h-[2px] bg-brand-burgundy scale-x-0 group-hover:scale-x-100 transition-transform origin-left rounded-full" />
                             </Link>
                         </p>
                     </div>
                 </div>
 
                 {/* Footer */}
-                <p className="text-center text-xs font-bold text-brand-ebony/40 mt-6 uppercase tracking-[0.2em]">
-                    © 2024 Alumnest • For the Tribe.
+                <p className="text-center text-[10px] font-bold text-brand-ebony/30 mt-8 uppercase tracking-[0.25em]">
+                    © {new Date().getFullYear()} Alumnest • For the Tribe.
                 </p>
             </div>
         </div>

@@ -1,11 +1,11 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { UserPlus, X } from 'lucide-react';
+import { UserPlus, X, Sparkles } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
-import { collection, query, onSnapshot, updateDoc, arrayUnion, arrayRemove, doc, addDoc } from 'firebase/firestore';
+import { collection, query, onSnapshot, updateDoc, arrayUnion, addDoc, doc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { User } from '@/types';
 
@@ -20,53 +20,35 @@ export function RightSidebar({ isOpen = false, onClose = () => {} }: RightSideba
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        if (!userData) {
-            setLoading(false);
-            return;
-        }
+        if (!userData) { setLoading(false); return; }
 
         const usersQuery = query(collection(db, 'users'));
-        const unsubscribe = onSnapshot(usersQuery, 
+        const unsubscribe = onSnapshot(usersQuery,
             (snapshot) => {
-                const fetchedUsers = snapshot.docs
-                    .map(doc => ({
-                        uid: doc.id,
-                        ...doc.data()
-                    } as User))
-                    .filter(user => 
-                        user.uid !== userData.uid && 
-                        !userData.connections?.includes(user.uid) && 
-                        !userData.pendingRequests?.includes(user.uid) && 
+                const fetched = snapshot.docs
+                    .map(doc => ({ uid: doc.id, ...doc.data() } as User))
+                    .filter(user =>
+                        user.uid !== userData.uid &&
+                        !userData.connections?.includes(user.uid) &&
+                        !userData.pendingRequests?.includes(user.uid) &&
                         !user.pendingRequests?.includes(userData.uid)
                     );
-
-                // Shuffle and pick 3 suggestions
-                const shuffled = [...fetchedUsers].sort(() => 0.5 - Math.random());
-                setSuggestions(shuffled.slice(0, 3));
+                const shuffled = [...fetched].sort(() => 0.5 - Math.random());
+                setSuggestions(shuffled.slice(0, 4));
                 setLoading(false);
             },
-            (error) => {
-                console.error('Error fetching suggestions:', error);
-                setLoading(false);
-            }
+            (error) => { console.error('Error fetching suggestions:', error); setLoading(false); }
         );
-
         return () => unsubscribe();
     }, [userData]);
 
-
     const handleConnect = async (recipientId: string) => {
         if (!userData) return;
-        
         setSuggestions(prev => prev.filter(u => u.uid !== recipientId));
-
         try {
-            const recipientRef = doc(db, 'users', recipientId);
-            await updateDoc(recipientRef, {
+            await updateDoc(doc(db, 'users', recipientId), {
                 pendingRequests: arrayUnion(userData.uid)
             });
-            
-            // Create a notification for the recipient
             await addDoc(collection(db, 'notifications'), {
                 userId: recipientId,
                 type: 'connection_request',
@@ -83,97 +65,114 @@ export function RightSidebar({ isOpen = false, onClose = () => {} }: RightSideba
         }
     };
 
-
     return (
         <>
-            {/* Backdrop for all screen sizes */}
+            {/* Backdrop */}
             {isOpen && (
-                <div 
-                    className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40 transition-opacity"
+                <div
+                    className="fixed inset-0 bg-black/30 backdrop-blur-sm z-40 transition-opacity"
                     onClick={onClose}
                 />
             )}
-            
-            <div className={`w-80 fixed right-0 top-0 h-full p-6 overflow-y-auto border-l border-brand-ebony/10 bg-brand-parchment/95 backdrop-blur-xl z-50 transition-transform duration-300 ${isOpen ? 'translate-x-0 shadow-2xl' : 'translate-x-full'}`}>
-                
-                {/* Close Button */}
-                <button 
-                    onClick={onClose}
-                    className="absolute top-4 right-4 p-2 text-brand-ebony/50 hover:text-brand-burgundy hover:bg-brand-burgundy/10 rounded-full transition-colors z-10"
-                >
-                    <X className="w-5 h-5" />
-                </button>
 
-                {loading ? (
-                    <div className="animate-pulse flex flex-col gap-8 mt-8">
-                        <div>
-                            <div className="h-6 bg-brand-ebony/10 rounded w-1/2 mb-5"></div>
-                            {[1, 2, 3].map(i => (
-                                <div key={i} className="flex gap-3 items-center mb-4">
-                                    <div className="w-10 h-10 rounded-full bg-brand-ebony/10"></div>
+            {/* Panel */}
+            <div
+                className={`w-80 fixed right-0 top-0 h-full overflow-y-auto scrollbar-hide z-50 transition-transform duration-300 ease-out ${
+                    isOpen ? 'translate-x-0 shadow-2xl' : 'translate-x-full'
+                }`}
+                style={{
+                    background: 'rgba(244,246,255,0.94)',
+                    backdropFilter: 'blur(24px)',
+                    WebkitBackdropFilter: 'blur(24px)',
+                    borderLeft: '1px solid rgba(99,102,241,0.12)',
+                }}
+            >
+                {/* Header */}
+                <div className="flex items-center justify-between px-5 pt-5 pb-4 border-b border-brand-ebony/6">
+                    <div className="flex items-center gap-2">
+                        <div
+                            className="w-7 h-7 rounded-lg flex items-center justify-center"
+                            style={{ background: 'linear-gradient(135deg,#4f46e5,#818cf8)', boxShadow: '0 4px 10px rgba(99,102,241,0.35)' }}
+                        >
+                            <Sparkles className="w-3.5 h-3.5 text-white" />
+                        </div>
+                        <h2 className="font-semibold text-brand-ebony text-sm">Discover Alumni</h2>
+                    </div>
+                    <button
+                        onClick={onClose}
+                        className="p-1.5 text-brand-ebony/40 hover:text-brand-ebony hover:bg-brand-parchment rounded-lg transition-all"
+                    >
+                        <X className="w-4 h-4" />
+                    </button>
+                </div>
+
+                <div className="px-5 py-5">
+                    {loading ? (
+                        <div className="space-y-4">
+                            {[1, 2, 3, 4].map(i => (
+                                <div key={i} className="flex gap-3 items-center animate-pulse">
+                                    <div className="w-10 h-10 rounded-full bg-brand-parchment flex-shrink-0" />
                                     <div className="flex-1 space-y-2">
-                                        <div className="h-4 bg-brand-ebony/10 rounded w-3/4"></div>
-                                        <div className="h-3 bg-brand-ebony/10 rounded w-1/2"></div>
+                                        <div className="h-3 bg-brand-parchment rounded w-3/4" />
+                                        <div className="h-2.5 bg-brand-parchment rounded w-1/2" />
                                     </div>
                                 </div>
                             ))}
                         </div>
-                    </div>
-                ) : (
-                    <>
-                        {/* Suggestions */}
-                        <div className="mb-10 lg:mt-4">
-                            <h2 className="text-brand-ebony font-serif font-bold text-lg mb-5 flex items-center">
-                                <UserPlus className="h-5 w-5 mr-2 text-brand-burgundy" />
-                                More Alumni to Follow
-                            </h2>
-                            <div className="space-y-5">
-                                {suggestions.length > 0 ? (
-                                    suggestions.map((user) => (
-                                        <div key={user.uid} className="flex items-center justify-between group">
-                                            <div className="flex items-center space-x-3 overflow-hidden">
-                                                <Link href={`/profile/${user.uid}`} className="relative h-11 w-11 flex-shrink-0 rounded-full overflow-hidden border border-brand-ebony/10 shadow-sm hover:opacity-80 transition block">
-                                                    <Image
-                                                        src={user.profilePic || `https://placehold.co/100x100/EFEFEFF/3D2B27?text=${user.name.substring(0, 1)}`}
-                                                        alt={user.name}
-                                                        fill
-                                                        className="object-cover"
-                                                        unoptimized
-                                                    />
-                                                </Link>
-                                                <div className="flex-1 min-w-0 pr-2">
-                                                    <Link href={`/profile/${user.uid}`}>
-                                                        <p className="text-sm font-bold text-brand-ebony truncate hover:text-brand-burgundy transition-colors">
-                                                            {user.name}
-                                                        </p>
-                                                    </Link>
-                                                    <p className="text-xs text-brand-ebony/60 truncate">
-                                                        {user.profession || `Class of ${user.batch}`}
-                                                    </p>
-                                                </div>
-                                            </div>
-                                            <button 
-                                                onClick={() => handleConnect(user.uid)}
-                                                className="text-brand-burgundy text-xs font-bold hover:bg-brand-burgundy/10 px-3 py-1.5 rounded-full transition-colors whitespace-nowrap border border-brand-burgundy/20"
-                                            >
-                                                Connect
-                                            </button>
+                    ) : (
+                        <div className="space-y-3">
+                            {suggestions.length > 0 ? (
+                                suggestions.map((user) => (
+                                    <div
+                                        key={user.uid}
+                                        className="card-premium p-3.5 flex items-center gap-3 group hover:shadow-[0_4px_16px_rgba(79,70,229,0.12)] transition-all duration-200"
+                                    >
+                                        {/* Avatar */}
+                                        <Link href={`/profile/${user.uid}`} className="relative h-10 w-10 flex-shrink-0 rounded-full overflow-hidden ring-2 ring-white dark:ring-brand-parchment group-hover:ring-brand-burgundy/40 transition-all block">
+                                            <Image
+                                                src={user.profilePic || `https://placehold.co/80x80/4f46e5/ffffff?text=${user.name.substring(0, 1)}`}
+                                                alt={user.name}
+                                                fill
+                                                className="object-cover"
+                                                unoptimized
+                                            />
+                                        </Link>
+
+                                        {/* Info */}
+                                        <div className="flex-1 min-w-0">
+                                            <Link href={`/profile/${user.uid}`}>
+                                                <p className="text-sm font-semibold text-brand-ebony truncate hover:text-brand-burgundy transition-colors leading-tight">
+                                                    {user.name}
+                                                </p>
+                                            </Link>
+                                            <p className="text-[11px] text-brand-ebony/45 truncate mt-0.5 font-medium">
+                                                {user.profession || `Batch of ${user.batch}`}
+                                            </p>
                                         </div>
-                                    ))
-                                ) : (
-                                    <p className="text-sm text-brand-ebony/60 italic">You&apos;re connected with everyone!</p>
-                                )}
-                            </div>
+
+                                        {/* Connect */}
+                                        <button
+                                            onClick={() => handleConnect(user.uid)}
+                                            className="flex-shrink-0 flex items-center gap-1 text-[11px] font-bold text-brand-burgundy border border-brand-burgundy/30 bg-brand-burgundy/8 hover:bg-brand-burgundy hover:text-white px-2.5 py-1.5 rounded-lg transition-all duration-200"
+                                        >
+                                            <UserPlus className="w-3 h-3" />
+                                            Connect
+                                        </button>
+                                    </div>
+                                ))
+                            ) : (
+                                <div className="text-center py-10">
+                                    <div
+                                        className="w-12 h-12 rounded-full mx-auto mb-3 flex items-center justify-center"
+                                        style={{ background: 'linear-gradient(135deg,#4f46e5,#818cf8)' }}
+                                    >
+                                        <UserPlus className="w-5 h-5 text-white" />
+                                    </div>
+                                    <p className="text-sm text-brand-ebony/50 font-medium">You&apos;re connected with everyone!</p>
+                                </div>
+                            )}
                         </div>
-                    </>
-                )}
-                
-                {/* Decorative element */}
-                <div className="absolute bottom-10 right-0 w-32 h-32 opacity-[0.03] pointer-events-none">
-                    <svg viewBox="0 0 200 200" className="w-full h-full fill-brand-ebony">
-                        <path d="M40,160 C40,160 80,100 160,100 C160,100 100,160 40,160 Z" />
-                        <path d="M40,160 C40,160 20,100 100,80 C100,80 60,140 40,160 Z" opacity="0.7" />
-                    </svg>
+                    )}
                 </div>
             </div>
         </>

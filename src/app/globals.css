@@ -1,9 +1,9 @@
-@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600;1,700&family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600;1,700&family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap');
 @import "tailwindcss";
 @variant dark (&:where(.dark, .dark *));
 
 @theme {
-  --font-sans: "Inter", var(--font-geist-sans);
+  --font-sans: "Plus Jakarta Sans", "Inter", var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
   --font-serif: "Cormorant Garamond", serif;
 
@@ -12,62 +12,253 @@
   --color-brand-cream: var(--brand-cream);
   --color-brand-parchment: var(--brand-parchment);
   --color-brand-ebony: var(--brand-ebony);
+  --color-brand-glow: var(--brand-glow);
 }
 
+/* ── Light Mode (Default) ────────────────────────────────── */
 :root {
-  --brand-burgundy: #702d31;
-  --brand-gold: #c5a07c;
-  --brand-cream: #f2eae4;
-  --brand-parchment: #ede1d5;
-  --brand-ebony: #3d2b27;
+  --brand-burgundy: #4f46e5;        /* Indigo-600 — primary action */
+  --brand-gold:     #d97706;        /* Amber-600  — gold accent    */
+  --brand-cream:    #f4f6ff;        /* Indigo-tinted white bg      */
+  --brand-parchment:#eef2ff;        /* Indigo-50  — card surface   */
+  --brand-ebony:    #1e1b4b;        /* Indigo-950 — primary text   */
+  --brand-glow:     rgba(79,70,229,0.18);
 }
 
+/* ── Dark Mode ───────────────────────────────────────────── */
 .dark {
-  --brand-burgundy: #4f46e5;
-  --brand-gold: #64748b;
-  --brand-cream: #020617;     /* Slate 950 */
-  --brand-parchment: #1e293b;  /* Slate 800 - Better contrast against 950 */
-  --brand-ebony: #f8fafc;     /* Slate 50 */
+  --brand-burgundy: #818cf8;        /* Indigo-400 — primary action */
+  --brand-gold:     #fbbf24;        /* Amber-400  — gold accent    */
+  --brand-cream:    #020817;        /* Deepest navy — page bg      */
+  --brand-parchment:#0f172a;        /* Dark navy  — card bg        */
+  --brand-ebony:    #e2e8f0;        /* Slate-200  — text on dark   */
+  --brand-glow:     rgba(129,140,248,0.22);
 }
 
+/* ── Base Styles ─────────────────────────────────────────── */
 @layer base {
+  *, *::before, *::after {
+    box-sizing: border-box;
+  }
+
   body {
     background-color: var(--color-brand-cream);
-    background-image:
-      radial-gradient(at 0% 0%, hsla(28, 24%, 90%, 1) 0, transparent 50%),
-      radial-gradient(at 50% 0%, hsla(25, 24%, 88%, 1) 0, transparent 50%),
-      radial-gradient(at 100% 0%, hsla(28, 24%, 90%, 1) 0, transparent 50%),
-      url("https://www.transparenttextures.com/patterns/linen.png");
     color: var(--color-brand-ebony);
     min-height: 100vh;
+    font-family: var(--font-sans);
+    background-image:
+      radial-gradient(ellipse 80% 50% at 0% 0%,   rgba(99,102,241,0.09) 0, transparent 60%),
+      radial-gradient(ellipse 60% 40% at 100% 0%,  rgba(251,191,36,0.06) 0, transparent 50%),
+      radial-gradient(ellipse 70% 60% at 50% 100%, rgba(99,102,241,0.06) 0, transparent 60%);
   }
 
   .dark body {
     background-image:
-      radial-gradient(at 0% 0%, rgba(79, 70, 229, 0.1) 0, transparent 50%),
-      radial-gradient(at 50% 0%, rgba(15, 23, 42, 0.2) 0, transparent 50%),
-      radial-gradient(at 100% 0%, rgba(79, 70, 229, 0.1) 0, transparent 50%),
-      url("https://www.transparenttextures.com/patterns/linen.png");
+      radial-gradient(ellipse 80% 50% at 0% 0%,   rgba(99,102,241,0.14) 0, transparent 60%),
+      radial-gradient(ellipse 60% 40% at 100% 0%,  rgba(251,191,36,0.04) 0, transparent 50%),
+      radial-gradient(ellipse 70% 60% at 50% 100%, rgba(99,102,241,0.10) 0, transparent 60%);
   }
 
-  h1,
-  h2,
-  h3,
-  h4,
-  h5,
-  h6 {
-    font-family: var(--font-serif);
+  h1, h2, h3, h4, h5, h6 {
+    font-family: "Cormorant Garamond", serif;
     color: var(--color-brand-ebony);
+  }
+
+  input, textarea, select {
+    color-scheme: light;
+  }
+  .dark input, .dark textarea, .dark select {
+    color-scheme: dark;
+  }
+  
+  input::placeholder, textarea::placeholder {
+    color: var(--color-brand-ebony);
+    opacity: 0.35;
   }
 }
 
+/* ── Utility Classes ─────────────────────────────────────── */
 @layer utilities {
-  .scrollbar-hide::-webkit-scrollbar {
-    display: none;
+
+  /* Scrollbar */
+  .scrollbar-hide::-webkit-scrollbar { display: none; }
+  .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+
+  /* ── Glassmorphism ── */
+  .glass-dark {
+    background: rgba(15, 23, 42, 0.75);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255,255,255,0.07);
+  }
+  .glass-light {
+    background: rgba(255,255,255,0.72);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(99,102,241,0.14);
+  }
+  .glass-card {
+    background: rgba(255,255,255,0.06);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255,255,255,0.08);
   }
 
-  .scrollbar-hide {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
+  /* ── Glow Effects ── */
+  .glow-indigo {
+    box-shadow: 0 0 24px rgba(99,102,241,0.30), 0 0 48px rgba(99,102,241,0.10);
+  }
+  .glow-gold {
+    box-shadow: 0 0 20px rgba(251,191,36,0.30);
+  }
+  .glow-sm {
+    box-shadow: 0 0 12px rgba(99,102,241,0.25);
+  }
+
+  /* ── Gradient Text ── */
+  .text-gradient-indigo {
+    background: linear-gradient(135deg, #6366f1 0%, #a5b4fc 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .text-gradient-gold {
+    background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .text-gradient-premium {
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #fbbf24 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* ── Gradient Backgrounds ── */
+  .bg-gradient-indigo {
+    background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%);
+  }
+  .bg-gradient-gold {
+    background: linear-gradient(135deg, #d97706 0%, #fbbf24 100%);
+  }
+  .bg-gradient-dark-card {
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+  }
+
+  /* ── Shimmer Animation ── */
+  .shimmer {
+    position: relative;
+    overflow: hidden;
+  }
+  .shimmer::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.08) 50%, transparent 100%);
+    background-size: 200% 100%;
+    animation: shimmer 2.5s infinite;
+  }
+  @keyframes shimmer {
+    0%   { background-position: -200% 0; }
+    100% { background-position:  200% 0; }
+  }
+
+  /* ── Pulse Subtle ── */
+  @keyframes pulse-subtle {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: 0.82; }
+  }
+  .animate-pulse-subtle {
+    animation: pulse-subtle 2.2s ease-in-out infinite;
+  }
+
+  /* ── Float ── */
+  @keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50%       { transform: translateY(-5px); }
+  }
+  .animate-float { animation: float 3.5s ease-in-out infinite; }
+
+  /* ── Fade Up ── */
+  @keyframes fade-up {
+    0%   { opacity: 0; transform: translateY(12px); }
+    100% { opacity: 1; transform: translateY(0); }
+  }
+  .animate-fade-up { animation: fade-up 0.45s ease-out forwards; }
+
+  /* ── Indigo border accent ── */
+  .border-accent-indigo {
+    border-color: rgba(99,102,241,0.30);
+  }
+
+  /* ── Active nav indicator ── */
+  .nav-active-bg {
+    background: linear-gradient(135deg, rgba(99,102,241,0.15) 0%, rgba(99,102,241,0.08) 100%);
+    border: 1px solid rgba(99,102,241,0.25);
+  }
+  .nav-active-bg-light {
+    background: linear-gradient(135deg, rgba(79,70,229,0.12) 0%, rgba(79,70,229,0.06) 100%);
+    border: 1px solid rgba(79,70,229,0.22);
+  }
+
+  /* ── Input focus ring ── */
+  .input-premium {
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.10);
+    outline: none;
+    transition: all 0.2s ease;
+  }
+  .input-premium:focus {
+    border-color: rgba(99,102,241,0.60);
+    box-shadow: 0 0 0 3px rgba(99,102,241,0.15);
+  }
+
+  /* ── Premium Card ── */
+  .card-premium {
+    background: rgba(255,255,255,0.70);
+    border: 1px solid rgba(99,102,241,0.12);
+    box-shadow: 0 4px 24px rgba(79,70,229,0.06), 0 1px 3px rgba(0,0,0,0.04);
+    border-radius: 1.25rem;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+  .dark .card-premium {
+    background: rgba(15,23,42,0.80);
+    border: 1px solid rgba(129,140,248,0.10);
+    box-shadow: 0 4px 24px rgba(0,0,0,0.30), 0 1px 3px rgba(0,0,0,0.20);
+  }
+
+  /* ── Sidebar glass ── */
+  .sidebar-glass {
+    background: rgba(244,246,255,0.88);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border-right: 1px solid rgba(99,102,241,0.12);
+  }
+  .dark .sidebar-glass {
+    background: rgba(2,8,23,0.90);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border-right: 1px solid rgba(129,140,248,0.08);
+  }
+
+  /* ── Page header accent ── */
+  .page-header-accent {
+    width: 4px;
+    height: 2rem;
+    border-radius: 9999px;
+    background: linear-gradient(180deg, #6366f1 0%, #a5b4fc 100%);
+  }
+
+  /* ── Gold dot separator ── */
+  .dot-gold::before {
+    content: '·';
+    color: #d97706;
+    margin: 0 0.35rem;
+    font-weight: 700;
+  }
+  .dark .dot-gold::before {
+    color: #fbbf24;
   }
 }

@@ -7,7 +7,7 @@ import { db } from '@/lib/firebase';
 import { Event } from '@/types';
 import { EventCard } from '@/components/events/EventCard';
 import { CreateEventModal, EventFormData } from '@/components/modals/CreateEventModal';
-import { Calendar as CalendarIcon, Plus, Loader2 } from 'lucide-react';
+import { Calendar as CalendarIcon, Plus, Loader2, Sparkles } from 'lucide-react';
 import { uploadMedia } from '@/lib/media';
 import { useRouter } from 'next/navigation';
 
@@ -79,32 +79,43 @@ export default function EventsPage() {
     if (authLoading || loading) {
         return (
             <div className="flex items-center justify-center min-h-screen">
-                <Loader2 className="w-12 h-12 animate-spin text-brand-burgundy" />
+                <div className="relative w-16 h-16">
+                     <div className="absolute inset-0 rounded-full border-4 border-brand-burgundy/20"></div>
+                     <div className="absolute inset-0 rounded-full border-4 border-brand-burgundy border-t-transparent animate-spin"></div>
+                </div>
             </div>
         );
     }
 
-    if (!userData) return null; // Wait for redirect
+    if (!userData) return null;
 
     return (
-        <div className="max-w-4xl mx-auto px-4 md:px-8 pt-8 pb-12 w-full">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 sm:mb-8">
-                <div className="flex items-center gap-3">
-                    <div className="bg-brand-gold/20 p-2 sm:p-3 rounded-xl border border-brand-gold/30 hidden sm:block">
-                        <CalendarIcon className="h-6 w-6 sm:h-7 sm:w-7 text-brand-burgundy" />
+        <div className="max-w-5xl mx-auto px-4 md:px-8 pt-8 pb-12 w-full animate-fade-up">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+                <div className="flex items-center gap-4">
+                    <div className="bg-gradient-gold p-2.5 sm:p-3 rounded-xl shadow-lg shadow-brand-gold/20 hidden sm:block">
+                        <CalendarIcon className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
                     </div>
-                    <h1 className="text-2xl sm:text-3xl font-serif font-bold text-brand-ebony">
-                        Events
-                        <span className="hidden sm:inline"> Directory</span>
-                    </h1>
+                    <div>
+                        <div className="flex items-center gap-3">
+                            <div className="page-header-accent glow-indigo sm:hidden"></div>
+                            <h1 className="text-3xl sm:text-4xl font-serif font-extrabold text-brand-ebony flex items-center gap-2">
+                                Event Directory
+                                <Sparkles className="w-5 h-5 text-brand-gold animate-pulse sm:hidden" />
+                            </h1>
+                        </div>
+                        <p className="text-sm text-brand-ebony/50 mt-1 hidden sm:block font-medium">Discover and join exclusive alumni gatherings</p>
+                    </div>
                 </div>
                 {userData && (
                     <button
                         onClick={() => setShowCreateModal(true)}
-                        className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-3 sm:px-5 sm:py-2.5 bg-brand-burgundy text-white text-sm sm:text-sm rounded-xl hover:bg-[#5a2427] shadow-sm transition-all font-semibold tracking-wide active:scale-[0.98]"
+                        className="w-full sm:w-auto flex items-center justify-center gap-2 px-5 py-3 bg-gradient-gold text-white text-sm rounded-xl hover:shadow-[0_0_20px_rgba(251,191,36,0.4)] transition-all font-bold tracking-wide active:scale-[0.98] shimmer relative overflow-hidden text-brand-ebony/90"
                     >
-                        <Plus className="w-5 h-5" />
-                        <span>Create Event</span>
+                        <span className="relative z-10 flex items-center gap-2 text-white">
+                            <Plus className="w-4 h-4" />
+                            <span>Create Event</span>
+                        </span>
                     </button>
                 )}
             </div>
@@ -116,13 +127,16 @@ export default function EventsPage() {
                     ))}
                 </div>
             ) : (
-                <div className="bg-brand-parchment/30 border border-brand-gold/10 rounded-2xl p-12 text-center">
-                    <CalendarIcon className="w-16 h-16 text-brand-gold/20 mx-auto mb-4" />
-                    <p className="text-brand-ebony/60 font-medium font-serif italic text-lg">No upcoming events found</p>
+                <div className="card-premium p-16 text-center border-dashed border-2 border-brand-ebony/10 mt-8">
+                    <div className="w-16 h-16 bg-brand-gold/10 rounded-full flex items-center justify-center mx-auto mb-4 border border-brand-gold/20">
+                        <CalendarIcon className="w-8 h-8 text-brand-gold/60" />
+                    </div>
+                    <p className="text-brand-ebony/60 font-medium font-serif italic text-lg mb-1">No upcoming events found</p>
+                    <p className="text-brand-ebony/40 text-sm mb-6">Plan a meetup, reunion, or networking session!</p>
                     {userData && (
                         <button
                             onClick={() => setShowCreateModal(true)}
-                            className="mt-4 text-brand-burgundy hover:text-[#5a2427] font-bold tracking-wide"
+                            className="text-brand-gold hover:text-amber-500 font-bold tracking-wide text-sm bg-brand-gold/10 hover:bg-brand-gold/20 px-6 py-2.5 rounded-lg transition-colors inline-block"
                         >
                             Organize the first event
                         </button>
@@ -138,4 +152,3 @@ export default function EventsPage() {
         </div>
     );
 }
-

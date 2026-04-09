@@ -12,7 +12,7 @@ import { CommentModal } from '@/components/modals/CommentModal';
 import { ConfirmDialog } from '@/components/modals/ConfirmDialog';
 import { SharePostModal } from '@/components/modals/SharePostModal';
 import { SignedOutView } from '@/components/auth/SignedOutView';
-import { PenSquare, Camera, Image as ImageIcon, Paperclip, Users, Menu } from 'lucide-react';
+import { PenSquare, Camera, Image as ImageIcon, Paperclip, Users, Menu, Sparkles } from 'lucide-react';
 import { RightSidebar } from '@/components/layout/RightSidebar';
 import { NotificationBell } from '@/components/notifications/NotificationPanel';
 import { InstituteSwitcher } from '@/components/layout/InstituteSwitcher';
@@ -238,9 +238,12 @@ export default function HomePage() {
   if (authLoading || loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-burgundy mx-auto mb-4"></div>
-          <p className="text-brand-ebony font-serif italic">Gathering the tribe...</p>
+        <div className="text-center animate-fade-up">
+          <div className="relative w-16 h-16 mx-auto mb-6">
+             <div className="absolute inset-0 rounded-full border-4 border-brand-burgundy/20"></div>
+             <div className="absolute inset-0 rounded-full border-4 border-brand-burgundy border-t-transparent animate-spin"></div>
+          </div>
+          <p className="text-brand-ebony font-serif italic text-lg opacity-80">Loading...</p>
         </div>
       </div>
     );
@@ -252,69 +255,81 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen transition-all duration-300">
-      <div className="max-w-4xl mx-auto px-4 md:px-8 pt-8 pb-12 w-full">
+      <div className="max-w-3xl mx-auto px-4 md:px-8 pt-8 pb-12 w-full">
         {/* Feed Header */}
-        <div className="flex flex-wrap items-center justify-between mb-8 gap-4">
-          <div className="flex items-center gap-3">
-            <div className="h-10 w-1 bg-brand-burgundy rounded-full" />
-            <h1 className="text-3xl font-serif font-bold text-brand-ebony tracking-tight">The Feed</h1>
+        <div className="flex flex-wrap items-center justify-between mb-8 gap-4 px-2">
+          <div className="flex items-center gap-4">
+            <div className="page-header-accent glow-indigo"></div>
+            <h1 className="text-3xl font-serif font-extrabold text-brand-ebony tracking-tight flex items-center gap-2">
+               The Feed
+               <Sparkles className="w-5 h-5 text-brand-gold animate-pulse" />
+            </h1>
           </div>
           <div className="flex items-center gap-3">
             <button
                onClick={() => setIsRightSidebarOpen(true)}
-               className="flex items-center justify-center p-2 sm:px-4 sm:py-2 bg-brand-burgundy/10 text-brand-burgundy rounded-xl sm:rounded-full text-sm font-bold hover:bg-brand-burgundy/20 transition-all border border-brand-burgundy/20 shadow-sm"
-               title="Suggestions & Trending"
+               className="flex items-center justify-center px-4 py-2 bg-brand-burgundy/10 hover:bg-brand-burgundy/20 text-brand-burgundy rounded-xl text-sm font-bold transition-all border border-brand-burgundy/20 shadow-sm"
+               title="Suggestions"
             >
-               <Menu className="w-5 h-5" />
-               <span className="hidden sm:inline tracking-wider uppercase text-xs sm:ml-2">Discover</span>
+               <Users className="w-4 h-4" />
+               <span className="hidden sm:inline tracking-wider uppercase text-[10px] ml-2">Discover</span>
             </button>
-            <NotificationBell />
+            <div className="bg-brand-parchment/60 p-1.5 rounded-xl border border-brand-ebony/10">
+               <NotificationBell />
+            </div>
           </div>
         </div>
 
         {/* Mobile Switcher (Hidden on Desktop) */}
-        <div className="md:hidden">
+        <div className="md:hidden mb-6 px-2">
           <InstituteSwitcher />
         </div>
 
         {/* Create Post Button Area */}
-        <div className="bg-brand-parchment/40 rounded-2xl border border-brand-ebony/10 p-5 mb-8 shadow-sm backdrop-blur-sm group hover:border-brand-burgundy/20 transition-all duration-300">
+        <div className="card-premium p-5 mb-8 group hover:border-brand-burgundy/30 transition-all duration-300 ease-in-out relative overflow-hidden">
+          {/* subtle background glow on hover */}
+          <div className="absolute -inset-2 bg-gradient-to-r from-brand-burgundy/0 via-brand-burgundy/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none -z-10" />
+          
           <div className="flex items-start gap-4 mb-4">
             <img
-              src={userData.profilePic || `https://placehold.co/100x100/EFEFEFF/3D2B27?text=${userData.name.substring(0, 1)}`}
+              src={userData.profilePic || `https://placehold.co/100x100/4f46e5/ffffff?text=${userData.name.substring(0, 1)}`}
               alt={userData.name}
-              className="w-12 h-12 rounded-full border-2 border-white shadow-sm"
+              className="w-12 h-12 rounded-full ring-2 ring-white dark:ring-brand-parchment shadow-sm object-cover"
             />
             <button
               onClick={() => setShowCreatePost(true)}
-              className="flex-1 text-left px-5 py-3 bg-white/60 hover:bg-white border border-brand-ebony/10 rounded-xl text-brand-ebony/40 transition-all font-medium group-hover:shadow-inner"
+              className="flex-1 text-left px-5 py-3 input-premium rounded-xl text-brand-ebony/40 transition-all font-medium text-sm border border-brand-ebony/10 bg-brand-cream/50 dark:bg-white/5 hover:bg-white dark:hover:bg-brand-parchment"
             >
               Share something with your fellow alumni...
             </button>
           </div>
-          <div className="flex items-center justify-between pt-4 border-t border-brand-ebony/5">
-            <div className="flex gap-2">
-              <button onClick={() => setShowCreatePost(true)} className="p-2.5 text-brand-ebony/30 hover:text-brand-burgundy hover:bg-brand-burgundy/5 rounded-xl transition-all">
+          
+          <div className="flex items-center justify-between pt-3 mt-1 border-t border-brand-ebony/5">
+            <div className="flex gap-1.5">
+              <button onClick={() => setShowCreatePost(true)} className="p-2 text-brand-ebony/40 hover:text-brand-burgundy hover:bg-brand-burgundy/10 rounded-lg transition-colors flex items-center gap-2">
                 <Camera className="w-5 h-5" />
+                <span className="hidden sm:inline text-xs font-semibold">Photo</span>
               </button>
-              <button onClick={() => setShowCreatePost(true)} className="p-2.5 text-brand-ebony/30 hover:text-brand-burgundy hover:bg-brand-burgundy/5 rounded-xl transition-all">
+              <button onClick={() => setShowCreatePost(true)} className="p-2 text-brand-ebony/40 hover:text-brand-burgundy hover:bg-brand-burgundy/10 rounded-lg transition-colors flex items-center gap-2">
                 <ImageIcon className="w-5 h-5" />
+                <span className="hidden sm:inline text-xs font-semibold">Video</span>
               </button>
-              <button onClick={() => setShowCreatePost(true)} className="p-2.5 text-brand-ebony/30 hover:text-brand-burgundy hover:bg-brand-burgundy/5 rounded-xl transition-all">
+              <button onClick={() => setShowCreatePost(true)} className="p-2 text-brand-ebony/40 hover:text-brand-burgundy hover:bg-brand-burgundy/10 rounded-lg transition-colors flex items-center gap-2">
                 <Paperclip className="w-5 h-5" />
+                <span className="hidden sm:inline text-xs font-semibold">Attach</span>
               </button>
             </div>
             <button
               onClick={() => setShowCreatePost(true)}
-              className="px-8 py-2 bg-brand-burgundy text-white rounded-xl font-bold hover:bg-[#5a2427] transition-all shadow-md shadow-brand-burgundy/20 hover:shadow-lg active:scale-95"
+              className="px-6 py-2 bg-gradient-indigo text-white rounded-xl font-bold hover:shadow-[0_0_15px_rgba(99,102,241,0.5)] transition-all shadow-md active:scale-95 text-sm shimmer overflow-hidden relative"
             >
-              Post
+              <span className="relative z-10">Post</span>
             </button>
           </div>
         </div>
 
         {/* Posts Feed */}
-        <div className="space-y-4">
+        <div className="space-y-6">
           {posts.length > 0 ? (
             posts.map(post => (
               <PostCard
@@ -329,8 +344,18 @@ export default function HomePage() {
               />
             ))
           ) : (
-            <div className="bg-white rounded-xl shadow-sm p-8 text-center">
-              <p className="text-gray-500">No posts yet. Be the first to share something!</p>
+            <div className="card-premium p-12 text-center animate-fade-up border-dashed border-2 border-brand-ebony/10">
+              <div className="w-16 h-16 bg-brand-burgundy/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <PenSquare className="w-8 h-8 text-brand-burgundy opacity-80" />
+              </div>
+              <p className="text-brand-ebony font-serif italic text-lg mb-1">It's quiet in here...</p>
+              <p className="text-brand-ebony/50 text-sm mb-6">Be the first to share an update with your network.</p>
+              <button
+                onClick={() => setShowCreatePost(true)}
+                className="px-6 py-2 bg-brand-burgundy/10 text-brand-burgundy rounded-xl font-bold hover:bg-brand-burgundy hover:text-white transition-colors"
+              >
+                 Create Post
+              </button>
             </div>
           )}
         </div>

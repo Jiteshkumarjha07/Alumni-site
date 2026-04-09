@@ -5,7 +5,6 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { Eye, EyeOff, Loader2, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
-
 import { BrandLogo } from '@/components/brand/BrandLogo';
 
 export default function LoginPage() {
@@ -40,48 +39,44 @@ export default function LoginPage() {
     };
 
     return (
-        <div className="flex items-center justify-center p-4 relative overflow-hidden">
-            {/* Decorative Background Leaves */}
-            <div className="absolute top-0 left-0 w-64 h-64 opacity-5 pointer-events-none -translate-x-1/4 -translate-y-1/4 rotate-45">
-                <svg viewBox="0 0 200 200" className="w-full h-full fill-brand-ebony">
-                    <path d="M40,100 C40,100 80,40 160,40 C160,40 100,100 40,100 Z" />
-                </svg>
-            </div>
-            <div className="absolute bottom-0 right-0 w-64 h-64 opacity-5 pointer-events-none translate-x-1/4 translate-y-1/4 -rotate-12">
-                <svg viewBox="0 0 200 200" className="w-full h-full fill-brand-ebony">
-                    <path d="M40,100 C40,100 80,40 160,40 C160,40 100,100 40,100 Z" />
-                </svg>
-            </div>
+        <div className="flex items-center justify-center min-h-screen p-4 relative overflow-hidden">
+            {/* Dark premium background gradient specific to auth */}
+            <div className="absolute inset-0 bg-gradient-to-br from-brand-cream to-brand-parchment z-[-1]" />
+            <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-brand-burgundy rounded-full mix-blend-multiply filter blur-[128px] opacity-20 dark:opacity-40 animate-pulse-subtle" />
+            <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-brand-gold rounded-full mix-blend-multiply filter blur-[128px] opacity-10 dark:opacity-20 animate-pulse-subtle" style={{ animationDelay: '1s' }} />
 
-            <div className="max-w-md w-full relative z-10">
+            <div className="max-w-md w-full relative z-10 animate-fade-up">
                 {/* Back Button */}
-                <Link href="/" className="inline-flex items-center gap-2 text-brand-ebony/60 hover:text-brand-burgundy mb-6 font-medium transition-colors">
+                <Link href="/" className="inline-flex items-center gap-2 text-brand-ebony/50 hover:text-brand-ebony mb-8 font-semibold transition-colors text-sm uppercase tracking-wider backdrop-blur-md bg-white/10 px-4 py-2 rounded-full border border-brand-ebony/10">
                     <ArrowLeft className="w-4 h-4" />
                     Back to Home
                 </Link>
 
                 {/* Card */}
-                <div className="bg-brand-parchment/80 rounded-2xl shadow-xl p-8 border border-brand-ebony/10 backdrop-blur-sm">
+                <div className="card-premium p-8 sm:p-10">
                     {/* Header */}
-                    <div className="text-center mb-8">
-                        <Link href="/" className="block transition-transform hover:scale-105 active:scale-95 mb-4">
-                            <BrandLogo size="lg" className="mx-auto" />
+                    <div className="text-center mb-10">
+                        <Link href="/" className="inline-block transition-transform duration-300 hover:scale-[1.03] active:scale-95 mb-6">
+                            <div className="p-3 bg-gradient-indigo rounded-2xl shadow-xl flex items-center justify-center glow-indigo mx-auto w-16 h-16">
+                                <BrandLogo size="md" showText={false} variant="white" />
+                            </div>
                         </Link>
                         <h1 className="text-3xl font-serif font-bold text-brand-ebony mb-2">Welcome Back</h1>
-                        <p className="text-brand-ebony/60">Sign in to your alumni account</p>
+                        <p className="text-brand-ebony/60 text-sm font-medium">Sign in to your alumni account</p>
                     </div>
 
                     {/* Error Message */}
                     {error && (
-                        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-                            <p className="text-sm text-red-600">{error}</p>
+                        <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-xl flex items-center gap-3">
+                            <div className="w-1.5 h-1.5 rounded-full bg-red-500 flex-shrink-0" />
+                            <p className="text-sm text-red-600 dark:text-red-400 font-medium">{error}</p>
                         </div>
                     )}
 
                     {/* Form */}
                     <form onSubmit={handleSubmit} className="space-y-5">
                         <div>
-                            <label className="block text-sm font-bold text-brand-ebony/70 mb-2 uppercase tracking-widest">
+                            <label className="block text-[11px] font-bold text-brand-ebony/60 mb-2 uppercase tracking-[0.15em]">
                                 Email Address
                             </label>
                             <input
@@ -89,13 +84,13 @@ export default function LoginPage() {
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
                                 placeholder="your.email@example.com"
-                                className="w-full px-4 py-3 bg-white/50 border border-brand-ebony/10 rounded-xl focus:ring-2 focus:ring-brand-burgundy/20 focus:border-brand-burgundy transition outline-none text-brand-ebony placeholder-brand-ebony/40"
+                                className="w-full px-4 py-3.5 input-premium rounded-xl text-sm font-medium"
                                 disabled={loading}
                             />
                         </div>
 
                         <div>
-                            <label className="block text-sm font-bold text-brand-ebony/70 mb-2 uppercase tracking-widest">
+                            <label className="block text-[11px] font-bold text-brand-ebony/60 mb-2 uppercase tracking-[0.15em]">
                                 Password
                             </label>
                             <div className="relative">
@@ -104,56 +99,61 @@ export default function LoginPage() {
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
                                     placeholder="Enter your password"
-                                    className="w-full px-4 py-3 bg-white/50 border border-brand-ebony/10 rounded-xl focus:ring-2 focus:ring-brand-burgundy/20 focus:border-brand-burgundy transition outline-none pr-12 text-brand-ebony placeholder-brand-ebony/40"
+                                    className="w-full px-4 py-3.5 input-premium rounded-xl text-sm font-medium pr-12"
                                     disabled={loading}
                                 />
                                 <button
                                     type="button"
                                     onClick={() => setShowPassword(!showPassword)}
-                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-brand-ebony/40 hover:text-brand-burgundy"
+                                    className="absolute right-4 top-1/2 -translate-y-1/2 text-brand-ebony/40 hover:text-brand-burgundy transition-colors"
                                 >
-                                    {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                                 </button>
                             </div>
                         </div>
 
-                        <button
-                            type="submit"
-                            disabled={loading}
-                            className="w-full py-3 bg-brand-burgundy text-white rounded-xl font-bold hover:bg-[#5a2427] transition-all shadow-md shadow-brand-burgundy/20 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed uppercase tracking-widest text-sm"
-                        >
-                            {loading ? (
-                                <span className="flex items-center justify-center gap-2">
-                                    <Loader2 className="w-5 h-5 animate-spin" />
-                                    Signing in...
+                        <div className="pt-2">
+                            <button
+                                type="submit"
+                                disabled={loading}
+                                className="w-full py-3.5 bg-gradient-indigo text-white rounded-xl font-bold hover:shadow-[0_0_20px_rgba(99,102,241,0.4)] transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed uppercase tracking-widest text-xs shimmer overflow-hidden relative"
+                            >
+                                <span className="relative z-10 flex items-center justify-center gap-2">
+                                    {loading ? (
+                                        <>
+                                            <Loader2 className="w-4 h-4 animate-spin" />
+                                            Signing in...
+                                        </>
+                                    ) : (
+                                        'Sign In'
+                                    )}
                                 </span>
-                            ) : (
-                                'Sign In'
-                            )}
-                        </button>
+                            </button>
+                        </div>
                     </form>
 
                     {/* Divider */}
-                    <div className="my-6 flex items-center gap-4">
-                        <div className="flex-1 border-t border-gray-300"></div>
-                        <span className="text-sm text-gray-500">or</span>
-                        <div className="flex-1 border-t border-gray-300"></div>
+                    <div className="my-8 flex items-center gap-4">
+                        <div className="flex-1 h-px bg-gradient-to-r from-transparent via-brand-ebony/10 to-brand-ebony/10" />
+                        <span className="text-[10px] uppercase font-bold tracking-widest text-brand-ebony/30">or</span>
+                        <div className="flex-1 h-px bg-gradient-to-l from-transparent via-brand-ebony/10 to-brand-ebony/10" />
                     </div>
 
                     {/* Sign Up Link */}
                     <div className="text-center">
-                        <p className="text-brand-ebony/60">
+                        <p className="text-sm text-brand-ebony/60 font-medium">
                             Don&apos;t have an account?{' '}
-                            <Link href="/signup" className="text-brand-burgundy hover:underline font-bold">
+                            <Link href="/signup" className="text-brand-burgundy hover:text-indigo-500 font-bold ml-1 transition-colors relative group">
                                 Sign Up
+                                <span className="absolute bottom-0 left-0 w-full h-[2px] bg-brand-burgundy scale-x-0 group-hover:scale-x-100 transition-transform origin-left rounded-full" />
                             </Link>
                         </p>
                     </div>
                 </div>
 
                 {/* Footer */}
-                <p className="text-center text-xs font-bold text-brand-ebony/40 mt-6 uppercase tracking-[0.2em]">
-                    © 2024 Alumnest • For the Tribe.
+                <p className="text-center text-[10px] font-bold text-brand-ebony/30 mt-8 uppercase tracking-[0.25em]">
+                    © {new Date().getFullYear()} Alumnest • For the Tribe.
                 </p>
             </div>
         </div>

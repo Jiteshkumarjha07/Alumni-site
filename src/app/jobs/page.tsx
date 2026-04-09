@@ -8,7 +8,7 @@ import { Job } from '@/types';
 import { JobCard } from '@/components/jobs/JobCard';
 import { CreateOpportunityModal, OpportunityFormData } from '@/components/modals/CreateOpportunityModal';
 import { ConfirmDialog } from '@/components/modals/ConfirmDialog';
-import { Briefcase, Plus } from 'lucide-react';
+import { Briefcase, Plus, Sparkles } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useMemo } from 'react';
 import { JobSkeleton } from '@/components/jobs/JobSkeleton';
@@ -38,7 +38,7 @@ export default function JobsPage() {
             collection(db, 'opportunities'),
             where('instituteId', '==', userData.instituteId),
             orderBy('createdAt', 'desc'),
-            limit(20) // Only load the most recent 20 jobs to improve performance
+            limit(20)
         );
 
         const unsubscribe = onSnapshot(jobsQuery, (snapshot) => {
@@ -102,47 +102,55 @@ export default function JobsPage() {
     if (authLoading || (!userData && !authLoading)) {
         return (
             <div className="flex items-center justify-center min-h-screen">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-burgundy mx-auto mb-4"></div>
+                <div className="relative w-16 h-16">
+                     <div className="absolute inset-0 rounded-full border-4 border-brand-burgundy/20"></div>
+                     <div className="absolute inset-0 rounded-full border-4 border-brand-burgundy border-t-transparent animate-spin"></div>
+                </div>
             </div>
         );
     }
 
-    // Now we are sure userData is not null
     const currentUser = userData!;
 
-
-
     return (
-        <div className="max-w-4xl mx-auto px-4 md:px-8 pt-8 pb-12 w-full">
+        <div className="max-w-4xl mx-auto px-4 md:px-8 pt-8 pb-12 w-full animate-fade-up">
             {/* Header */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 sm:mb-8">
-                <div className="flex items-center gap-3">
-                    <div className="bg-brand-burgundy/10 p-2 sm:p-3 rounded-xl border border-brand-burgundy/20 hidden sm:block">
-                        <Briefcase className="w-6 h-6 sm:w-8 sm:h-8 text-brand-burgundy" />
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+                <div className="flex items-center gap-4">
+                    <div className="bg-gradient-indigo p-2.5 sm:p-3 rounded-xl shadow-lg shadow-brand-burgundy/20 hidden sm:block">
+                        <Briefcase className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
                     </div>
-                    <h1 className="text-2xl sm:text-3xl font-serif font-bold text-brand-ebony">
-                        Jobs
-                        <span className="hidden sm:inline"> Opportunities</span>
-                    </h1>
+                    <div>
+                        <div className="flex items-center gap-3">
+                            <div className="page-header-accent glow-indigo sm:hidden"></div>
+                            <h1 className="text-3xl sm:text-4xl font-serif font-extrabold text-brand-ebony flex items-center gap-2">
+                                Job Board
+                                <Sparkles className="w-5 h-5 text-brand-gold animate-pulse sm:hidden" />
+                            </h1>
+                        </div>
+                        <p className="text-sm text-brand-ebony/50 mt-1 hidden sm:block font-medium">Discover career opportunities from your network</p>
+                    </div>
                 </div>
                 <button
                     onClick={() => setShowCreateModal(true)}
-                    className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-3 sm:px-5 sm:py-2.5 bg-brand-burgundy text-white text-sm sm:text-sm rounded-xl hover:bg-[#5a2427] shadow-sm transition-all font-semibold tracking-wide active:scale-[0.98]"
+                    className="w-full sm:w-auto flex items-center justify-center gap-2 px-5 py-3 bg-gradient-indigo text-white text-sm rounded-xl hover:shadow-[0_0_20px_rgba(99,102,241,0.4)] transition-all font-semibold tracking-wide active:scale-[0.98] shimmer relative overflow-hidden"
                 >
-                    <Plus className="w-5 h-5" />
-                    <span>Post a Job</span>
+                    <span className="relative z-10 flex items-center gap-2">
+                        <Plus className="w-4 h-4" />
+                        <span>Post a Job</span>
+                    </span>
                 </button>
             </div>
 
             {/* Filters */}
-            <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
+            <div className="flex gap-2.5 mb-8 overflow-x-auto pb-3 scrollbar-hide">
                 {['all', 'Full-time', 'Part-time', 'Freelance/Contract', 'Internship'].map((type) => (
                     <button
                         key={type}
                         onClick={() => setFilterType(type)}
-                        className={`px-5 py-2 rounded-full font-medium whitespace-nowrap transition text-sm ${filterType === type
-                            ? 'bg-brand-burgundy text-white shadow-sm'
-                            : 'bg-brand-parchment/50 text-brand-ebony/70 hover:bg-brand-parchment border border-brand-ebony/10'
+                        className={`px-5 py-2.5 rounded-xl font-bold whitespace-nowrap transition-all text-xs tracking-wider uppercase ${filterType === type
+                            ? 'bg-brand-burgundy text-white shadow-md shadow-brand-burgundy/20'
+                            : 'bg-brand-cream/50 dark:bg-white/5 text-brand-ebony/60 hover:text-brand-ebony border border-brand-ebony/10 hover:border-brand-burgundy/30 hover:bg-brand-burgundy/5'
                             }`}
                     >
                         {type === 'all' ? 'All Jobs' : type}
@@ -153,7 +161,6 @@ export default function JobsPage() {
             {/* Jobs List */}
             <div className="space-y-4">
                 {loading ? (
-                    // Shimmering Skeletons
                     Array.from({ length: 4 }).map((_, i) => (
                         <JobSkeleton key={i} />
                     ))
@@ -167,14 +174,17 @@ export default function JobsPage() {
                         />
                     ))
                 ) : (
-                    <div className="bg-brand-parchment/50 border border-brand-ebony/10 rounded-xl shadow-sm p-12 text-center">
-                        <Briefcase className="w-16 h-16 text-brand-ebony/20 mx-auto mb-4" />
-                        <p className="text-brand-ebony/60 font-medium">No job opportunities available</p>
+                    <div className="card-premium p-16 text-center border-dashed border-2 border-brand-ebony/10">
+                        <div className="w-16 h-16 bg-brand-burgundy/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <Briefcase className="w-8 h-8 text-brand-burgundy/60" />
+                        </div>
+                        <p className="text-brand-ebony/60 font-medium font-serif italic text-lg mb-1">No job opportunities available</p>
+                        <p className="text-brand-ebony/40 text-sm mb-6">Be the first to post an opportunity for the network.</p>
                         <button
                             onClick={() => setShowCreateModal(true)}
-                            className="mt-4 text-brand-burgundy hover:text-[#5a2427] font-semibold tracking-wide"
+                            className="text-brand-burgundy hover:text-indigo-500 font-bold tracking-wide text-sm bg-brand-burgundy/10 hover:bg-brand-burgundy/20 px-6 py-2.5 rounded-lg transition-colors inline-block"
                         >
-                            Post the first opportunity
+                            Post an opportunity
                         </button>
                     </div>
                 )}

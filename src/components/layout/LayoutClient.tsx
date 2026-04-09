@@ -69,7 +69,7 @@ export function LayoutClient({ children }: { children: React.ReactNode }) {
             <MessagingProvider>
                 <div className="flex flex-col min-h-screen">
                     <Sidebar />
-                    <main className={`min-h-screen ${(userData && !pathname.startsWith('/admin')) ? 'md:pl-64' : ''} ${isMobile && !pathname.startsWith('/admin') ? 'pb-24' : 'pb-8'}`}>
+                    <main className={`min-h-screen ${(userData && !pathname.startsWith('/admin')) ? 'md:pt-[84px]' : ''} ${isMobile && !pathname.startsWith('/admin') ? 'pb-24' : 'pb-8'} relative z-0`}>
                 <div className="mx-auto w-full overflow-x-hidden">
                     {isMobile ? (
                         <AnimatePresence initial={false} custom={direction}>

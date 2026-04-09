@@ -6,7 +6,7 @@ import { collection, query, onSnapshot, updateDoc, arrayUnion, arrayRemove, doc,
 import { db } from '@/lib/firebase';
 import { User } from '@/types';
 import { AlumniCard } from '@/components/network/AlumniCard';
-import { Users, Search } from 'lucide-react';
+import { Users, Search, Sparkles } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 export default function NetworkPage() {
@@ -126,32 +126,39 @@ export default function NetworkPage() {
     if (authLoading || loading) {
         return (
             <div className="flex items-center justify-center min-h-screen">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+                <div className="relative w-16 h-16">
+                     <div className="absolute inset-0 rounded-full border-4 border-brand-burgundy/20"></div>
+                     <div className="absolute inset-0 rounded-full border-4 border-brand-burgundy border-t-transparent animate-spin"></div>
+                </div>
             </div>
         );
     }
 
     if (!userData) return null; // Wait for redirect
 
-
-
     return (
-        <div className="max-w-4xl mx-auto px-4 md:px-8 pt-8 pb-12 w-full">
+        <div className="max-w-5xl mx-auto px-4 md:px-8 pt-8 pb-12 w-full animate-fade-up">
             {/* Header */}
             <div className="flex items-center gap-4 mb-8">
-                <div className="bg-brand-burgundy/10 p-3 rounded-xl border border-brand-burgundy/20">
-                    <Users className="w-8 h-8 text-brand-burgundy" />
-                </div>
-                <h1 className="text-3xl font-serif font-bold text-brand-ebony">Alumni Network</h1>
+                <div className="page-header-accent glow-indigo"></div>
+                <h1 className="text-3xl sm:text-4xl font-serif font-extrabold text-brand-ebony tracking-tight flex items-center gap-3">
+                    Alumni Network
+                    <Sparkles className="w-6 h-6 text-brand-gold animate-pulse" />
+                </h1>
             </div>
 
             {/* Pending Requests Section */}
             {userData.pendingRequests && userData.pendingRequests.length > 0 && (
-                <div className="bg-brand-gold/10 border border-brand-gold/20 rounded-xl p-4 mb-6 shadow-sm">
-                    <h2 className="font-semibold text-brand-ebony mb-3 font-serif text-lg flex items-center gap-2">
-                        Connection Requests <span className="text-sm bg-brand-gold text-white px-2 py-0.5 rounded-full">{userData.pendingRequests.length}</span>
+                <div className="card-premium border-brand-gold/30 p-5 mb-8 outline outline-1 outline-brand-gold/20 shadow-[0_0_30px_rgba(251,191,36,0.1)] relative overflow-hidden">
+                    <div className="absolute top-0 right-0 w-64 h-64 bg-brand-gold/10 blur-[60px] rounded-full pointer-events-none -translate-y-1/2 translate-x-1/4" />
+                    
+                    <h2 className="font-semibold text-brand-ebony mb-4 text-lg flex items-center gap-2 relative z-10">
+                        Connection Requests 
+                        <span className="text-xs bg-gradient-gold text-brand-cream px-2.5 py-0.5 rounded-full shadow-sm font-bold ml-1">
+                            {userData.pendingRequests.length}
+                        </span>
                     </h2>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 relative z-10">
                         {allUsers
                             .filter(user => userData.pendingRequests?.includes(user.uid))
                             .map(user => (
@@ -170,33 +177,38 @@ export default function NetworkPage() {
             )}
 
             {/* Search and Filters */}
-            <div className="bg-brand-parchment/80 rounded-xl shadow-sm border border-brand-ebony/10 p-4 mb-8">
+            <div className="card-premium p-4 mb-8">
                 <div className="flex flex-col md:flex-row gap-4">
-                    <div className="flex-1 relative">
-                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-brand-ebony/40" />
+                    <div className="flex-1 relative group">
+                        <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-brand-ebony/40 group-focus-within:text-brand-burgundy transition-colors" />
                         <input
                             type="text"
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                             placeholder="Search by name or profession..."
-                            className="w-full pl-10 pr-4 py-2 border border-brand-ebony/20 rounded-lg focus:ring-2 focus:ring-brand-burgundy focus:border-transparent bg-white/50 text-brand-ebony placeholder-brand-ebony/40 font-medium"
+                            className="w-full pl-12 pr-4 py-3 input-premium font-medium rounded-xl transition-all"
                         />
                     </div>
-                    <select
-                        value={filterBatch}
-                        onChange={(e) => setFilterBatch(e.target.value)}
-                        className="px-4 py-2 border border-brand-ebony/20 rounded-lg focus:ring-2 focus:ring-brand-burgundy focus:border-transparent bg-white/50 text-brand-ebony font-medium"
-                    >
-                        <option value="all">All Batches</option>
-                        {batches.map(batch => (
-                            <option key={batch} value={batch}>Batch of {batch}</option>
-                        ))}
-                    </select>
+                    <div className="relative md:w-64">
+                        <select
+                            value={filterBatch}
+                            onChange={(e) => setFilterBatch(e.target.value)}
+                            className="w-full px-4 py-3 input-premium font-medium rounded-xl appearance-none pr-10 cursor-pointer"
+                        >
+                            <option value="all">All Batches</option>
+                            {batches.map(batch => (
+                                <option key={batch} value={batch}>Batch of {batch}</option>
+                            ))}
+                        </select>
+                        <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
+                            <span className="border-l-[5px] border-r-[5px] border-t-[5px] border-transparent border-t-brand-ebony/50 block"></span>
+                        </div>
+                    </div>
                 </div>
             </div>
 
             {/* Alumni Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                 {filteredUsers.length > 0 ? (
                     filteredUsers.map(user => (
                         <AlumniCard
@@ -210,9 +222,12 @@ export default function NetworkPage() {
                         />
                     ))
                 ) : (
-                    <div className="col-span-full bg-brand-parchment/50 border border-brand-ebony/10 rounded-xl shadow-sm p-12 text-center">
-                        <Users className="w-16 h-16 text-brand-ebony/20 mx-auto mb-4" />
-                        <p className="text-brand-ebony/60 font-medium text-lg font-serif italic">No alumni found matching your criteria</p>
+                    <div className="col-span-full card-premium p-16 text-center border-dashed border-2 border-brand-ebony/10">
+                        <div className="w-16 h-16 bg-brand-ebony/5 rounded-full flex items-center justify-center mx-auto mb-4 border border-brand-ebony/10">
+                            <Users className="w-8 h-8 text-brand-ebony/30" />
+                        </div>
+                        <p className="text-brand-ebony/60 font-medium text-lg font-serif italic mb-1">No alumni found</p>
+                        <p className="text-brand-ebony/40 text-sm">Try adjusting your search filters.</p>
                     </div>
                 )}
             </div>

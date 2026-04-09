@@ -78,7 +78,6 @@ export default function ProfilePage() {
                     return;
                 }
 
-                // Fetch full user objects for all connections
                 const usersRef = collection(db, 'users');
                 const q = query(usersRef, where('uid', 'in', connectionIds));
                 const snapshot = await getDocs(q);
@@ -108,8 +107,6 @@ export default function ProfilePage() {
                     return;
                 }
 
-                // Fetch group objects individually to avoid the 10-item limit of 'in' queries
-                // and to guarantee we get the correct doc IDs
                 const groupPromises = groupIds.map(async (groupId) => {
                     const groupDoc = await getDoc(doc(db, 'groups', groupId));
                     if (groupDoc.exists()) {
@@ -142,9 +139,8 @@ export default function ProfilePage() {
                 location: formData.location,
             };
 
-            // Handle profile picture
             if (isRemovingPic) {
-                updates.profilePic = `https://placehold.co/100x100/1e293b/f8fafc?text=${formData.name.substring(0, 2).toUpperCase()}`;
+                updates.profilePic = `https://placehold.co/100x100/4f46e5/ffffff?text=${formData.name.substring(0, 2).toUpperCase()}`;
             } else if (profilePicFile) {
                 const uploadedUrl = await uploadMedia(profilePicFile);
                 if (uploadedUrl) {
@@ -152,10 +148,8 @@ export default function ProfilePage() {
                 }
             }
 
-            // Update user document
             await updateDoc(userRef, updates);
 
-            // Update profile info on all posts by this user
             const postsQuery = query(collection(db, 'posts'), where('authorUid', '==', userData.uid));
             const postsSnapshot = await getDocs(postsQuery);
 
@@ -168,9 +162,6 @@ export default function ProfilePage() {
             });
 
             await Promise.all(updatePromises);
-
-            // Show success message
-            alert('Profile updated successfully!');
         } catch (error) {
             console.error('Error updating profile:', error);
             alert('Failed to update profile. Please try again.');
@@ -205,7 +196,9 @@ export default function ProfilePage() {
             authorUid: userData.uid,
             authorName: userData.name,
             text,
-            createdAt: new Date()
+            createdAt: new Date(),
+            id: Math.random().toString(36).substring(2, 9),
+            reactions: {}
         };
 
         const updatedComments = [...(post.comments || []), newComment];
@@ -221,6 +214,36 @@ export default function ProfilePage() {
         });
     };
 
+    const handleReactComment = async (comment: AppComment, emoji: string) => {
+        if (!userData || !commentingPost) return;
+
+        const post = posts.find((p) => p.id === commentingPost.id);
+        if (!post) return;
+
+        const updatedComments = (post.comments || []).map(c => {
+          const isMatch = c.id ? c.id === comment.id : (c.text === comment.text && c.authorUid === comment.authorUid);
+          if (isMatch) {
+            const reactions = { ...(c.reactions || {}) };
+            const hasReactedWithThis = reactions[emoji]?.includes(userData.uid);
+            
+            Object.keys(reactions).forEach(key => {
+              reactions[key] = (reactions[key] || []).filter(id => id !== userData.uid);
+              if (reactions[key].length === 0) delete reactions[key];
+            });
+
+            if (!hasReactedWithThis) {
+              reactions[emoji] = [...(reactions[emoji] || []), userData.uid];
+            }
+            return { ...c, reactions };
+          }
+          return c;
+        });
+
+        const postRef = doc(db, 'posts', commentingPost.id);
+        updateDoc(postRef, { comments: updatedComments }).catch(console.error);
+    };
+
+
     const handleChangePassword = async (newPassword: string) => {
         if (!user) return;
         await updatePassword(user, newPassword);
@@ -231,7 +254,6 @@ export default function ProfilePage() {
 
         setDeleting(true);
         try {
-            // 1. Delete all user posts
             const postsQuery = query(collection(db, 'posts'), where('authorUid', '==', userData.uid));
             const postsSnapshot = await getDocs(postsQuery);
             const batch = writeBatch(db);
@@ -240,10 +262,7 @@ export default function ProfilePage() {
             });
             await batch.commit();
 
-            // 2. Delete user document
             await deleteDoc(doc(db, 'users', userData.uid));
-
-            // 3. Delete auth account
             await deleteUser(user);
 
             window.location.href = '/signup';
@@ -271,9 +290,9 @@ export default function ProfilePage() {
     if (authLoading || loading) {
         return (
             <div className="flex items-center justify-center min-h-screen">
-                <div className="text-center">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-burgundy mx-auto mb-4"></div>
-                    <p className="text-gray-600">Loading profile...</p>
+                <div className="relative w-16 h-16 mx-auto mb-6">
+                     <div className="absolute inset-0 rounded-full border-4 border-brand-burgundy/20"></div>
+                     <div className="absolute inset-0 rounded-full border-4 border-brand-burgundy border-t-transparent animate-spin"></div>
                 </div>
             </div>
         );
@@ -284,124 +303,100 @@ export default function ProfilePage() {
     }
 
     return (
-        <div className="max-w-4xl mx-auto px-4 md:px-8 pt-8 pb-12 w-full">
-            {/* Cover Photo Area */}
-            <div className="bg-gradient-to-r from-brand-burgundy to-[#4a1c20] h-32 sm:h-40 md:h-48 rounded-t-xl opacity-90 border-b-4 border-brand-gold/60 relative">
+        <div className="max-w-4xl mx-auto px-4 md:px-8 pt-8 pb-12 w-full animate-fade-up">
+            {/* Cover Photo */}
+            <div className="bg-gradient-indigo h-32 sm:h-48 md:h-56 rounded-t-3xl relative overflow-hidden">
+                {/* Decorative graphics */}
+                <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full mix-blend-overlay filter blur-[40px] -translate-y-1/2 translate-x-1/4"></div>
+                <div className="absolute bottom-0 left-10 w-48 h-48 bg-brand-gold/30 rounded-full mix-blend-overlay filter blur-[40px] translate-y-1/2"></div>
+                
                 <button
                     onClick={() => setShowAccountSettings(true)}
-                    className="absolute top-4 right-4 p-2.5 bg-white/15 hover:bg-white/25 backdrop-blur-sm text-white rounded-xl transition-all border border-white/20 shadow-md"
+                    className="absolute top-4 right-4 p-2.5 bg-black/20 hover:bg-black/40 backdrop-blur-md text-white rounded-xl transition-all border border-white/20 shadow-md"
                     title="Account Settings"
                 >
                     <Settings className="w-5 h-5" />
                 </button>
             </div>
 
-            {/* Profile Header */}
-            <div className="bg-brand-parchment/90 rounded-b-xl shadow-md p-4 sm:p-6 -mt-12 sm:-mt-16 md:-mt-20 relative border border-brand-ebony/10 z-10">
-
-
-                <div className="flex flex-col md:flex-row items-center md:items-end gap-6">
-                    {/* Profile Picture */}
-                    <div className="relative">
-                        <Image
-                            src={userData.profilePic || `https://placehold.co/150x150/1e293b/f8fafc?text=${userData.name.substring(0, 1)}`}
-                            alt={userData.name}
-                            width={128}
-                            height={128}
-                            className="w-24 h-24 sm:w-32 sm:h-32 rounded-full border-4 border-brand-cream shadow-lg object-cover bg-brand-cream"
-                            unoptimized
-                        />
+            {/* Profile Content */}
+            <div className="card-premium rounded-t-none rounded-b-3xl shadow-sm p-4 sm:p-8 -mt-12 sm:-mt-20 md:-mt-24 relative z-10 mx-2 sm:mx-0">
+                <div className="flex flex-col md:flex-row items-center md:items-end gap-6 border-b border-brand-ebony/10 pb-8">
+                    {/* Avatar */}
+                    <div className="relative group">
+                        <div className="w-28 h-28 sm:w-36 sm:h-36 rounded-full border-[6px] border-white dark:border-[#0f172a] shadow-xl overflow-hidden bg-brand-cream relative z-10 transition-transform duration-300 group-hover:scale-105">
+                            <Image
+                                src={userData.profilePic || `https://placehold.co/150x150/4f46e5/ffffff?text=${userData.name.substring(0, 1)}`}
+                                alt={userData.name}
+                                fill
+                                className="object-cover"
+                                unoptimized
+                            />
+                        </div>
                     </div>
 
-                    {/* User Info */}
+                    {/* Info */}
                     <div className="flex-1 text-center md:text-left pt-2">
-                        <h1 className="text-3xl sm:text-4xl font-serif font-bold text-brand-ebony">{userData.name}</h1>
-                        <p className="text-base sm:text-lg text-brand-ebony/70 mt-1 italic font-serif">Class of {userData.batch}</p>
+                        <h1 className="text-3xl sm:text-4xl font-serif font-extrabold text-brand-ebony mb-1 tracking-tight">{userData.name}</h1>
+                        
+                        <div className="flex items-center justify-center md:justify-start gap-3 text-sm font-bold uppercase tracking-widest text-brand-ebony/50 mb-3">
+                            <span>Batch of {userData.batch}</span>
+                        </div>
 
-                        <div className="flex flex-col md:flex-row gap-3 sm:gap-4 mt-3 text-brand-ebony/80 font-medium text-xs sm:text-sm tracking-wide">
+                        <div className="flex flex-col md:flex-row gap-3 sm:gap-4 mt-3 text-brand-ebony/70 font-medium text-sm">
                             {userData.profession && (
-                                <div className="flex items-center justify-center md:justify-start gap-2">
-                                    <Briefcase className="w-4 h-4 text-brand-burgundy/80" />
+                                <div className="flex items-center justify-center md:justify-start gap-2 bg-brand-burgundy/5 px-3 py-1.5 rounded-lg border border-brand-burgundy/10">
+                                    <Briefcase className="w-4 h-4 text-brand-burgundy" />
                                     <span>{userData.profession}</span>
                                 </div>
                             )}
                             {userData.location && (
-                                <div className="flex items-center justify-center md:justify-start gap-2">
-                                    <MapPin className="w-4 h-4 text-brand-burgundy/80" />
+                                <div className="flex items-center justify-center md:justify-start gap-2 bg-brand-burgundy/5 px-3 py-1.5 rounded-lg border border-brand-burgundy/10">
+                                    <MapPin className="w-4 h-4 text-brand-burgundy" />
                                     <span>{userData.location}</span>
                                 </div>
                             )}
                         </div>
                     </div>
 
-                    {/* Edit Button */}
+                    {/* Edit Btn */}
                     <button
                         onClick={() => setShowEditProfile(true)}
-                        className="flex items-center gap-2 px-6 py-2.5 bg-brand-burgundy text-white rounded-lg hover:bg-[#5a2427] transition font-semibold tracking-wide shadow-sm text-sm"
+                        className="flex items-center gap-2 px-6 py-3 bg-white dark:bg-white/5 text-brand-ebony rounded-xl hover:bg-brand-parchment transition border border-brand-ebony/10 shadow-sm text-sm font-bold tracking-wide hover:border-brand-burgundy/30 uppercase"
                     >
                         <Pencil className="w-4 h-4" />
                         Edit Profile
                     </button>
                 </div>
 
-                {/* Stats / Tabs */}
-                <div className="grid grid-cols-3 gap-2 sm:gap-4 mt-6 pt-6 border-t border-brand-ebony/10">
+                {/* Stats */}
+                <div className="grid grid-cols-3 gap-2 px-2 sm:px-6 mt-6">
                     <button 
                         onClick={() => setActiveTab('posts')}
-                        className={`text-center p-2 rounded-xl transition ${activeTab === 'posts' ? 'bg-brand-burgundy/5 ring-1 ring-brand-burgundy/20' : 'hover:bg-brand-ebony/5'}`}
+                        className={`text-center p-3 rounded-2xl transition-all ${activeTab === 'posts' ? 'bg-gradient-to-b from-brand-burgundy/10 to-transparent border-t border-brand-burgundy/20' : 'hover:bg-brand-ebony/5 object-bottom'}`}
                     >
-                        <p className="text-xl sm:text-2xl font-bold text-brand-ebony font-serif">{posts.length}</p>
-                        <p className="text-[10px] sm:text-xs text-brand-ebony/60 uppercase tracking-widest font-bold mt-1">Posts</p>
+                        <p className="text-2xl sm:text-3xl font-bold text-brand-ebony font-serif">{posts.length}</p>
+                        <p className="text-[10px] sm:text-xs text-brand-ebony/50 uppercase tracking-[0.2em] font-bold mt-1">Posts</p>
                     </button>
                     <button 
                         onClick={() => setActiveTab('connections')}
-                        className={`text-center border-l w-full border-brand-ebony/10 p-2 rounded-xl transition ${activeTab === 'connections' ? 'bg-brand-burgundy/5 ring-1 ring-brand-burgundy/20' : 'hover:bg-brand-ebony/5'}`}
+                        className={`text-center p-3 rounded-2xl transition-all ${activeTab === 'connections' ? 'bg-gradient-to-b from-brand-burgundy/10 to-transparent border-t border-brand-burgundy/20' : 'hover:bg-brand-ebony/5 object-bottom'}`}
                     >
-                        <p className="text-xl sm:text-2xl font-bold text-brand-ebony font-serif">{userData.connections?.length || 0}</p>
-                        <p className="text-[10px] sm:text-xs text-brand-ebony/60 uppercase tracking-widest font-bold mt-1">Connections</p>
+                        <p className="text-2xl sm:text-3xl font-bold text-brand-ebony font-serif">{userData.connections?.length || 0}</p>
+                        <p className="text-[10px] sm:text-xs text-brand-ebony/50 uppercase tracking-[0.2em] font-bold mt-1">Network</p>
                     </button>
                     <button 
                         onClick={() => setActiveTab('groups')}
-                        className={`text-center border-l w-full border-brand-ebony/10 p-2 rounded-xl transition ${activeTab === 'groups' ? 'bg-brand-burgundy/5 ring-1 ring-brand-burgundy/20' : 'hover:bg-brand-ebony/5'}`}
+                        className={`text-center p-3 rounded-2xl transition-all ${activeTab === 'groups' ? 'bg-gradient-to-b from-brand-burgundy/10 to-transparent border-t border-brand-burgundy/20' : 'hover:bg-brand-ebony/5 object-bottom'}`}
                     >
-                        <p className="text-xl sm:text-2xl font-bold text-brand-ebony font-serif">{userData.groups?.length || 0}</p>
-                        <p className="text-[10px] sm:text-xs text-brand-ebony/60 uppercase tracking-widest font-bold mt-1">Groups</p>
+                        <p className="text-2xl sm:text-3xl font-bold text-brand-ebony font-serif">{userData.groups?.length || 0}</p>
+                        <p className="text-[10px] sm:text-xs text-brand-ebony/50 uppercase tracking-[0.2em] font-bold mt-1">Groups</p>
                     </button>
                 </div>
             </div>
 
-            {/* Content Tabs Navigation */}
-            <div className="mt-8">
-                <div className="flex border-b border-brand-ebony/10 mb-6 overflow-x-auto scrollbar-hide">
-                    <button
-                        onClick={() => setActiveTab('posts')}
-                        className={`pb-3 px-6 text-xs sm:text-sm font-bold uppercase tracking-widest transition-all relative flex-shrink-0 ${
-                            activeTab === 'posts' ? 'text-brand-burgundy' : 'text-brand-ebony/40 hover:text-brand-ebony/60'
-                        }`}
-                    >
-                        My Feed
-                        {activeTab === 'posts' && <div className="absolute bottom-0 left-0 right-0 h-1 bg-brand-burgundy rounded-t-full" />}
-                    </button>
-                    <button
-                        onClick={() => setActiveTab('connections')}
-                        className={`pb-3 px-6 text-xs sm:text-sm font-bold uppercase tracking-widest transition-all relative flex-shrink-0 ${
-                            activeTab === 'connections' ? 'text-brand-burgundy' : 'text-brand-ebony/40 hover:text-brand-ebony/60'
-                        }`}
-                    >
-                        Connections
-                        {activeTab === 'connections' && <div className="absolute bottom-0 left-0 right-0 h-1 bg-brand-burgundy rounded-t-full" />}
-                    </button>
-                    <button
-                        onClick={() => setActiveTab('groups')}
-                        className={`pb-3 px-6 text-xs sm:text-sm font-bold uppercase tracking-widest transition-all relative flex-shrink-0 ${
-                            activeTab === 'groups' ? 'text-brand-burgundy' : 'text-brand-ebony/40 hover:text-brand-ebony/60'
-                        }`}
-                    >
-                        Groups
-                        {activeTab === 'groups' && <div className="absolute bottom-0 left-0 right-0 h-1 bg-brand-burgundy rounded-t-full" />}
-                    </button>
-                </div>
-
+            {/* Tabs content block */}
+            <div className="mt-6 mx-2 sm:mx-0">
                 {activeTab === 'posts' ? (
                     <div className="space-y-4">
                         {posts.length > 0 ? (
@@ -416,18 +411,12 @@ export default function ProfilePage() {
                                 />
                             ))
                         ) : (
-                            <div className="bg-brand-parchment/80 border border-brand-ebony/10 rounded-xl shadow-sm p-12 text-center">
+                            <div className="card-premium p-12 text-center border-dashed border-2 border-brand-ebony/10">
                                 <div className="w-16 h-16 bg-brand-ebony/5 rounded-full flex items-center justify-center mx-auto mb-4 border border-brand-ebony/10">
                                     <Pencil className="w-8 h-8 text-brand-ebony/30" />
                                 </div>
                                 <p className="text-brand-ebony/70 text-lg mb-2 font-serif italic">No posts yet</p>
                                 <p className="text-brand-ebony/50 text-sm">Share your first post to get started!</p>
-                                <Link
-                                    href="/"
-                                    className="inline-block mt-4 px-6 py-2.5 bg-brand-burgundy text-white rounded-lg hover:bg-[#5a2427] transition font-semibold text-sm tracking-wide shadow-sm"
-                                >
-                                    Create Post
-                                </Link>
                             </div>
                         )}
                     </div>
@@ -436,30 +425,30 @@ export default function ProfilePage() {
                         {loadingConnections ? (
                             <div className="space-y-4">
                                 {[1, 2, 3].map(i => (
-                                    <div key={i} className="bg-brand-parchment/40 h-24 rounded-xl border border-brand-ebony/5 animate-pulse" />
+                                    <div key={i} className="card-premium h-24 animate-pulse border border-brand-ebony/5" />
                                 ))}
                             </div>
                         ) : connections.length > 0 ? (
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 {connections.map(connection => (
-                                    <div key={connection.uid} className="bg-brand-parchment/60 border border-brand-ebony/10 rounded-xl p-4 flex items-center gap-4 hover:shadow-md transition group">
+                                    <div key={connection.uid} className="card-premium p-4 flex items-center gap-4 hover:shadow-[0_4px_16px_rgba(79,70,229,0.08)] transition group">
                                         <Link href={`/profile/${connection.uid}`} className="block">
                                             <img 
-                                                src={connection.profilePic || `https://placehold.co/100x100/EFEFEFF/5a2427?text=${connection.name.substring(0, 1)}`}
+                                                src={connection.profilePic || `https://placehold.co/100x100/4f46e5/ffffff?text=${connection.name.substring(0, 1)}`}
                                                 alt={connection.name}
-                                                className="w-12 h-12 sm:w-14 sm:h-14 rounded-full border-2 border-white shadow-sm hover:opacity-80 transition"
+                                                className="w-14 h-14 rounded-full border-2 border-white dark:border-[#0f172a] shadow-sm hover:scale-105 transition-transform"
                                             />
                                         </Link>
                                         <div className="flex-1 min-w-0">
                                             <Link href={`/profile/${connection.uid}`} className="block w-fit">
-                                                <h3 className="font-serif font-bold text-brand-ebony truncate group-hover:text-brand-burgundy transition-colors">{connection.name}</h3>
+                                                <h3 className="font-semibold text-brand-ebony truncate group-hover:text-brand-burgundy transition-colors">{connection.name}</h3>
                                             </Link>
-                                            <p className="text-xs text-brand-ebony/60 truncate uppercase tracking-widest font-bold">Class of {connection.batch}</p>
-                                            <p className="text-sm text-brand-ebony/70 truncate mt-1">{connection.profession || 'Alumni'}</p>
+                                            <p className="text-[10px] text-brand-ebony/50 truncate uppercase tracking-widest font-bold">Class of {connection.batch}</p>
+                                            <p className="text-xs text-brand-ebony/60 truncate mt-1 font-medium">{connection.profession || 'Alumni'}</p>
                                         </div>
                                         <Link 
                                             href={`/messages?userId=${connection.uid}&name=${encodeURIComponent(connection.name)}&pic=${encodeURIComponent(connection.profilePic || '')}`}
-                                            className="p-2 text-brand-burgundy hover:bg-brand-burgundy hover:text-white rounded-full transition"
+                                            className="p-2.5 text-brand-ebony/40 bg-brand-ebony/5 hover:bg-gradient-indigo hover:text-white hover:border-transparent border border-brand-ebony/10 rounded-xl transition-all shadow-sm"
                                         >
                                             <MessageCircle className="w-5 h-5" />
                                         </Link>
@@ -467,18 +456,12 @@ export default function ProfilePage() {
                                 ))}
                             </div>
                         ) : (
-                            <div className="bg-brand-parchment/80 border border-brand-ebony/10 rounded-xl shadow-sm p-12 text-center">
+                            <div className="card-premium p-12 text-center border-dashed border-2 border-brand-ebony/10">
                                 <div className="w-16 h-16 bg-brand-ebony/5 rounded-full flex items-center justify-center mx-auto mb-4 border border-brand-ebony/10">
-                                    <span className="text-2xl">👥</span>
+                                    <Users className="w-8 h-8 text-brand-ebony/30" />
                                 </div>
                                 <p className="text-brand-ebony/70 text-lg mb-2 font-serif italic">No connections yet</p>
                                 <p className="text-brand-ebony/50 text-sm">Grow your network by connecting with fellow alumni!</p>
-                                <Link
-                                    href="/network"
-                                    className="inline-block mt-4 px-6 py-2.5 bg-brand-burgundy text-white rounded-lg hover:bg-[#5a2427] transition font-semibold text-sm tracking-wide shadow-sm"
-                                >
-                                    Find Alumni
-                                </Link>
                             </div>
                         )}
                     </div>
@@ -487,20 +470,20 @@ export default function ProfilePage() {
                         {loadingGroups ? (
                             <div className="space-y-4">
                                 {[1, 2].map(i => (
-                                    <div key={i} className="bg-brand-parchment/40 h-24 rounded-xl border border-brand-ebony/5 animate-pulse" />
+                                    <div key={i} className="card-premium h-24 animate-pulse border border-brand-ebony/5" />
                                 ))}
                             </div>
                         ) : userGroups.length > 0 ? (
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 {userGroups.map(group => (
-                                    <Link key={group.id} href={`/messages/group/${group.id}`} className="bg-brand-parchment/60 border border-brand-ebony/10 rounded-xl p-5 flex items-center justify-between hover:shadow-md transition group">
+                                    <Link key={group.id} href={`/messages/group/${group.id}`} className="card-premium p-5 flex items-center justify-between group hover:shadow-[0_4px_16px_rgba(79,70,229,0.08)] transition">
                                         <div className="flex items-center gap-4 min-w-0">
-                                            <div className="w-12 h-12 rounded-lg bg-brand-burgundy/10 flex items-center justify-center flex-shrink-0 text-brand-burgundy font-bold text-xl border border-brand-burgundy/20 group-hover:bg-brand-burgundy group-hover:text-white transition-colors">
+                                            <div className="w-12 h-12 rounded-xl bg-brand-burgundy/10 flex items-center justify-center flex-shrink-0 text-brand-burgundy font-bold text-xl border border-brand-burgundy/20 group-hover:bg-gradient-indigo group-hover:text-white transition-all shadow-sm">
                                                 {group.groupName.substring(0, 1).toUpperCase()}
                                             </div>
                                             <div className="min-w-0">
-                                                <h3 className="font-serif font-bold text-brand-ebony truncate text-lg group-hover:text-brand-burgundy transition-colors">{group.groupName}</h3>
-                                                <div className="flex items-center gap-1 mt-0.5 text-brand-ebony/50 text-xs font-bold uppercase tracking-wider">
+                                                <h3 className="font-semibold text-brand-ebony truncate group-hover:text-brand-burgundy transition-colors">{group.groupName}</h3>
+                                                <div className="flex items-center gap-1.5 mt-1 text-brand-ebony/50 text-[10px] font-bold uppercase tracking-widest">
                                                     <Users className="w-3.5 h-3.5" />
                                                     {group.members?.length || 0} Members
                                                 </div>
@@ -510,7 +493,7 @@ export default function ProfilePage() {
                                 ))}
                             </div>
                         ) : (
-                            <div className="bg-brand-parchment/80 border border-brand-ebony/10 rounded-xl shadow-sm p-12 text-center">
+                            <div className="card-premium p-12 text-center border-dashed border-2 border-brand-ebony/10">
                                 <div className="w-16 h-16 bg-brand-ebony/5 rounded-full flex items-center justify-center mx-auto mb-4 border border-brand-ebony/10">
                                     <Users className="w-8 h-8 text-brand-ebony/30" />
                                 </div>
@@ -524,11 +507,10 @@ export default function ProfilePage() {
 
             {/* Modals */}
             {(updating || deleting) && (
-                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[110]">
-                    <div className="bg-white rounded-2xl p-8 text-center shadow-2xl animate-in zoom-in duration-200 max-w-xs w-full">
-                        <Loader2 className="w-12 h-12 animate-spin text-brand-burgundy mx-auto mb-4" />
-                        <p className="text-gray-800 font-bold">{deleting ? 'Deleting Account...' : 'Updating Profile...'}</p>
-                        <p className="text-xs text-gray-500 mt-2">Please wait a moment</p>
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-[110]">
+                    <div className="card-premium p-8 text-center shadow-2xl animate-fade-up max-w-xs w-full">
+                        <Loader2 className="w-10 h-10 animate-spin text-brand-burgundy mx-auto mb-4" />
+                        <p className="text-brand-ebony font-bold text-sm tracking-wide uppercase">{deleting ? 'Deleting Account...' : 'Updating Profile...'}</p>
                     </div>
                 </div>
             )}
@@ -581,6 +563,7 @@ export default function ProfilePage() {
                     onClose={() => setCommentingPost(null)}
                     onSubmit={handleAddComment}
                     onDelete={handleDeleteComment}
+                    onReact={handleReactComment}
                     comments={posts.find(p => p.id === commentingPost.id)?.comments || []}
                     currentUserUid={userData.uid}
                     currentUserName={userData.name}
@@ -596,7 +579,7 @@ export default function ProfilePage() {
                 onAccountDeleted={() => { signOut(); }}
             />
 
-            <div className="py-4 text-center text-brand-ebony/30 text-[10px] font-serif italic tracking-widest">
+            <div className="py-6 text-center text-brand-ebony/30 text-[10px] font-bold uppercase tracking-[0.3em]">
                 Alumnest &bull; For the Tribe
             </div>
         </div>

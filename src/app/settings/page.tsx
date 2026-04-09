@@ -3,7 +3,7 @@
 import React from 'react';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useAuth } from '@/contexts/AuthContext';
-import { Moon, Sun, Monitor, Bell, Shield, User, Info, ArrowLeft } from 'lucide-react';
+import { Moon, Sun, Monitor, Bell, User, Info, ArrowLeft, Settings2 } from 'lucide-react';
 import Link from 'next/link';
 
 export default function SettingsPage() {
@@ -19,7 +19,7 @@ export default function SettingsPage() {
                     label: 'Theme',
                     description: 'Choose how Alumnest looks to you.',
                     content: (
-                        <div className="flex p-1 bg-brand-ebony/5 rounded-xl gap-1">
+                        <div className="flex p-1.5 bg-brand-ebony/5 rounded-xl gap-1 border border-brand-ebony/10">
                             {[
                                 { id: 'light', icon: Sun, label: 'Light' },
                                 { id: 'dark', icon: Moon, label: 'Dark' },
@@ -30,8 +30,8 @@ export default function SettingsPage() {
                                     onClick={() => setTheme(opt.id as 'light' | 'dark' | 'system')}
                                     className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
                                         theme === opt.id
-                                            ? 'bg-white shadow-sm text-brand-burgundy'
-                                            : 'text-brand-ebony/40 hover:text-brand-ebony'
+                                            ? 'bg-gradient-indigo text-white shadow-md'
+                                            : 'text-brand-ebony/40 hover:text-brand-ebony hover:bg-brand-ebony/5'
                                     }`}
                                 >
                                     <opt.icon className="w-4 h-4" />
@@ -53,7 +53,7 @@ export default function SettingsPage() {
                     content: (
                         <Link
                             href="/profile"
-                            className="text-sm font-bold text-brand-burgundy hover:underline"
+                            className="text-sm font-bold text-brand-burgundy hover:text-indigo-500 bg-brand-burgundy/10 px-4 py-2 rounded-lg transition-colors border border-brand-burgundy/20"
                         >
                             Go to Profile
                         </Link>
@@ -74,8 +74,8 @@ export default function SettingsPage() {
                     label: 'Email Notifications',
                     description: 'Receive updates about new jobs and events.',
                     content: (
-                        <div className="w-12 h-6 bg-brand-burgundy rounded-full relative cursor-pointer">
-                            <div className="absolute right-1 top-1 w-4 h-4 bg-white rounded-full shadow-sm" />
+                        <div className="w-12 h-6 bg-brand-burgundy/40 rounded-full relative cursor-pointer border border-brand-ebony/10 transition-colors hover:bg-brand-burgundy">
+                            <div className="absolute right-1 top-[3px] w-4 h-4 bg-white rounded-full shadow-sm" />
                         </div>
                     ),
                 },
@@ -83,8 +83,8 @@ export default function SettingsPage() {
                     label: 'Profile Visibility',
                     description: 'Allow other alumni to find you.',
                     content: (
-                        <div className="w-12 h-6 bg-brand-burgundy rounded-full relative cursor-pointer">
-                            <div className="absolute right-1 top-1 w-4 h-4 bg-white rounded-full shadow-sm" />
+                        <div className="w-12 h-6 bg-brand-burgundy rounded-full relative cursor-pointer shadow-inner shadow-brand-ebony/20">
+                            <div className="absolute right-1 top-[3px] w-4 h-4 bg-white rounded-full shadow-sm" />
                         </div>
                     ),
                 },
@@ -93,17 +93,20 @@ export default function SettingsPage() {
     ];
 
     return (
-        <div className="max-w-4xl mx-auto py-8 px-4 sm:px-6 md:px-8">
+        <div className="max-w-4xl mx-auto py-8 px-4 sm:px-6 md:px-8 animate-fade-up">
             <div className="flex items-center gap-4 mb-8">
                 <Link
                     href="/"
-                    className="p-2 hover:bg-brand-ebony/5 rounded-full transition-all text-brand-ebony/60"
+                    className="p-2.5 hover:bg-white/10 rounded-xl transition-all text-brand-ebony/60 hover:text-brand-ebony border border-brand-ebony/5 card-premium backdrop-blur-md"
                 >
-                    <ArrowLeft className="w-6 h-6" />
+                    <ArrowLeft className="w-5 h-5" />
                 </Link>
                 <div className="flex items-center gap-3">
-                    <div className="h-10 w-1 bg-brand-burgundy rounded-full" />
-                    <h1 className="text-3xl font-serif font-bold text-brand-ebony tracking-tight">Settings</h1>
+                    <div className="page-header-accent glow-indigo"></div>
+                    <h1 className="text-3xl font-serif font-extrabold text-brand-ebony tracking-tight flex items-center gap-2">
+                         Settings
+                         <Settings2 className="w-6 h-6 text-brand-ebony/20" />
+                    </h1>
                 </div>
             </div>
 
@@ -111,11 +114,11 @@ export default function SettingsPage() {
                 {sections.map((section) => (
                     <div
                         key={section.title}
-                        className="bg-brand-parchment/40 rounded-3xl border border-brand-ebony/10 overflow-hidden backdrop-blur-sm"
+                        className="card-premium overflow-hidden transition-all duration-300 hover:shadow-[0_8px_30px_rgba(79,70,229,0.06)]"
                     >
-                        <div className="px-6 py-4 bg-brand-ebony/5 border-b border-brand-ebony/5 flex items-center gap-3">
-                            <section.icon className="w-5 h-5 text-brand-burgundy/60" />
-                            <h2 className="font-serif font-bold text-lg text-brand-ebony uppercase tracking-widest text-sm">
+                        <div className="px-6 py-4 bg-gradient-to-r from-brand-burgundy/5 to-transparent border-b border-brand-ebony/5 flex items-center gap-3">
+                            <section.icon className="w-5 h-5 text-brand-burgundy" />
+                            <h2 className="font-semibold text-brand-ebony uppercase tracking-widest text-xs">
                                 {section.title}
                             </h2>
                         </div>
@@ -126,8 +129,8 @@ export default function SettingsPage() {
                                     className="p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4"
                                 >
                                     <div>
-                                        <h3 className="font-bold text-brand-ebony">{item.label}</h3>
-                                        <p className="text-sm text-brand-ebony/50 mt-1">
+                                        <h3 className="font-bold text-sm text-brand-ebony">{item.label}</h3>
+                                        <p className="text-xs text-brand-ebony/50 mt-1 font-medium">
                                             {item.description}
                                         </p>
                                     </div>
@@ -140,7 +143,7 @@ export default function SettingsPage() {
             </div>
 
             <div className="mt-12 text-center p-8 border-t border-brand-ebony/10">
-                <div className="flex items-center justify-center gap-2 mb-2 text-brand-burgundy/40">
+                <div className="flex items-center justify-center gap-2 mb-2 text-brand-gold">
                     <Info className="w-4 h-4" />
                     <span className="font-serif italic text-sm">About Alumnest</span>
                 </div>
