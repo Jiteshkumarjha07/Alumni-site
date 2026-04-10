@@ -53,6 +53,7 @@ export interface Post {
   authorName: string;
   authorBatch: number;
   authorProfilePic?: string;
+  authorProfession?: string;
   content: string;
   imageUrl?: string;
   likes?: string[];
