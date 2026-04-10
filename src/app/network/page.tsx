@@ -46,6 +46,9 @@ export default function NetworkPage() {
             setAllUsers(fetchedUsers);
             setFilteredUsers(fetchedUsers);
             setLoading(false);
+        }, (err) => {
+            console.error('[Network] Error fetching users:', err);
+            setLoading(false);
         });
 
         return () => unsubscribe();

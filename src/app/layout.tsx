@@ -5,6 +5,7 @@ import { Sidebar } from "@/components/layout/Sidebar";
 import { MobileNav } from "@/components/layout/MobileNav";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
+import { UIProvider } from "@/contexts/UIContext";
 import { LayoutClient } from "@/components/layout/LayoutClient";
 
 const geistSans = Geist({
@@ -43,9 +44,11 @@ export default function RootLayout({
       >
         <AuthProvider>
           <ThemeProvider>
-            <LayoutClient>
-              {children}
-            </LayoutClient>
+            <UIProvider>
+              <LayoutClient>
+                {children}
+              </LayoutClient>
+            </UIProvider>
           </ThemeProvider>
         </AuthProvider>
       </body>

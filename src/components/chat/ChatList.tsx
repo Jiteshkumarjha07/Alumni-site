@@ -42,7 +42,11 @@ export function ChatList({ currentUser, chats, onSelectChat, onStartChat, onSele
             setIsSearching(true);
             try {
                 const usersRef = collection(db, 'users');
-                const querySnapshot = await getDocs(usersRef);
+                const q = query(
+                    usersRef, 
+                    where('instituteId', '==', currentUser.instituteId)
+                );
+                const querySnapshot = await getDocs(q);
                 const term = searchQuery.toLowerCase();
 
                 const results: User[] = [];

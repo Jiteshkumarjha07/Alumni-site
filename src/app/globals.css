@@ -23,16 +23,20 @@
   --brand-parchment:#eef2ff;        /* Indigo-50  — card surface   */
   --brand-ebony:    #1e1b4b;        /* Indigo-950 — primary text   */
   --brand-glow:     rgba(79,70,229,0.18);
+  --brand-border:   rgba(30,27,75,0.08); /* Light mode border */
+  --brand-surface:  rgba(255,255,255,0.72); /* Glassy surface */
 }
 
 /* ── Dark Mode ───────────────────────────────────────────── */
 .dark {
   --brand-burgundy: #818cf8;        /* Indigo-400 — primary action */
   --brand-gold:     #fbbf24;        /* Amber-400  — gold accent    */
-  --brand-cream:    #020817;        /* Deepest navy — page bg      */
-  --brand-parchment:#0f172a;        /* Dark navy  — card bg        */
-  --brand-ebony:    #e2e8f0;        /* Slate-200  — text on dark   */
+  --brand-cream:    #030712;        /* Gray-950 — deepest bg       */
+  --brand-parchment:#111827;        /* Gray-900 — card surface     */
+  --brand-ebony:    #f1f5f9;        /* Gray-100 — text on dark     */
   --brand-glow:     rgba(129,140,248,0.22);
+  --brand-border:   rgba(255,255,255,0.08); /* Dark mode border */
+  --brand-surface:  rgba(15,23,42,0.75);    /* Dark slate glass */
 }
 
 /* ── Base Styles ─────────────────────────────────────────── */
@@ -106,13 +110,16 @@
 
   /* ── Glow Effects ── */
   .glow-indigo {
-    box-shadow: 0 0 24px rgba(99,102,241,0.30), 0 0 48px rgba(99,102,241,0.10);
+    box-shadow: 0 0 24px rgba(79, 70, 229, 0.25), 0 0 48px rgba(79, 70, 229, 0.1);
   }
   .glow-gold {
-    box-shadow: 0 0 20px rgba(251,191,36,0.30);
+    box-shadow: 0 0 20px rgba(217, 119, 6, 0.25);
   }
   .glow-sm {
-    box-shadow: 0 0 12px rgba(99,102,241,0.25);
+    box-shadow: 0 0 12px rgba(79, 70, 229, 0.2);
+  }
+  .glow-premium {
+    box-shadow: 0 0 30px rgba(79, 70, 229, 0.15), 0 0 60px rgba(79, 70, 229, 0.05);
   }
 
   /* ── Gradient Text ── */
@@ -141,6 +148,9 @@
   }
   .bg-gradient-gold {
     background: linear-gradient(135deg, #d97706 0%, #fbbf24 100%);
+  }
+  .bg-gradient-burgundy-gold {
+    background: linear-gradient(135deg, #4f46e5 0%, #d97706 100%);
   }
   .bg-gradient-dark-card {
     background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
@@ -216,17 +226,37 @@
 
   /* ── Premium Card ── */
   .card-premium {
-    background: rgba(255,255,255,0.70);
-    border: 1px solid rgba(99,102,241,0.12);
-    box-shadow: 0 4px 24px rgba(79,70,229,0.06), 0 1px 3px rgba(0,0,0,0.04);
-    border-radius: 1.25rem;
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+    background: rgba(255, 255, 255, 0.65);
+    border: 1px solid rgba(79, 70, 229, 0.1);
+    box-shadow: 
+      0 10px 30px -5px rgba(79, 70, 229, 0.04), 
+      0 4px 12px -2px rgba(79, 70, 229, 0.03),
+      inset 0 0 0 1px rgba(255, 255, 255, 0.4);
+    border-radius: 1.5rem;
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    transition: all 0.4s cubic-bezier(0.2, 0, 0, 1);
+  }
+  .card-premium:hover {
+    box-shadow: 
+      0 20px 40px -10px rgba(79, 70, 229, 0.08), 
+      0 8px 16px -4px rgba(79, 70, 229, 0.06),
+      inset 0 0 0 1px rgba(255, 255, 255, 0.6);
   }
   .dark .card-premium {
-    background: rgba(15,23,42,0.80);
-    border: 1px solid rgba(129,140,248,0.10);
-    box-shadow: 0 4px 24px rgba(0,0,0,0.30), 0 1px 3px rgba(0,0,0,0.20);
+    background: rgba(15, 23, 42, 0.75);
+    border: 1px solid rgba(129, 140, 248, 0.08);
+    box-shadow: 
+      0 20px 40px -10px rgba(0, 0, 0, 0.4), 
+      0 8px 16px -4px rgba(0, 0, 0, 0.3),
+      inset 0 0 0 1px rgba(255, 255, 255, 0.03);
+  }
+  .dark .card-premium:hover {
+    border-color: rgba(129, 140, 248, 0.15);
+    box-shadow: 
+      0 25px 50px -12px rgba(0, 0, 0, 0.5), 
+      0 12px 24px -6px rgba(0, 0, 0, 0.4),
+      inset 0 0 0 1px rgba(255, 255, 255, 0.05);
   }
 
   /* ── Sidebar glass ── */

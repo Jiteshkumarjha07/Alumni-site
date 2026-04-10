@@ -36,27 +36,16 @@ export function MobileNav() {
             
             <div className="fixed bottom-4 left-3 right-3 md:hidden z-50">
                 <div
-                    className="flex justify-around items-center px-1 py-2 rounded-2xl shadow-2xl"
+                    className="flex justify-around items-center px-1 py-1 rounded-2xl shadow-2xl bg-[var(--brand-surface)] backdrop-blur-3xl border border-[var(--brand-border)]"
                     style={{
-                        background: 'rgba(244,246,255,0.88)',
-                        backdropFilter: 'blur(24px)',
-                        WebkitBackdropFilter: 'blur(24px)',
-                        border: '1px solid rgba(99,102,241,0.18)',
-                        boxShadow: '0 8px 32px rgba(79,70,229,0.15), 0 2px 8px rgba(0,0,0,0.08)',
+                        boxShadow: '0 8px 32px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.05)',
                     }}
                 >
-                    <style>{`
-                        .dark .mob-nav-wrap {
-                            background: rgba(9,14,28,0.92) !important;
-                            border-color: rgba(129,140,248,0.12) !important;
-                        }
-                    `}</style>
-
                     {navItems.map((item) => {
                         const isActive = pathname === item.href.split('?')[0];
                         
                         const content = (
-                            <div className="relative flex flex-col items-center justify-center gap-0.5 px-3 py-1.5 rounded-xl transition-all duration-200">
+                            <div className="relative flex flex-col items-center justify-center gap-0.5 px-2.5 py-1.5 rounded-xl transition-all duration-200">
                                 <div className={`relative flex items-center justify-center w-9 h-9 rounded-xl transition-all duration-200 ${
                                     isActive
                                         ? 'bg-brand-burgundy shadow-[0_4px_12px_rgba(99,102,241,0.40)]'
@@ -73,8 +62,8 @@ export function MobileNav() {
                                         </span>
                                     )}
                                 </div>
-                                <span className={`text-[8px] font-semibold tracking-wide transition-colors ${
-                                    isActive ? 'text-brand-burgundy' : 'text-brand-ebony/40'
+                                <span className={`text-[8px] font-black uppercase tracking-wider transition-colors ${
+                                    isActive ? 'text-brand-burgundy' : 'text-brand-ebony/40 dark:text-brand-ebony/60'
                                 }`}>
                                     {item.name}
                                 </span>

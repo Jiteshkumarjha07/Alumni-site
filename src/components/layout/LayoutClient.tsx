@@ -10,6 +10,8 @@ import { MessagingProvider } from '@/contexts/MessagingContext';
 import { Sidebar } from './Sidebar';
 import { MobileNav } from './MobileNav';
 import { BrandHeader } from './BrandHeader';
+import { SocialRibbon } from './SocialRibbon';
+import { useUI } from '@/contexts/UIContext';
 
 const variants: Variants = {
     initial: (direction: number) => ({
@@ -37,6 +39,7 @@ const variants: Variants = {
 export function LayoutClient({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
     const { userData } = useAuth();
+    const { isFocusMode, focusType } = useUI();
     
     const [isMobile, setIsMobile] = React.useState(false);
     
@@ -57,16 +60,23 @@ export function LayoutClient({ children }: { children: React.ReactNode }) {
 
     const isAuthPage = pathname === '/login' || pathname === '/signup';
     const isAdminPage = pathname.startsWith('/admin');
-    const showNav = userData && !isAuthPage && !isAdminPage;
+    const showSidebar = userData && !isAuthPage && !isAdminPage && !isFocusMode;
+    const showRibbon = userData && !isAuthPage && !isAdminPage && (focusType === 'partial' || !isFocusMode);
+    const showMobileNav = userData && !isAuthPage && !isAdminPage && (focusType === 'partial' || !isFocusMode);
 
     return (
         <SwipeProvider>
             {userData && <GlobalMessaging />}
             <MessagingProvider>
                 <div className="flex flex-col min-h-screen">
-                    {showNav && <BrandHeader />}
-                    <Sidebar />
-                    <main className={`min-h-screen ${showNav ? 'md:pt-28 md:pl-80 md:pr-12' : ''} ${isMobile && !isAdminPage ? 'pb-24' : 'pb-8'} relative z-0`}>
+                    {showRibbon && (
+                        <>
+                            <BrandHeader />
+                            <SocialRibbon />
+                        </>
+                    )}
+                    {showSidebar && <Sidebar />}
+                    <main className={`min-h-screen ${showSidebar ? 'md:pl-80' : ''} ${showRibbon ? 'md:pt-28' : ''} md:pr-12 ${isMobile && !isAdminPage && showMobileNav ? 'pb-24' : 'pb-8'} relative z-0 transition-all duration-500`}>
                 <div className="mx-auto w-full overflow-x-hidden">
                     {isMobile ? (
                         <AnimatePresence initial={false} custom={direction}>
@@ -90,7 +100,7 @@ export function LayoutClient({ children }: { children: React.ReactNode }) {
                     )}
                 </div>
             </main>
-            <MobileNav />
+            {showMobileNav && <MobileNav />}
         </div>
     </MessagingProvider>
 </SwipeProvider>

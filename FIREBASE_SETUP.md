@@ -67,6 +67,7 @@ service cloud.firestore {
     // Users collection
     match /users/{userId} {
       allow read: if request.auth != null;
+      allow update: if request.auth != null; // Allows sending connection requests
       allow write: if request.auth != null && request.auth.uid == userId;
     }
     
@@ -85,8 +86,21 @@ service cloud.firestore {
       allow delete: if request.auth != null && 
         resource.data.postedByUid == request.auth.uid;
     }
+    // Notifications collection (Missing previously, caused Liking/Connecting to fail)
+    match /notifications/{notifId} {
+      allow read: if request.auth != null && resource.data.userId == request.auth.uid;
+      allow create: if request.auth != null;
+      allow update, delete: if request.auth != null && resource.data.userId == request.auth.uid;
+    }
     
-    // Chats collection
+    // Chats Parent Collection (Missing previously, caused Messaging to fail)
+    match /chats/{chatId} {
+      allow read, write: if request.auth != null && 
+        request.auth.uid in resource.data.participants;
+      allow create: if request.auth != null;
+    }
+
+    // Chat Messages Subcollection
     match /chats/{chatId}/messages/{messageId} {
       allow read, write: if request.auth != null && 
         get(/databases/$(database)/documents/chats/$(chatId)).data.participants.hasAny([request.auth.uid]);

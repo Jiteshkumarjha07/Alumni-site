@@ -135,8 +135,6 @@ export function ChatWindow({ chatId, currentUser, otherUser, isGroup = false, gr
                     readBy: [currentUser.uid],
                     receiverId: isGroup ? null : otherUser?.uid || null,
                 };
-                await addDoc(collection(db, collectionPath, chatId, 'messages'), messageData);
-
                 if (!isGroup && otherUser) {
                     await setDoc(doc(db, 'chats', chatId), {
                         participants: [currentUser.uid, otherUser.uid],
@@ -155,6 +153,8 @@ export function ChatWindow({ chatId, currentUser, otherUser, isGroup = false, gr
                         lastSenderName: currentUser.name,
                     });
                 }
+                
+                await addDoc(collection(db, collectionPath, chatId, 'messages'), messageData);
             } catch (err) {
                 console.error('Voice recording failed:', err);
             } finally {
@@ -186,6 +186,8 @@ export function ChatWindow({ chatId, currentUser, otherUser, isGroup = false, gr
                 const data = docSnapshot.data();
                 setOtherUserStatus({ isOnline: data.isOnline || false, lastSeen: data.lastSeen });
             }
+        }, (err) => {
+            console.error('[ChatWindow] Error fetching user status:', err);
         });
         return () => unsubscribe();
     }, [otherUser?.uid, isGroup]);
@@ -215,11 +217,11 @@ export function ChatWindow({ chatId, currentUser, otherUser, isGroup = false, gr
                     readBy: arrayUnion(currentUser.uid),
                     isRead: true,
                     isDelivered: true
-                }).catch(console.error);
+                }).catch(err => console.error('[ChatWindow.tsx] Error updating message delivered/read status:', err));
             });
 
             if (!isGroup) {
-                updateDoc(doc(db, 'chats', chatId), { [`unreadCount.${currentUser.uid}`]: 0 }).catch(console.error);
+                updateDoc(doc(db, 'chats', chatId), { [`unreadCount.${currentUser.uid}`]: 0 }).catch(err => console.error('[ChatWindow.tsx] Error updating chat unread count:', err));
             }
         }, (error) => {
             console.error('Error fetching messages:', error);
@@ -287,8 +289,6 @@ export function ChatWindow({ chatId, currentUser, otherUser, isGroup = false, gr
                     messageData.replyToText = encryptMessage(currentReply.text, encryptionSecret);
                     messageData.replyToSenderName = currentReply.senderName || 'Unknown';
                 }
-                await addDoc(collection(db, collectionPath, chatId, 'messages'), messageData);
-
                 if (!isGroup && otherUser) {
                     await setDoc(doc(db, 'chats', chatId), {
                         participants: [currentUser.uid, otherUser.uid],
@@ -304,6 +304,8 @@ export function ChatWindow({ chatId, currentUser, otherUser, isGroup = false, gr
                         lastSenderName: currentUser.name
                     });
                 }
+
+                await addDoc(collection(db, collectionPath, chatId, 'messages'), messageData);
             }
         } catch (error) {
             console.error('Error sending message:', error);
@@ -521,7 +523,14 @@ export function ChatWindow({ chatId, currentUser, otherUser, isGroup = false, gr
             </div>
 
             {/* Messages Area */}
-            <div className="flex-1 overflow-y-auto px-8 py-10 space-y-6 scrollbar-hide bg-white/30 dark:bg-brand-parchment/5">
+            <div
+                className="flex-1 overflow-y-auto px-4 md:px-6 py-6 space-y-4 scrollbar-hide bg-white/30 dark:bg-brand-parchment/5"
+                onContextMenu={(e) => {
+                    e.preventDefault();
+                    setContextMenu({ x: e.clientX, y: e.clientY });
+                }}
+                onClick={() => contextMenu && setContextMenu(null)}
+            >
                 {loading ? (
                     <div className="flex justify-center items-center h-full">
                         <Loader2 className="w-10 h-10 animate-spin text-indigo-500/20" />
@@ -566,8 +575,41 @@ export function ChatWindow({ chatId, currentUser, otherUser, isGroup = false, gr
                 <div ref={messagesEndRef} />
             </div>
 
+            {/* Right-Click Context Menu */}
+            {contextMenu && (
+                <>
+                    <div
+                        className="fixed inset-0 z-[90]"
+                        onClick={() => setContextMenu(null)}
+                        onContextMenu={(e) => { e.preventDefault(); setContextMenu(null); }}
+                    />
+                    <div
+                        className="fixed z-[100] w-56 card-premium shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150"
+                        style={{ top: contextMenu.y, left: contextMenu.x }}
+                    >
+                        <div className="p-1.5 space-y-0.5">
+                            <button
+                                onClick={() => { setIsSelectionMode(true); setContextMenu(null); }}
+                                className="w-full flex items-center gap-3 px-4 py-2.5 text-xs font-bold text-brand-ebony hover:bg-indigo-500/10 hover:text-indigo-600 rounded-xl transition-all"
+                            >
+                                <ListChecks className="w-4 h-4 text-indigo-500" />
+                                Select Messages
+                            </button>
+                            <div className="h-px bg-brand-ebony/5 mx-2" />
+                            <button
+                                onClick={() => { onBack?.(); setContextMenu(null); }}
+                                className="w-full flex items-center gap-3 px-4 py-2.5 text-xs font-bold text-red-500 hover:bg-red-500/10 rounded-xl transition-all"
+                            >
+                                <LogOut className="w-4 h-4" />
+                                Close Chat
+                            </button>
+                        </div>
+                    </div>
+                </>
+            )}
+
             {/* Input Footer Area */}
-            <div className="px-8 py-8 bg-white/50 dark:bg-brand-parchment/10 backdrop-blur-3xl border-t border-brand-ebony/5 relative z-20">
+            <div className="px-4 md:px-6 py-4 bg-white/50 dark:bg-brand-parchment/10 backdrop-blur-3xl border-t border-brand-ebony/5 relative z-20">
                 {editingMessage && (
                     <div className="flex items-center justify-between mb-4 px-5 py-3 bg-indigo-500/10 rounded-2xl border border-indigo-500/20 animate-in slide-in-from-bottom-2">
                         <div className="flex items-center gap-3 text-indigo-600">

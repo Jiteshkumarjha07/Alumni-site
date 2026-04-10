@@ -9,17 +9,8 @@ import { usePathname } from 'next/navigation';
 import { InstituteSwitcher } from './InstituteSwitcher';
 import { ComingSoonModal } from '../modals/ComingSoonModal';
 
-const topNavigation = [
-    { name: 'Home',           href: '/',         icon: Home },
-    { name: 'Messages',       href: '/messages', icon: MessageSquare },
-    { name: 'Events',         href: '/events',   icon: Calendar },
-    { name: 'Jobs',           href: '/jobs',     icon: Briefcase },
-    { name: 'Network',        href: '/network',  icon: Users },
-];
-
 export function Sidebar() {
     const { userData, signOut } = useAuth();
-    const { totalUnreadCount } = useMessaging();
     const pathname = usePathname();
     const [isMarketplaceOpen, setIsMarketplaceOpen] = useState(false);
 
@@ -32,54 +23,6 @@ export function Sidebar() {
                 onClose={() => setIsMarketplaceOpen(false)} 
                 featureName="Marketplace" 
             />
-
-            {/* --- TOP RIBBON (Social Navigation) --- */}
-            <div className="hidden md:block fixed top-6 left-[300px] right-12 z-50 pointer-events-none transition-all duration-300">
-                <div 
-                    className="group pointer-events-auto flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-full sidebar-glass border border-brand-ebony/10 shadow-[0_8px_32px_rgba(79,70,229,0.12)] hover:shadow-[0_12px_48px_rgba(79,70,229,0.20)] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)]"
-                >
-                    <nav className="flex items-center gap-1.5">
-                        {topNavigation.map((item) => {
-                            const isActive = pathname === item.href;
-                            return (
-                                <Link
-                                    key={item.name}
-                                    href={item.href}
-                                    className={`relative flex items-center px-4 py-2.5 rounded-full transition-all duration-300 group/link
-                                        ${isActive 
-                                            ? 'bg-gradient-indigo text-white shadow-lg shadow-indigo-500/30' 
-                                            : 'text-brand-ebony/50 hover:bg-brand-parchment dark:hover:bg-white/10 hover:text-brand-ebony'
-                                        }
-                                    `}
-                                >
-                                    <div className="relative shrink-0 flex items-center justify-center">
-                                        <item.icon className={`w-[19px] h-[19px] ${isActive ? 'text-white' : ''}`} />
-                                        {item.name === 'Messages' && totalUnreadCount > 0 && (
-                                            <span className="absolute -top-1.5 -right-1.5 flex h-4 w-4">
-                                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-60" />
-                                                <span className="relative inline-flex rounded-full h-4 w-4 bg-red-500 border-2 border-white text-[8px] text-white items-center justify-center font-black">
-                                                    {totalUnreadCount > 9 ? '9+' : totalUnreadCount}
-                                                </span>
-                                            </span>
-                                        )}
-                                    </div>
-                                    
-                                    {/* Togo/Expand behavior: Active is always shown, others expand on group hover */}
-                                    <span className={`overflow-hidden transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] 
-                                        ${isActive 
-                                            ? 'ml-2.5 w-auto opacity-100' 
-                                            : 'ml-0 w-0 opacity-0 group-hover:ml-2.5 group-hover:w-[65px] group-hover:opacity-100'
-                                        }
-                                        text-xs font-bold tracking-wide whitespace-nowrap
-                                    `}>
-                                        {item.name}
-                                    </span>
-                                </Link>
-                            );
-                        })}
-                    </nav>
-                </div>
-            </div>
 
             {/* --- FIXED FULL SIDEBAR (Identity & Marketplace) --- */}
             <aside className="hidden md:flex fixed top-28 bottom-6 left-6 z-50 flex-col items-center pointer-events-none">
@@ -114,29 +57,29 @@ export function Sidebar() {
                         </div>
 
                         {/* Profile Info */}
-                        <div className="bg-brand-ebony/5 dark:bg-white/5 rounded-3xl p-4 border border-brand-ebony/5">
+                        <div className="bg-brand-ebony/5 dark:bg-brand-ebony/40 rounded-3xl p-4 border border-brand-ebony/5">
                             <div className="flex items-center mb-4">
                                 <img
                                     src={userData.profilePic || `https://placehold.co/80x80/4f46e5/ffffff?text=${userData.name.substring(0, 1)}`}
                                     alt={userData.name}
-                                    className="w-11 h-11 rounded-2xl object-cover shadow-sm bg-white"
+                                    className="w-11 h-11 rounded-2xl object-cover shadow-sm bg-white dark:bg-brand-ebony/20"
                                 />
                                 <div className="ml-3 overflow-hidden">
                                     <p className="text-sm font-black text-brand-ebony truncate leading-none mb-1">{userData.name}</p>
-                                    <p className="text-[10px] text-brand-ebony/40 font-bold uppercase tracking-widest">Active Member</p>
+                                    <p className="text-[10px] text-brand-ebony/60 font-black uppercase tracking-widest">Active Member</p>
                                 </div>
                             </div>
                             
                             <div className="grid grid-cols-2 gap-2">
                                 <Link 
                                     href="/profile"
-                                    className="flex items-center justify-center gap-2 py-2.5 bg-white dark:bg-brand-ebony rounded-xl border border-brand-ebony/10 text-brand-ebony/60 hover:text-brand-ebony transition-all text-[10px] font-black uppercase tracking-wider"
+                                    className="flex items-center justify-center gap-2 py-2.5 bg-brand-cream/50 dark:bg-brand-ebony rounded-xl border border-brand-ebony/10 text-brand-ebony/60 hover:text-brand-ebony transition-all text-[10px] font-black uppercase tracking-wider"
                                 >
                                     Archives
                                 </Link>
                                 <Link 
                                     href="/settings"
-                                    className="flex items-center justify-center gap-2 py-2.5 bg-white dark:bg-brand-ebony rounded-xl border border-brand-ebony/10 text-brand-ebony/60 hover:text-brand-ebony transition-all text-[10px] font-black uppercase tracking-wider"
+                                    className="flex items-center justify-center gap-2 py-2.5 bg-brand-cream/50 dark:bg-brand-ebony rounded-xl border border-brand-ebony/10 text-brand-ebony/60 hover:text-brand-ebony transition-all text-[10px] font-black uppercase tracking-wider"
                                 >
                                     Settings
                                 </Link>

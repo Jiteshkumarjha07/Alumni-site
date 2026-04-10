@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { collection, query, orderBy, onSnapshot, addDoc, updateDoc, deleteDoc, doc, serverTimestamp, arrayRemove, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
@@ -16,7 +16,95 @@ import { PenSquare, Camera, Image as ImageIcon, Paperclip, Users, Menu, Sparkles
 import { RightSidebar } from '@/components/layout/RightSidebar';
 import { NotificationBell } from '@/components/notifications/NotificationPanel';
 import { InstituteSwitcher } from '@/components/layout/InstituteSwitcher';
+import { useUI } from '@/contexts/UIContext';
 import Link from 'next/link';
+
+// ── Bidirectional Fade Scroll Animation ────────────────────────────────
+const EASE_IN  = 'cubic-bezier(0.22, 1, 0.36, 1)';   // spring settle
+const EASE_OUT = 'cubic-bezier(0.4, 0, 0.6, 1)';      // smooth fade out
+
+// Tiny global scroll-direction tracker (shared, no re-renders)
+let lastScrollY = 0;
+let scrollDir: 'down' | 'up' = 'down';
+if (typeof window !== 'undefined') {
+  window.addEventListener('scroll', () => {
+    scrollDir = window.scrollY > lastScrollY ? 'down' : 'up';
+    lastScrollY = window.scrollY;
+  }, { passive: true });
+}
+
+type CardState = 'below' | 'visible' | 'above';
+
+function ScrollRevealCard({ children, index = 0 }: { children: React.ReactNode; index?: number }) {
+  const ref = useRef<HTMLDivElement>(null);
+  // Cards start in 'below' state (off-screen below viewport)
+  const [state, setState] = useState<CardState>('below');
+  // Track if this card has ever been shown (for instant first load)
+  const hasBeenVisible = useRef(false);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+
+    const obs = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          hasBeenVisible.current = true;
+          setState('visible');
+        } else {
+          if (!hasBeenVisible.current) return; // not yet shown, keep as 'below'
+          // Card left viewport — determine which direction
+          const rect = entry.boundingClientRect;
+          if (rect.top < 0) {
+            // Card scrolled above the viewport (user scrolled down past it)
+            setState('above');
+          } else {
+            // Card scrolled below the viewport (user scrolled back up)
+            setState('below');
+          }
+        }
+      },
+      // Slight margin so fade completes before card fully leaves
+      { threshold: 0.08, rootMargin: '0px 0px 0px 0px' }
+    );
+
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, []);
+
+  // Stagger delay only on entry, not on fade out
+  const entryDelay = state === 'visible' && !hasBeenVisible.current
+    ? Math.min(index * 50, 220)
+    : 0;
+
+  // Define per-state transforms — only translateY + scale (GPU composited)
+  const styles: Record<CardState, { opacity: number; transform: string }> = {
+    below:   { opacity: 0, transform: 'translateY(36px) scale(0.97)' },
+    visible: { opacity: 1, transform: 'translateY(0px)  scale(1)'    },
+    above:   { opacity: 0, transform: 'translateY(-18px) scale(0.98)' },
+  };
+
+  const isVisible = state === 'visible';
+  const current = styles[state];
+
+  return (
+    <div
+      ref={ref}
+      style={{
+        opacity: current.opacity,
+        transform: current.transform,
+        // Entry: spring bounce. Exit: smooth ease-out (faster, feels intentional)
+        transition: isVisible
+          ? `opacity 0.52s ${EASE_IN} ${entryDelay}ms, transform 0.58s ${EASE_IN} ${entryDelay}ms`
+          : `opacity 0.32s ${EASE_OUT}, transform 0.36s ${EASE_OUT}`,
+        willChange: 'transform, opacity',
+      }}
+    >
+      {children}
+    </div>
+  );
+}
+// ───────────────────────────────────────────────────────────────────────
 
 export default function HomePage() {
   const { user, userData, signOut, loading: authLoading } = useAuth();
@@ -28,6 +116,9 @@ export default function HomePage() {
   const [deletingPostId, setDeletingPostId] = useState<string | null>(null);
   const [sharingPost, setSharingPost] = useState<Post | null>(null);
   const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(false);
+  const { setFocusMode } = useUI();
+  const [newPostCount, setNewPostCount] = useState(0);
+  const isFirstLoad = useRef(true);
 
   // Fetch posts from Firebase
   useEffect(() => {
@@ -35,6 +126,10 @@ export default function HomePage() {
       setTimeout(() => setLoading(false), 0);
       return;
     }
+
+    // Instantly clear the feed when `instituteId` changes to prevent visual bleed from previous institute
+    setPosts([]);
+    setLoading(true);
 
     const postsQuery = query(
       collection(db, 'posts'),
@@ -46,8 +141,18 @@ export default function HomePage() {
       (snapshot) => {
         const fetchedPosts = snapshot.docs.map(doc => ({
           id: doc.id,
-          ...doc.data()
+          ...doc.data({ serverTimestamps: 'estimate' })
         })) as Post[];
+
+        if (isFirstLoad.current) {
+          // First load — no 'new' posts yet
+          isFirstLoad.current = false;
+          setNewPostCount(0);
+        } else {
+          // Subsequent updates — count increments
+          setNewPostCount(prev => prev + Math.max(0, fetchedPosts.length - posts.length));
+        }
+
         setPosts(fetchedPosts);
         setLoading(false);
       },
@@ -58,7 +163,7 @@ export default function HomePage() {
     );
 
     return () => unsubscribe();
-  }, [userData]);
+  }, [userData?.instituteId]); // Explicitly depend ONLY on changes in instituteId
 
   const handleCreatePost = async (content: string, imageUrl?: string) => {
     if (!userData) return;
@@ -93,7 +198,7 @@ export default function HomePage() {
       comments: [],
       instituteId: userData.instituteId || '',
       createdAt: serverTimestamp()
-    }).catch(console.error);
+    }).catch(err => console.error('[page.tsx] Error adding post:', err));
   };
 
   const handleUpdatePost = async (postId: string, newContent: string) => {
@@ -135,7 +240,7 @@ export default function HomePage() {
         link: `/posts/${postId}?action=view`,
         createdAt: serverTimestamp(),
         isRead: false,
-      }).catch(console.error);
+      }).catch(err => console.error('[page.tsx] Error adding notification:', err));
     }
   };
 
@@ -237,14 +342,28 @@ export default function HomePage() {
 
   if (authLoading || loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center animate-fade-up">
-          <div className="relative w-16 h-16 mx-auto mb-6">
-             <div className="absolute inset-0 rounded-full border-4 border-brand-burgundy/20"></div>
-             <div className="absolute inset-0 rounded-full border-4 border-brand-burgundy border-t-transparent animate-spin"></div>
+      <div className="max-w-3xl mx-auto px-4 md:px-8 pt-8 pb-12 space-y-6">
+        {/* Skeleton loader */}
+        {[1, 2, 3].map(i => (
+          <div key={i} className="bg-white/60 dark:bg-brand-parchment/10 rounded-[1.75rem] border border-brand-ebony/5 p-6 animate-pulse">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-11 h-11 rounded-full bg-brand-parchment/60" />
+              <div className="flex-1 space-y-2">
+                <div className="h-3.5 bg-brand-parchment/60 rounded-full w-1/3" />
+                <div className="h-2.5 bg-brand-parchment/40 rounded-full w-1/4" />
+              </div>
+            </div>
+            <div className="space-y-2 mb-4">
+              <div className="h-3 bg-brand-parchment/50 rounded-full w-full" />
+              <div className="h-3 bg-brand-parchment/50 rounded-full w-5/6" />
+              <div className="h-3 bg-brand-parchment/50 rounded-full w-4/6" />
+            </div>
+            {i === 1 && <div className="h-48 bg-brand-parchment/40 rounded-2xl mb-4" />}
+            <div className="flex gap-2 pt-3 border-t border-brand-ebony/5">
+              {[1, 2, 3].map(j => <div key={j} className="flex-1 h-9 bg-brand-parchment/40 rounded-2xl" />)}
+            </div>
           </div>
-          <p className="text-brand-ebony font-serif italic text-lg opacity-80">Loading...</p>
-        </div>
+        ))}
       </div>
     );
   }
@@ -255,113 +374,145 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen transition-all duration-300">
-      <div className="max-w-3xl mx-auto px-4 md:px-8 pt-8 pb-12 w-full">
-        {/* Feed Header */}
-        <div className="flex flex-wrap items-center justify-between mb-8 gap-4 px-2">
-          <div className="flex items-center gap-4">
-            <div className="page-header-accent glow-indigo"></div>
-            <h1 className="text-3xl font-serif font-extrabold text-brand-ebony tracking-tight flex items-center gap-2">
-               The Feed
-               <Sparkles className="w-5 h-5 text-brand-gold animate-pulse" />
-            </h1>
-          </div>
-          <div className="flex items-center gap-3">
-            <button
-               onClick={() => setIsRightSidebarOpen(true)}
-               className="flex items-center justify-center px-4 py-2 bg-brand-burgundy/10 hover:bg-brand-burgundy/20 text-brand-burgundy rounded-xl text-sm font-bold transition-all border border-brand-burgundy/20 shadow-sm"
-               title="Suggestions"
-            >
-               <Users className="w-4 h-4" />
-               <span className="hidden sm:inline tracking-wider uppercase text-[10px] ml-2">Discover</span>
-            </button>
-            <div className="bg-brand-parchment/60 p-1.5 rounded-xl border border-brand-ebony/10">
-               <NotificationBell />
+      <div className="max-w-3xl mx-auto px-4 md:px-6 pt-6 pb-12 w-full">
+
+        {/* ── Hero Header ── */}
+        <div className="relative mb-8 overflow-hidden rounded-[2rem] bg-gradient-to-br from-brand-burgundy via-[#6b1a2a] to-indigo-900 p-8 shadow-2xl">
+          {/* Background decoration */}
+          <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl" />
+          <div className="absolute bottom-0 left-0 w-48 h-48 bg-indigo-500/10 rounded-full translate-y-1/2 -translate-x-1/2 blur-2xl" />
+          <div className="absolute inset-0 opacity-[0.03]" style={{backgroundImage: 'radial-gradient(circle at 20% 50%, white 1px, transparent 1px), radial-gradient(circle at 80% 20%, white 1px, transparent 1px)', backgroundSize: '40px 40px'}} />
+
+          <div className="relative flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
+            <div>
+              <div className="flex items-center gap-2 mb-2">
+                <div className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse" />
+                <span className="text-white/50 text-[10px] font-extrabold uppercase tracking-[0.3em]">Live Feed</span>
+              </div>
+              <h1 className="text-[2.5rem] font-serif font-bold text-white tracking-tight leading-none flex items-center gap-3">
+                The Feed
+                <Sparkles className="w-7 h-7 text-brand-gold animate-pulse" />
+              </h1>
+              <p className="text-white/40 text-xs font-semibold mt-1.5 tracking-wider">
+                {newPostCount > 0
+                  ? <><span className="text-emerald-400 font-extrabold">{newPostCount} new</span> · {posts.length} total in your network</>
+                  : <>{posts.length} update{posts.length !== 1 ? 's' : ''} from your network</>}
+              </p>
+            </div>
+
+            <div className="flex items-center gap-3 shrink-0">
+              <button
+                onClick={() => { setIsRightSidebarOpen(true); setFocusMode(true, 'full'); }}
+                className="flex items-center gap-2 px-5 py-2.5 bg-white/10 hover:bg-white/20 text-white rounded-2xl text-xs font-bold transition-all border border-white/10 hover:border-white/20 backdrop-blur-sm group"
+              >
+                <Users className="w-4 h-4 group-hover:scale-110 transition-transform" />
+                <span className="tracking-[0.1em] uppercase">Connect</span>
+              </button>
+              <div className="bg-white/10 p-2 rounded-xl border border-white/10 backdrop-blur-sm hover:bg-white/20 transition-all">
+                <NotificationBell />
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Mobile Switcher (Hidden on Desktop) */}
-        <div className="md:hidden mb-6 px-2">
+        {/* Mobile institute switcher */}
+        <div className="md:hidden mb-6">
           <InstituteSwitcher />
         </div>
 
-        {/* Create Post Button Area */}
-        <div className="card-premium p-5 mb-8 group hover:border-brand-burgundy/30 transition-all duration-300 ease-in-out relative overflow-hidden">
-          {/* subtle background glow on hover */}
-          <div className="absolute -inset-2 bg-gradient-to-r from-brand-burgundy/0 via-brand-burgundy/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none -z-10" />
+        {/* ── Create Post Card ── */}
+        <div className="group relative bg-white/70 dark:bg-brand-parchment/10 backdrop-blur-sm rounded-[1.75rem] border border-brand-ebony/6 hover:border-brand-burgundy/20 hover:shadow-[0_8px_40px_rgba(79,70,229,0.10)] transition-all duration-500 mb-7 overflow-hidden">
+          {/* Hover glow */}
+          <div className="absolute inset-0 bg-gradient-to-br from-brand-burgundy/0 to-indigo-500/0 group-hover:from-brand-burgundy/[0.02] group-hover:to-indigo-500/[0.02] transition-all duration-700 pointer-events-none rounded-[1.75rem]" />
+          <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-brand-burgundy/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
           
-          <div className="flex items-start gap-4 mb-4">
-            <img
-              src={userData.profilePic || `https://placehold.co/100x100/4f46e5/ffffff?text=${userData.name.substring(0, 1)}`}
-              alt={userData.name}
-              className="w-12 h-12 rounded-full ring-2 ring-white dark:ring-brand-parchment shadow-sm object-cover"
-            />
-            <button
-              onClick={() => setShowCreatePost(true)}
-              className="flex-1 text-left px-5 py-3 input-premium rounded-xl text-brand-ebony/40 transition-all font-medium text-sm border border-brand-ebony/10 bg-brand-cream/50 dark:bg-white/5 hover:bg-white dark:hover:bg-brand-parchment"
-            >
-              Share something with your fellow alumni...
-            </button>
-          </div>
-          
-          <div className="flex items-center justify-between pt-3 mt-1 border-t border-brand-ebony/5">
-            <div className="flex gap-1.5">
-              <button onClick={() => setShowCreatePost(true)} className="p-2 text-brand-ebony/40 hover:text-brand-burgundy hover:bg-brand-burgundy/10 rounded-lg transition-colors flex items-center gap-2">
-                <Camera className="w-5 h-5" />
-                <span className="hidden sm:inline text-xs font-semibold">Photo</span>
-              </button>
-              <button onClick={() => setShowCreatePost(true)} className="p-2 text-brand-ebony/40 hover:text-brand-burgundy hover:bg-brand-burgundy/10 rounded-lg transition-colors flex items-center gap-2">
-                <ImageIcon className="w-5 h-5" />
-                <span className="hidden sm:inline text-xs font-semibold">Video</span>
-              </button>
-              <button onClick={() => setShowCreatePost(true)} className="p-2 text-brand-ebony/40 hover:text-brand-burgundy hover:bg-brand-burgundy/10 rounded-lg transition-colors flex items-center gap-2">
-                <Paperclip className="w-5 h-5" />
-                <span className="hidden sm:inline text-xs font-semibold">Attach</span>
+          <div className="relative p-5 md:p-6">
+            <div className="flex items-center gap-4 mb-5">
+              <div className="relative shrink-0">
+                <img
+                  src={userData.profilePic || `https://placehold.co/100x100/4f46e5/ffffff?text=${userData.name.substring(0, 1)}`}
+                  alt={userData.name}
+                  className="w-11 h-11 rounded-full ring-2 ring-white shadow-md object-cover"
+                />
+                <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-emerald-400 border-2 border-white rounded-full shadow-sm" />
+              </div>
+              <button
+                onClick={() => setShowCreatePost(true)}
+                className="flex-1 text-left px-5 py-3.5 rounded-2xl text-brand-ebony/40 transition-all font-medium text-sm border border-brand-ebony/8 bg-brand-parchment/30 hover:bg-white/70 hover:border-brand-burgundy/20 hover:text-brand-ebony/60 shadow-sm"
+              >
+                Share an update with your legacy...
               </button>
             </div>
-            <button
-              onClick={() => setShowCreatePost(true)}
-              className="px-6 py-2 bg-gradient-indigo text-white rounded-xl font-bold hover:shadow-[0_0_15px_rgba(99,102,241,0.5)] transition-all shadow-md active:scale-95 text-sm shimmer overflow-hidden relative"
-            >
-              <span className="relative z-10">Post</span>
-            </button>
+            
+            <div className="flex items-center justify-between pt-4 border-t border-brand-ebony/5">
+              <div className="flex gap-1">
+                {[
+                  { icon: Camera, label: 'Photo' },
+                  { icon: ImageIcon, label: 'Video' },
+                  { icon: Paperclip, label: 'File' },
+                ].map(({ icon: Icon, label }) => (
+                  <button
+                    key={label}
+                    onClick={() => setShowCreatePost(true)}
+                    className="flex items-center gap-2 px-3 py-2 text-brand-ebony/40 hover:text-brand-burgundy hover:bg-brand-burgundy/6 rounded-xl transition-all group/btn"
+                  >
+                    <Icon className="w-4 h-4 group-hover/btn:scale-110 transition-transform" />
+                    <span className="hidden sm:inline text-[11px] font-bold tracking-wide">{label}</span>
+                  </button>
+                ))}
+              </div>
+              <button
+                onClick={() => setShowCreatePost(true)}
+                className="px-7 py-2.5 bg-brand-burgundy text-white rounded-2xl font-bold hover:brightness-110 active:scale-[0.97] transition-all text-[11px] tracking-widest uppercase shadow-lg shadow-brand-burgundy/20 relative overflow-hidden group/post"
+              >
+                <span className="relative z-10">Post</span>
+                <div className="absolute inset-0 bg-white/10 opacity-0 group-hover/post:opacity-100 transition-opacity" />
+              </button>
+            </div>
           </div>
         </div>
 
-        {/* Posts Feed */}
-        <div className="space-y-6">
+        {/* ── Posts Feed ── */}
+        <div className="space-y-5">
           {posts.length > 0 ? (
-            posts.map(post => (
-              <PostCard
-                key={post.id}
-                post={post}
-                currentUser={userData}
-                onLike={(isLiked) => handleLikePost(post.id, isLiked)}
-                onComment={() => setCommentingPost(post)}
-                onEdit={() => setEditingPost(post)}
-                onDelete={() => setDeletingPostId(post.id)}
-                onShare={() => setSharingPost(post)}
-              />
+            posts.map((post, idx) => (
+              <ScrollRevealCard key={post.id} index={idx}>
+                <PostCard
+                  post={post}
+                  currentUser={userData}
+                  onLike={(isLiked) => handleLikePost(post.id, isLiked)}
+                  onComment={() => setCommentingPost(post)}
+                  onEdit={() => setEditingPost(post)}
+                  onDelete={() => setDeletingPostId(post.id)}
+                  onShare={() => setSharingPost(post)}
+                />
+              </ScrollRevealCard>
             ))
           ) : (
-            <div className="card-premium p-12 text-center animate-fade-up border-dashed border-2 border-brand-ebony/10">
-              <div className="w-16 h-16 bg-brand-burgundy/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <PenSquare className="w-8 h-8 text-brand-burgundy opacity-80" />
+            <div className="relative overflow-hidden rounded-[2rem] border-2 border-dashed border-brand-burgundy/15 bg-white/50 dark:bg-brand-parchment/5 p-16 text-center animate-in fade-in duration-700">
+              <div className="absolute inset-0 bg-gradient-to-br from-brand-burgundy/3 to-indigo-500/3" />
+              <div className="relative">
+                <div className="w-20 h-20 bg-gradient-to-br from-brand-burgundy/10 to-indigo-500/10 rounded-[1.5rem] flex items-center justify-center mx-auto mb-6 shadow-inner">
+                  <PenSquare className="w-9 h-9 text-brand-burgundy/50" />
+                </div>
+                <h3 className="text-2xl font-serif font-bold text-brand-ebony mb-2">It&apos;s quiet in here...</h3>
+                <p className="text-brand-ebony/45 text-sm mb-8 max-w-xs mx-auto leading-relaxed">Be the first to share a memory, insight, or update with your alumni network.</p>
+                <button
+                  onClick={() => setShowCreatePost(true)}
+                  className="px-8 py-3 bg-brand-burgundy text-white rounded-2xl font-bold hover:brightness-110 transition-all text-sm tracking-wide shadow-lg shadow-brand-burgundy/20"
+                >
+                  Create First Post
+                </button>
               </div>
-              <p className="text-brand-ebony font-serif italic text-lg mb-1">It's quiet in here...</p>
-              <p className="text-brand-ebony/50 text-sm mb-6">Be the first to share an update with your network.</p>
-              <button
-                onClick={() => setShowCreatePost(true)}
-                className="px-6 py-2 bg-brand-burgundy/10 text-brand-burgundy rounded-xl font-bold hover:bg-brand-burgundy hover:text-white transition-colors"
-              >
-                 Create Post
-              </button>
             </div>
           )}
         </div>
       </div>
 
-      <RightSidebar isOpen={isRightSidebarOpen} onClose={() => setIsRightSidebarOpen(false)} />
+      <RightSidebar
+        isOpen={isRightSidebarOpen}
+        onClose={() => { setIsRightSidebarOpen(false); setFocusMode(false); }}
+      />
 
       {/* Modals */}
       <CreatePostModal
@@ -415,3 +566,4 @@ export default function HomePage() {
     </div>
   );
 }
+

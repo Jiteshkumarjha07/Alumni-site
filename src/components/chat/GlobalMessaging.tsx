@@ -50,6 +50,8 @@ export function GlobalMessaging() {
                                 }
                             }
                         });
+                    }, (err) => {
+                        console.error('[GlobalMessaging] Error listening to recent messages:', err);
                     });
 
                     activeListeners.current.set(chatId, unsubMessages);

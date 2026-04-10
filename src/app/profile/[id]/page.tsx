@@ -59,18 +59,19 @@ export default function PublicProfilePage() {
     }, [profileId]);
 
     useEffect(() => {
-        if (!profileUser) return;
+        if (!profileUser || !userData?.instituteId) return;
 
         const postsQuery = query(
             collection(db, 'posts'),
             where('authorUid', '==', profileUser.uid),
+            where('instituteId', '==', userData.instituteId),
             orderBy('createdAt', 'desc')
         );
 
         const unsubscribe = onSnapshot(postsQuery, (snapshot) => {
             const fetchedPosts = snapshot.docs.map(doc => ({
                 id: doc.id,
-                ...doc.data()
+                ...doc.data({ serverTimestamps: 'estimate' })
             })) as Post[];
             setPosts(fetchedPosts);
         }, (err) => {
@@ -78,7 +79,7 @@ export default function PublicProfilePage() {
         });
 
         return () => unsubscribe();
-    }, [profileUser]);
+    }, [profileUser, userData?.instituteId]);
 
     useEffect(() => {
         if (!profileUser || activeTab !== 'connections') return;

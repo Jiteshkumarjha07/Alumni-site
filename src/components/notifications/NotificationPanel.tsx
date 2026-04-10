@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import {
   collection, query, where,
@@ -8,9 +9,10 @@ import {
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { Notification } from '@/types';
-import { Bell, Heart, MessageCircle, UserPlus, CheckCheck, X, Check, Sparkles } from 'lucide-react';
+import { Bell, Heart, MessageCircle, UserPlus, CheckCheck, X, Check } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useUI } from '@/contexts/UIContext';
 
 function timeAgo(ts: any): string {
   try {
@@ -26,20 +28,33 @@ function timeAgo(ts: any): string {
 }
 
 function NotifIcon({ type }: { type: string }) {
-  if (type === 'like') return <Heart className="w-4 h-4 text-pink-500" fill="currentColor" />;
-  if (type === 'comment') return <MessageCircle className="w-4 h-4 text-brand-burgundy" />;
-  if (type === 'connection_request') return <UserPlus className="w-4 h-4 text-brand-gold" />;
-  if (type === 'connection_accepted') return <Check className="w-4 h-4 text-emerald-500" />;
-  return <Bell className="w-4 h-4 text-brand-ebony/30" />;
+  if (type === 'like') return <Heart className="w-3.5 h-3.5 text-pink-500" fill="currentColor" />;
+  if (type === 'comment') return <MessageCircle className="w-3.5 h-3.5 text-brand-burgundy" />;
+  if (type === 'connection_request') return <UserPlus className="w-3.5 h-3.5 text-brand-gold" />;
+  if (type === 'connection_accepted') return <Check className="w-3.5 h-3.5 text-emerald-500" />;
+  return <Bell className="w-3.5 h-3.5 text-brand-ebony/30" />;
 }
 
 export function NotificationBell() {
   const { userData } = useAuth();
   const router = useRouter();
-  const [open, setOpen] = useState(false);
-  const [notifications, setNotifications] = useState<Notification[]>([]);
-  const panelRef = useRef<HTMLDivElement>(null);
+  const { setFocusMode } = useUI();
 
+  const [open, setOpen] = useState(false);
+  const [mounted, setMounted] = useState(false); // for portal SSR safety
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const drawerRef = useRef<HTMLDivElement>(null);
+
+  // ── SSR safety: only mount portal on client ──
+  useEffect(() => { setMounted(true); }, []);
+
+  // ── stable close handler ──
+  const closeDrawer = useCallback(() => {
+    setOpen(false);
+    setFocusMode(false);
+  }, [setFocusMode]);
+
+  // ── Live notifications listener ──
   useEffect(() => {
     if (!userData?.uid) return;
     const q = query(
@@ -62,48 +77,57 @@ export function NotificationBell() {
     return () => unsub();
   }, [userData?.uid]);
 
+  // ── Close on outside click — delayed so the opening click doesn't immediately close ──
   useEffect(() => {
+    if (!open) return;
     const handler = (e: MouseEvent) => {
-      if (panelRef.current && !panelRef.current.contains(e.target as Node)) {
-        setOpen(false);
+      if (drawerRef.current && !drawerRef.current.contains(e.target as Node)) {
+        closeDrawer();
       }
     };
-    if (open) document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, [open]);
+    const id = setTimeout(() => document.addEventListener('mousedown', handler), 50);
+    return () => {
+      clearTimeout(id);
+      document.removeEventListener('mousedown', handler);
+    };
+  }, [open, closeDrawer]);
 
-  const unread = notifications.filter(n => !n.isRead).length;
+  // ── Auto mark-all-read 1.5 s after opening ──
+  useEffect(() => {
+    if (!open) return;
+    const timer = setTimeout(async () => {
+      const unread = notifications.filter(n => !n.isRead);
+      if (!unread.length) return;
+      await Promise.all(
+        unread.map(n => updateDoc(doc(db, 'notifications', n.id), { isRead: true }))
+      ).catch(console.error);
+    }, 1500);
+    return () => clearTimeout(timer);
+  }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const markAllRead = async () => {
-    const unreadNotifs = notifications.filter(n => !n.isRead);
-    await Promise.all(
-      unreadNotifs.map(n => updateDoc(doc(db, 'notifications', n.id), { isRead: true }))
-    );
-  };
-
-  const markRead = async (id: string) => {
-    await updateDoc(doc(db, 'notifications', id), { isRead: true });
+  // ─────────────────────── actions ───────────────────────
+  const markAllRead = () => {
+    notifications
+      .filter(n => !n.isRead)
+      .forEach(n => updateDoc(doc(db, 'notifications', n.id), { isRead: true }).catch(console.error));
   };
 
   const handleAccept = async (notif: Notification) => {
     if (!userData) return;
-    const requesterId = notif.sourceUserUid;
     try {
       await updateDoc(doc(db, 'users', userData.uid), {
-        pendingRequests: arrayRemove(requesterId),
-        connections: arrayUnion(requesterId),
+        pendingRequests: arrayRemove(notif.sourceUserUid),
+        connections: arrayUnion(notif.sourceUserUid),
       });
-      await updateDoc(doc(db, 'users', requesterId), {
+      await updateDoc(doc(db, 'users', notif.sourceUserUid), {
         sentRequests: arrayRemove(userData.uid),
         connections: arrayUnion(userData.uid),
       });
       await updateDoc(doc(db, 'notifications', notif.id), {
-        type: 'connection_accepted',
-        message: 'You are now connected.',
-        isRead: true,
+        type: 'connection_accepted', message: 'You are now connected.', isRead: true,
       });
       await addDoc(collection(db, 'notifications'), {
-        userId: requesterId,
+        userId: notif.sourceUserUid,
         type: 'connection_accepted',
         sourceUserUid: userData.uid,
         sourceUserName: userData.name,
@@ -113,181 +137,198 @@ export function NotificationBell() {
         createdAt: serverTimestamp(),
         isRead: false,
       });
-    } catch (err) {
-      console.error('Accept error:', err);
-    }
+    } catch (err) { console.error('Accept error:', err); }
   };
 
   const handleIgnore = async (notif: Notification) => {
     if (!userData) return;
     try {
-      await updateDoc(doc(db, 'users', userData.uid), {
-        pendingRequests: arrayRemove(notif.sourceUserUid),
-      });
+      await updateDoc(doc(db, 'users', userData.uid), { pendingRequests: arrayRemove(notif.sourceUserUid) });
       await updateDoc(doc(db, 'notifications', notif.id), { isRead: true, message: 'Request declined.' });
-    } catch (err) {
-      console.error('Ignore error:', err);
-    }
+    } catch (err) { console.error('Ignore error:', err); }
   };
 
-  const handleNotificationClick = async (notif: Notification) => {
-    if (!notif.isRead) markRead(notif.id);
-    setOpen(false);
-    const destination = notif.link || `/profile/${notif.sourceUserUid}`;
-    router.push(destination);
+  const handleNotificationClick = (notif: Notification) => {
+    updateDoc(doc(db, 'notifications', notif.id), { isRead: true }).catch(console.error);
+    closeDrawer();
+    router.push(notif.link || `/profile/${notif.sourceUserUid}`);
   };
 
+  const unreadCount = notifications.filter(n => !n.isRead).length;
+
+  // ─────────────────────── Portal content ───────────────────────
+  const drawerPortal = mounted ? createPortal(
+    <>
+      {/* Backdrop */}
+      <div
+        className={`fixed inset-0 bg-black/40 backdrop-blur-[2px] z-[200] transition-opacity duration-300 ${
+          open ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+        }`}
+        onClick={closeDrawer}
+      />
+
+      {/* Drawer panel */}
+      <div
+        ref={drawerRef}
+        className={`fixed right-0 top-0 h-full w-[22rem] z-[201] flex flex-col transition-transform duration-300 ease-out ${
+          open ? 'translate-x-0' : 'translate-x-full'
+        }`}
+        style={{
+          background: 'rgba(255, 255, 255, 0.98)',
+          backdropFilter: 'blur(32px)',
+          WebkitBackdropFilter: 'blur(32px)',
+          borderLeft: '1px solid rgba(139,21,56,0.12)',
+          boxShadow: open ? '-8px 0 40px rgba(0,0,0,0.15)' : 'none',
+        }}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 pt-6 pb-4 border-b border-brand-ebony/6 flex-shrink-0"
+          style={{ background: 'linear-gradient(to right, rgba(139,21,56,0.04), transparent)' }}
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 bg-brand-burgundy/10 rounded-2xl flex items-center justify-center">
+              <Bell className="w-4 h-4 text-brand-burgundy" />
+            </div>
+            <div>
+              <span className="text-brand-ebony font-extrabold text-[15px] tracking-tight block leading-none">
+                Notifications
+              </span>
+              {unreadCount > 0 && (
+                <span className="text-[10px] text-brand-burgundy font-bold uppercase tracking-wider">
+                  {unreadCount} unread
+                </span>
+              )}
+            </div>
+          </div>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={markAllRead}
+              className="p-2 text-brand-ebony/40 hover:text-brand-burgundy hover:bg-brand-burgundy/10 rounded-xl transition-all"
+              title="Mark all as read"
+            >
+              <CheckCheck className="w-4 h-4" />
+            </button>
+            <button
+              onClick={closeDrawer}
+              className="p-2 text-brand-ebony/40 hover:text-brand-ebony hover:bg-brand-ebony/5 rounded-xl transition-all"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+
+        {/* List */}
+        <div className="overflow-y-auto flex-1 scrollbar-hide">
+          {notifications.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-20 text-center px-6">
+              <div className="w-20 h-20 rounded-[1.5rem] flex items-center justify-center mb-5"
+                style={{ background: 'linear-gradient(135deg, rgba(139,21,56,0.06), rgba(99,102,241,0.06))' }}
+              >
+                <Bell className="w-9 h-9 text-brand-ebony/15" />
+              </div>
+              <p className="text-lg font-serif font-bold text-brand-ebony/50 italic mb-1">All caught up!</p>
+              <p className="text-xs text-brand-ebony/35 font-medium">No new activity from your circle.</p>
+            </div>
+          ) : (
+            notifications.map((notif) => (
+              <div
+                key={notif.id}
+                onClick={() => handleNotificationClick(notif)}
+                className={`flex items-start gap-4 px-5 py-4 border-b border-brand-ebony/5 cursor-pointer group/item relative transition-colors ${
+                  !notif.isRead
+                    ? 'bg-brand-burgundy/[0.03] hover:bg-brand-burgundy/[0.06]'
+                    : 'hover:bg-brand-parchment/40'
+                }`}
+              >
+                {!notif.isRead && (
+                  <div className="absolute left-0 top-4 bottom-4 w-[3px] bg-brand-burgundy rounded-r-full" />
+                )}
+                <div className="relative shrink-0 mt-0.5">
+                  <img
+                    src={notif.sourceUserProfilePic || `https://placehold.co/40x40/4f46e5/fff?text=${notif.sourceUserName?.charAt(0) || '?'}`}
+                    alt={notif.sourceUserName}
+                    className="w-10 h-10 rounded-full object-cover ring-2 ring-white shadow-sm"
+                  />
+                  <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-white rounded-full flex items-center justify-center shadow-sm ring-1 ring-brand-ebony/5">
+                    <NotifIcon type={notif.type} />
+                  </div>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[13px] text-brand-ebony leading-snug">
+                    <span className="font-extrabold">{notif.sourceUserName}</span>{' '}
+                    <span className="text-brand-ebony/60 font-medium">{notif.message}</span>
+                  </p>
+                  <p className="text-[10px] font-bold text-brand-ebony/30 uppercase tracking-widest mt-1.5 flex items-center gap-2">
+                    {timeAgo(notif.createdAt)}
+                    {!notif.isRead && <span className="w-1.5 h-1.5 rounded-full bg-brand-burgundy inline-block" />}
+                  </p>
+                  {notif.type === 'connection_request' && (
+                    <div className="flex gap-2 mt-3">
+                      <button
+                        onClick={(e) => { e.stopPropagation(); handleAccept(notif); }}
+                        className="text-[10px] font-bold text-white bg-brand-burgundy px-4 py-1.5 rounded-xl hover:brightness-110 transition-all uppercase tracking-widest shadow-sm"
+                      >
+                        Accept
+                      </button>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); handleIgnore(notif); }}
+                        className="text-[10px] font-bold text-brand-ebony/40 bg-brand-ebony/5 hover:bg-brand-ebony/10 px-4 py-1.5 rounded-xl transition-all uppercase tracking-widest"
+                      >
+                        Decline
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="px-5 py-3 border-t border-brand-ebony/5 text-center flex-shrink-0 bg-brand-ebony/[0.015]">
+          <Link
+            href="/settings"
+            onClick={closeDrawer}
+            className="text-[10px] font-bold text-brand-ebony/35 hover:text-brand-burgundy uppercase tracking-[0.2em] transition-colors"
+          >
+            Notification Settings
+          </Link>
+        </div>
+      </div>
+    </>,
+    document.body
+  ) : null;
+
+  // ─────────────────────── render ───────────────────────
   return (
-    <div className="relative" ref={panelRef}>
+    <>
+      {/* Bell button — stays in normal flow, NOT inside drawerRef */}
       <button
-        onClick={() => setOpen(v => !v)}
+        onClick={() => {
+          const next = !open;
+          setOpen(next);
+          setFocusMode(next, 'partial');
+        }}
         className={`relative flex items-center justify-center w-10 h-10 rounded-xl transition-all shadow-sm border ${
-          open ? 'bg-gradient-indigo text-white border-transparent' : 'bg-brand-burgundy/5 hover:bg-brand-burgundy/10 border-brand-burgundy/10 text-brand-burgundy'
+          open
+            ? 'bg-brand-burgundy text-white border-transparent shadow-brand-burgundy/30'
+            : 'bg-white/15 hover:bg-white/25 border-white/20 text-white'
         }`}
         title="Notifications"
       >
         <Bell className="w-5 h-5" />
-        {unread > 0 && (
-          <span className="absolute -top-1 -right-1 flex h-4 w-4">
+        {unreadCount > 0 && (
+          <span className="absolute -top-1 -right-1 flex h-4 w-4 pointer-events-none">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-60" />
-            <span className="relative inline-flex rounded-full h-4 w-4 bg-red-500 border border-white dark:border-brand-parchment text-[9px] text-white items-center justify-center font-bold">
-              {unread > 9 ? '9+' : unread}
+            <span className="relative inline-flex rounded-full h-4 w-4 bg-red-500 border border-white text-[9px] text-white items-center justify-center font-bold">
+              {unreadCount > 9 ? '9+' : unreadCount}
             </span>
           </span>
         )}
       </button>
 
-      {open && (
-        <div className="absolute right-0 mt-3 z-50 w-[calc(100vw-32px)] sm:w-[400px] max-h-[520px] flex flex-col card-premium shadow-2xl overflow-hidden animate-in fade-in slide-in-from-top-3 duration-300 border-brand-burgundy/10">
-          {/* Header */}
-          <div className="flex items-center justify-between px-5 py-4 border-b border-brand-ebony/5 flex-shrink-0 bg-white/40 dark:bg-brand-parchment/40 backdrop-blur-md">
-            <div className="flex items-center gap-2.5">
-              <div className="w-7 h-7 bg-brand-burgundy/10 rounded-lg flex items-center justify-center">
-                 <Bell className="w-4 h-4 text-brand-burgundy" />
-              </div>
-              <div>
-                <span className="text-brand-ebony font-extrabold text-md tracking-tight">Notifications</span>
-                <p className="text-[10px] font-bold text-brand-ebony/30 uppercase tracking-widest mt-0.5">Stay updated with your circle</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={markAllRead}
-                className="p-1.5 text-brand-ebony/40 hover:text-brand-burgundy hover:bg-brand-burgundy/10 rounded-lg transition-all"
-                title="Mark all as read"
-              >
-                <CheckCheck className="w-4 h-4" />
-              </button>
-              <button onClick={() => setOpen(false)} className="p-1.5 text-brand-ebony/40 hover:text-brand-ebony hover:bg-brand-ebony/5 rounded-lg transition-all">
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
-
-          {/* List */}
-          <div className="overflow-y-auto flex-1 scrollbar-hide bg-white/10 dark:bg-brand-parchment/10">
-            {notifications.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-16 text-center px-6">
-                <div className="w-16 h-16 bg-brand-ebony/5 rounded-full flex items-center justify-center mb-4 border border-brand-ebony/5">
-                   <Bell className="w-8 h-8 text-brand-ebony/10" />
-                </div>
-                <p className="text-lg font-serif font-bold text-brand-ebony/60 italic mb-1">Silence is golden</p>
-                <p className="text-xs text-brand-ebony/40 font-medium">You're all caught up for now.</p>
-              </div>
-            ) : (
-              notifications.map((notif) => (
-                <div
-                  key={notif.id}
-                  onClick={() => handleNotificationClick(notif)}
-                  className={`flex items-start gap-4 px-5 py-4 border-b border-brand-ebony/5 hover:bg-white dark:hover:bg-brand-ebony/20 transition-all cursor-pointer group/item relative ${
-                    !notif.isRead ? 'bg-brand-burgundy/[0.02]' : ''
-                  }`}
-                >
-                  {!notif.isRead && (
-                    <div className="absolute left-0 top-3 bottom-3 w-1 bg-gradient-indigo rounded-r-full" />
-                  )}
-                  
-                  {/* Avatar */}
-                  <div className="relative shrink-0">
-                    <img
-                      src={notif.sourceUserProfilePic || `https://placehold.co/40x40/4f46e5/fff?text=${notif.sourceUserName?.charAt(0) || '?'}`}
-                      alt={notif.sourceUserName}
-                      className="w-10 h-10 rounded-full object-cover border-2 border-white dark:border-brand-parchment shadow-sm group-hover/item:scale-105 transition-transform"
-                    />
-                    <div className="absolute -bottom-1 -right-1 p-1 bg-white dark:bg-[#0f172a] rounded-full shadow-sm ring-2 ring-transparent group-hover/item:ring-brand-burgundy/10 transition-all">
-                      <NotifIcon type={notif.type} />
-                    </div>
-                  </div>
-
-                  {/* Content */}
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm text-brand-ebony leading-relaxed">
-                      <span className="font-extrabold group-hover/item:text-brand-burgundy transition-colors">
-                        {notif.sourceUserName}
-                      </span>{' '}
-                      <span className="text-brand-ebony/60 font-medium">{notif.message}</span>
-                    </p>
-                    <p className="text-[10px] font-bold text-brand-ebony/30 uppercase tracking-widest mt-1.5 flex items-center gap-2">
-                       {timeAgo(notif.createdAt)}
-                       {notif.isRead === false && <span className="w-1 h-1 rounded-full bg-brand-burgundy"></span>}
-                    </p>
-
-                    {/* Connection request actions */}
-                    {notif.type === 'connection_request' && (
-                      <div className="flex gap-2 mt-4">
-                        <button
-                          onClick={(e) => { e.stopPropagation(); handleAccept(notif); }}
-                          className="text-[10px] font-bold text-white bg-gradient-indigo px-4 py-2 rounded-xl shadow-md hover:shadow-indigo-500/20 transition-all uppercase tracking-widest"
-                        >
-                          Accept
-                        </button>
-                        <button
-                          onClick={(e) => { e.stopPropagation(); handleIgnore(notif); }}
-                          className="text-[10px] font-bold text-brand-ebony/40 bg-brand-ebony/5 hover:bg-brand-ebony/10 px-4 py-2 rounded-xl transition-all uppercase tracking-widest"
-                        >
-                          Decline
-                        </button>
-                      </div>
-                    )}
-
-                    {/* Context Hint */}
-                    {notif.link && notif.type !== 'connection_request' && notif.type !== 'connection_accepted' && (
-                      <div className="inline-flex items-center mt-3 text-[10px] font-bold uppercase tracking-widest text-brand-burgundy group-hover/item:translate-x-1 transition-transform">
-                        Explore detail <ArrowRight size={10} className="ml-1" />
-                      </div>
-                    )}
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-          
-          <div className="px-5 py-3 bg-brand-burgundy/5 border-t border-brand-ebony/5 text-center">
-             <Link href="/settings" onClick={() => setOpen(false)} className="text-[10px] font-bold text-brand-burgundy/60 hover:text-brand-burgundy uppercase tracking-[0.2em] transition-colors">
-                Notification Settings
-             </Link>
-          </div>
-        </div>
-      )}
-    </div>
+      {/* Drawer & Backdrop mounted via Portal at document.body — escapes all transform stacking contexts */}
+      {drawerPortal}
+    </>
   );
-}
-
-function ArrowRight({ size, className }: { size: number, className: string }) {
-    return (
-        <svg 
-            width={size} 
-            height={size} 
-            viewBox="0 0 24 24" 
-            fill="none" 
-            stroke="currentColor" 
-            strokeWidth="3" 
-            strokeLinecap="round" 
-            strokeLinejoin="round" 
-            className={className}
-        >
-            <line x1="5" y1="12" x2="19" y2="12"></line>
-            <polyline points="12 5 19 12 12 19"></polyline>
-        </svg>
-    )
 }

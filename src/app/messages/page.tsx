@@ -146,7 +146,7 @@ function MessagesClient() {
     if (!userData) return null;
 
     return (
-        <div className="h-[calc(100vh-120px)] w-full max-w-[1400px] mx-auto md:px-6 md:pb-6 animate-fade-in overflow-hidden">
+        <div className="h-[calc(100dvh-7rem)] w-full max-w-[1400px] mx-auto md:px-4 md:pb-4 animate-fade-in overflow-hidden">
             <div className="flex bg-white/40 dark:bg-brand-parchment/10 backdrop-blur-xl md:rounded-3xl shadow-2xl border border-white/20 dark:border-brand-ebony/10 h-full w-full overflow-hidden transition-all duration-500">
                 {/* Left Pane: Chat List */}
                 <div className={`md:w-1/3 xl:w-1/4 w-full flex-shrink-0 border-r border-brand-ebony/5 flex flex-col ${(selectedChatId || selectedGroupId) ? 'hidden md:flex' : 'flex'}`}>

@@ -5,7 +5,7 @@ import { UserPlus, X, Sparkles } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
-import { collection, query, onSnapshot, updateDoc, arrayUnion, addDoc, doc } from 'firebase/firestore';
+import { collection, query, onSnapshot, updateDoc, arrayUnion, addDoc, doc, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { User } from '@/types';
 
@@ -22,7 +22,10 @@ export function RightSidebar({ isOpen = false, onClose = () => {} }: RightSideba
     useEffect(() => {
         if (!userData) { setLoading(false); return; }
 
-        const usersQuery = query(collection(db, 'users'));
+        const usersQuery = query(
+            collection(db, 'users'),
+            where('instituteId', '==', userData.instituteId)
+        );
         const unsubscribe = onSnapshot(usersQuery,
             (snapshot) => {
                 const fetched = snapshot.docs
@@ -37,7 +40,11 @@ export function RightSidebar({ isOpen = false, onClose = () => {} }: RightSideba
                 setSuggestions(shuffled.slice(0, 4));
                 setLoading(false);
             },
-            (error) => { console.error('Error fetching suggestions:', error); setLoading(false); }
+            (error) => { 
+                console.error('Error fetching suggestions (Permissions/Rules?):', error); 
+                setLoading(false); 
+                setSuggestions([]);
+            }
         );
         return () => unsubscribe();
     }, [userData]);
@@ -96,7 +103,7 @@ export function RightSidebar({ isOpen = false, onClose = () => {} }: RightSideba
                         >
                             <Sparkles className="w-3.5 h-3.5 text-white" />
                         </div>
-                        <h2 className="font-semibold text-brand-ebony text-sm">Discover Alumni</h2>
+                        <h2 className="font-serif font-bold text-brand-ebony text-lg tracking-tight">Discover Alumni</h2>
                     </div>
                     <button
                         onClick={onClose}
@@ -141,11 +148,11 @@ export function RightSidebar({ isOpen = false, onClose = () => {} }: RightSideba
                                         {/* Info */}
                                         <div className="flex-1 min-w-0">
                                             <Link href={`/profile/${user.uid}`}>
-                                                <p className="text-sm font-semibold text-brand-ebony truncate hover:text-brand-burgundy transition-colors leading-tight">
+                                                <p className="text-sm font-serif font-bold text-brand-ebony truncate hover:text-brand-burgundy transition-colors leading-tight">
                                                     {user.name}
                                                 </p>
                                             </Link>
-                                            <p className="text-[11px] text-brand-ebony/45 truncate mt-0.5 font-medium">
+                                            <p className="text-[10px] text-brand-ebony/40 truncate mt-1 flex items-center gap-1.5 font-bold uppercase tracking-wider">
                                                 {user.profession || `Batch of ${user.batch}`}
                                             </p>
                                         </div>
@@ -153,10 +160,10 @@ export function RightSidebar({ isOpen = false, onClose = () => {} }: RightSideba
                                         {/* Connect */}
                                         <button
                                             onClick={() => handleConnect(user.uid)}
-                                            className="flex-shrink-0 flex items-center gap-1 text-[11px] font-bold text-brand-burgundy border border-brand-burgundy/30 bg-brand-burgundy/8 hover:bg-brand-burgundy hover:text-white px-2.5 py-1.5 rounded-lg transition-all duration-200"
+                                            className="flex-shrink-0 flex items-center gap-1.5 text-[10px] font-bold text-brand-burgundy border border-brand-burgundy/20 bg-brand-burgundy/5 hover:bg-brand-burgundy hover:text-white px-3 py-2 rounded-xl transition-all duration-300 uppercase tracking-widest shadow-sm active:scale-95"
                                         >
-                                            <UserPlus className="w-3 h-3" />
-                                            Connect
+                                            <UserPlus className="w-3.5 h-3.5" />
+                                            <span>Invite</span>
                                         </button>
                                     </div>
                                 ))
