@@ -180,6 +180,6 @@ export interface Chat {
   lastMessage?: string;
   lastMessageAt?: Timestamp;
   unreadCount?: Record<string, number>;
-  participantDetails?: Record<string, { name: string; profilePic: string }>;
+  participantDetails?: Record<string, { name: string; profilePic: string; isOnline?: boolean }>;
   deletedBy?: string[]; // Array of UIDs who have "deleted" (hidden) the chat
 }

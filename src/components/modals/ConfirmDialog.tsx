@@ -13,6 +13,12 @@ interface ConfirmDialogProps {
     variant?: 'danger' | 'warning' | 'info';
 }
 
+const StatusIcon = ({ variant }: { variant: 'danger' | 'warning' | 'info' }) => {
+    if (variant === 'danger') return <ShieldAlert className="w-5 h-5 text-red-500" />;
+    if (variant === 'warning') return <AlertTriangle className="w-5 h-5 text-brand-gold" />;
+    return <Info className="w-5 h-5 text-brand-burgundy" />;
+};
+
 export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
     isOpen,
     onClose,
@@ -31,19 +37,13 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
         info: 'bg-gradient-indigo hover:shadow-indigo-500/20',
     };
 
-    const StatusIcon = () => {
-        if (variant === 'danger') return <ShieldAlert className="w-5 h-5 text-red-500" />;
-        if (variant === 'warning') return <AlertTriangle className="w-5 h-5 text-brand-gold" />;
-        return <Info className="w-5 h-5 text-brand-burgundy" />;
-    };
-
     return (
         <div className="fixed inset-0 bg-brand-ebony/60 dark:bg-black/60 backdrop-blur-md flex items-center justify-center z-[100] p-4 animate-in fade-in duration-300">
             <div className="card-premium max-w-md w-full overflow-hidden animate-in zoom-in-95 duration-200 border-brand-burgundy/10 shadow-2xl">
                 {/* Header */}
                 <div className="flex items-center justify-between px-6 py-5 border-b border-brand-ebony/5 bg-white/40 dark:bg-brand-parchment/40 backdrop-blur-sm">
                     <div className="flex items-center gap-3">
-                         <StatusIcon />
+                         <StatusIcon variant={variant} />
                          <h2 className="text-xl font-serif font-extrabold text-brand-ebony tracking-tight">{title}</h2>
                     </div>
                     <button

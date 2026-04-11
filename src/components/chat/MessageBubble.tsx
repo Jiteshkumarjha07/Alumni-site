@@ -81,9 +81,20 @@ export function MessageBubble({
         return colors[Math.abs(hash) % colors.length];
     }, [message.senderId, isOwnMessage]);
 
-    const canAction = message.createdAt && (
-        (Date.now() - message.createdAt.toMillis()) < 10 * 60 * 1000
-    );
+    const [canAction, setCanAction] = useState(false);
+
+    useEffect(() => {
+        if (!message.createdAt) {
+            setCanAction(false);
+            return;
+        }
+        try {
+            const timePassed = Date.now() - message.createdAt.toMillis();
+            setCanAction(timePassed < 10 * 60 * 1000);
+        } catch (e) {
+            setCanAction(false);
+        }
+    }, [message.createdAt]);
 
     const handleCopy = () => {
         const textToCopy = decryptedText;

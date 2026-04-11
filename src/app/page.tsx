@@ -30,6 +30,7 @@ function ScrollRevealCard({ children, index = 0 }: { children: React.ReactNode; 
   const [state, setState] = useState<CardState>('below');
   // Track whether a stagger delay has already played (only first appearance)
   const hasStaggered = useRef(false);
+  const [shouldDelay, setShouldDelay] = useState(false);
   const hasBeenVisible = useRef(false);
 
   useEffect(() => {
@@ -40,6 +41,12 @@ function ScrollRevealCard({ children, index = 0 }: { children: React.ReactNode; 
       ([entry]) => {
         if (entry.isIntersecting) {
           hasBeenVisible.current = true;
+          if (!hasStaggered.current) {
+            setShouldDelay(true);
+            hasStaggered.current = true;
+          } else {
+            setShouldDelay(false);
+          }
           setState('visible');
         } else {
           if (!hasBeenVisible.current) return; // never shown yet — stay 'below'
@@ -62,10 +69,7 @@ function ScrollRevealCard({ children, index = 0 }: { children: React.ReactNode; 
     return () => obs.disconnect();
   }, []);
 
-  // Stagger only plays ONCE per card (first appearance)
-  const shouldStagger = state === 'visible' && !hasStaggered.current;
-  if (shouldStagger) hasStaggered.current = true;
-  const entryDelay = shouldStagger ? Math.min(index * 60, 240) : 0;
+  const entryDelay = shouldDelay ? Math.min(index * 60, 240) : 0;
 
   const styles: Record<CardState, { opacity: number; transform: string }> = {
     below:   { opacity: 0, transform: 'translateY(40px) scale(0.97)' },
