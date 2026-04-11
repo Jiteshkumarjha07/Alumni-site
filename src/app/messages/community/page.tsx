@@ -72,18 +72,18 @@ export default function CommunityChatPage() {
     if (!userData) {
         return (
             <div className="flex items-center justify-center min-h-screen">
-                <p className="text-gray-600">Please log in to access community chat</p>
+                <p className="text-brand-ebony/60">Please log in to access community chat</p>
             </div>
         );
     }
 
     return (
-        <div className="flex flex-col h-screen bg-gray-50">
+        <div className="flex flex-col h-screen bg-brand-cream dark:bg-brand-cream">
             {/* Header */}
-            <div className="bg-white border-b px-4 py-3 flex items-center gap-3">
+            <div className="sidebar-glass border-b border-brand-ebony/8 px-4 py-3 flex items-center gap-3">
                 <button
                     onClick={() => router.back()}
-                    className="p-2 hover:bg-gray-100 rounded-full transition"
+                    className="p-2 hover:bg-brand-ebony/8 dark:hover:bg-white/8 rounded-full transition text-brand-ebony/60 hover:text-brand-ebony"
                 >
                     <ArrowLeft className="w-5 h-5" />
                 </button>
@@ -102,7 +102,7 @@ export default function CommunityChatPage() {
             <div className="flex-1 overflow-y-auto p-4 space-y-4">
                 {loading ? (
                     <div className="flex items-center justify-center h-full">
-                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-burgundy"></div>
                     </div>
                 ) : (
                     <>
@@ -113,12 +113,12 @@ export default function CommunityChatPage() {
                             >
                                 <div className={`max-w-[70%] ${msg.senderId === userData.uid ? 'order-2' : 'order-1'}`}>
                                     {msg.senderId !== userData.uid && (
-                                        <p className="text-xs text-gray-600 mb-1 px-3">{msg.senderName}</p>
+                                        <p className="text-xs text-brand-ebony/50 mb-1 px-3 font-semibold">{msg.senderName}</p>
                                     )}
                                     <div
                                         className={`rounded-2xl px-4 py-2 ${msg.senderId === userData.uid
-                                                ? 'bg-blue-600 text-white'
-                                                : 'bg-white text-gray-900'
+                                                ? 'bg-brand-burgundy text-white'
+                                                : 'bg-white/80 dark:bg-brand-parchment/20 text-brand-ebony border border-brand-ebony/5'
                                             }`}
                                     >
                                         <p className="whitespace-pre-wrap break-words">{msg.text}</p>
@@ -132,7 +132,7 @@ export default function CommunityChatPage() {
             </div>
 
             {/* Input */}
-            <div className="bg-white border-t p-4">
+            <div className="sidebar-glass border-t border-brand-ebony/8 p-4">
                 <div className="flex gap-2">
                     <input
                         type="text"
@@ -140,12 +140,12 @@ export default function CommunityChatPage() {
                         onChange={(e) => setNewMessage(e.target.value)}
                         onKeyPress={handleKeyPress}
                         placeholder="Type a message..."
-                        className="flex-1 px-4 py-2 border border-gray-300 rounded-full focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        className="flex-1 px-4 py-2 border border-brand-ebony/10 rounded-full focus:ring-2 focus:ring-brand-burgundy/20 focus:border-brand-burgundy/30 bg-white/60 dark:bg-brand-parchment/15 text-brand-ebony outline-none transition"
                     />
                     <button
                         onClick={handleSendMessage}
                         disabled={!newMessage.trim()}
-                        className="p-3 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="p-3 bg-brand-burgundy text-white rounded-full hover:brightness-110 transition disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
                     >
                         <Send className="w-5 h-5" />
                     </button>

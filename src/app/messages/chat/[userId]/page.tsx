@@ -94,7 +94,7 @@ export default function PersonalChatPage() {
     if (!userData) {
         return (
             <div className="flex items-center justify-center min-h-screen">
-                <p className="text-gray-600">Please log in to access chat</p>
+                <p className="text-brand-ebony/60">Please log in to access chat</p>
             </div>
         );
     }
@@ -102,29 +102,29 @@ export default function PersonalChatPage() {
     if (!recipient) {
         return (
             <div className="flex items-center justify-center min-h-screen">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-burgundy"></div>
             </div>
         );
     }
 
     return (
-        <div className="flex flex-col h-screen bg-gray-50">
+        <div className="flex flex-col h-screen bg-brand-cream dark:bg-brand-cream">
             {/* Header */}
-            <div className="bg-white border-b px-4 py-3 flex items-center gap-3">
+            <div className="sidebar-glass border-b border-brand-ebony/8 px-4 py-3 flex items-center gap-3">
                 <button
                     onClick={() => router.back()}
-                    className="p-2 hover:bg-gray-100 rounded-full transition"
+                    className="p-2 hover:bg-brand-ebony/8 dark:hover:bg-white/8 rounded-full transition text-brand-ebony/60 hover:text-brand-ebony"
                 >
                     <ArrowLeft className="w-5 h-5" />
                 </button>
                 <img
-                    src={recipient.profilePic || `https://placehold.co/40x40/EFEFEFF/3B82F6?text=${recipient.name.substring(0, 1)}`}
+                    src={recipient.profilePic || `https://placehold.co/40x40/4f46e5/ffffff?text=${recipient.name.substring(0, 1)}`}
                     alt={recipient.name}
-                    className="w-10 h-10 rounded-full"
+                    className="w-10 h-10 rounded-full border-2 border-white dark:border-brand-parchment shadow-sm"
                 />
                 <div>
-                    <h2 className="font-semibold">{recipient.name}</h2>
-                    <p className="text-sm text-gray-600">Batch of {recipient.batch}</p>
+                    <h2 className="font-semibold text-brand-ebony">{recipient.name}</h2>
+                    <p className="text-sm text-brand-ebony/50">Batch of {recipient.batch}</p>
                 </div>
             </div>
 
@@ -132,7 +132,7 @@ export default function PersonalChatPage() {
             <div className="flex-1 overflow-y-auto p-4 space-y-4">
                 {loading ? (
                     <div className="flex items-center justify-center h-full">
-                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-burgundy"></div>
                     </div>
                 ) : messages.length > 0 ? (
                     <>
@@ -143,8 +143,8 @@ export default function PersonalChatPage() {
                             >
                                 <div
                                     className={`max-w-[70%] rounded-2xl px-4 py-2 ${msg.senderId === userData.uid
-                                            ? 'bg-blue-600 text-white'
-                                            : 'bg-white text-gray-900'
+                                            ? 'bg-brand-burgundy text-white'
+                                            : 'bg-white/80 dark:bg-brand-parchment/20 text-brand-ebony border border-brand-ebony/5'
                                         }`}
                                 >
                                     <p className="whitespace-pre-wrap break-words">{msg.text}</p>
@@ -155,13 +155,13 @@ export default function PersonalChatPage() {
                     </>
                 ) : (
                     <div className="flex items-center justify-center h-full">
-                        <p className="text-gray-500">No messages yet. Start the conversation!</p>
+                        <p className="text-brand-ebony/40 font-medium">No messages yet. Start the conversation!</p>
                     </div>
                 )}
             </div>
 
             {/* Input */}
-            <div className="bg-white border-t p-4">
+            <div className="sidebar-glass border-t border-brand-ebony/8 p-4">
                 <div className="flex gap-2">
                     <input
                         type="text"
@@ -169,12 +169,12 @@ export default function PersonalChatPage() {
                         onChange={(e) => setNewMessage(e.target.value)}
                         onKeyPress={handleKeyPress}
                         placeholder="Type a message..."
-                        className="flex-1 px-4 py-2 border border-gray-300 rounded-full focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        className="flex-1 px-4 py-2 border border-brand-ebony/10 rounded-full focus:ring-2 focus:ring-brand-burgundy/20 focus:border-brand-burgundy/30 bg-white/60 dark:bg-brand-parchment/15 text-brand-ebony outline-none transition"
                     />
                     <button
                         onClick={handleSendMessage}
                         disabled={!newMessage.trim()}
-                        className="p-3 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="p-3 bg-brand-burgundy text-white rounded-full hover:brightness-110 transition disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
                     >
                         <Send className="w-5 h-5" />
                     </button>

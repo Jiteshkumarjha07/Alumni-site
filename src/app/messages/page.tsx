@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { ChatList } from '@/components/chat/ChatList';
 import { ChatWindow } from '@/components/chat/ChatWindow';
@@ -32,6 +32,11 @@ function MessagesClient() {
     const [selectedUser, setSelectedUser] = useState<{ name: string; profilePic: string; uid: string } | null>(null);
     const [selectedGroupData, setSelectedGroupData] = useState<Group | null>(null);
     const [viewMode, setViewMode] = useState<'chats' | 'groups'>('chats');
+    
+    // Resizable Sidebar State
+    const [sidebarWidth, setSidebarWidth] = useState(400);
+    const [isResizing, setIsResizing] = useState(false);
+    const containerRef = useRef<HTMLDivElement>(null);
 
     const getChatId = (uid1: string, uid2: string) => {
         return uid1 < uid2 ? `${uid1}_${uid2}` : `${uid2}_${uid1}`;
@@ -94,10 +99,13 @@ function MessagesClient() {
             return;
         }
 
+        let isMounted = true;
+
         const chatsRef = collection(db, 'chats');
         const q = query(chatsRef, where('participants', 'array-contains', userData.uid));
 
         const unsubscribe = onSnapshot(q, (snapshot) => {
+            if (!isMounted) return;
             const fetchedChats = snapshot.docs.map(doc => ({
                 id: doc.id,
                 ...doc.data()
@@ -113,10 +121,13 @@ function MessagesClient() {
             setLoadingChats(false);
         }, (error) => {
             console.error('Error fetching chats:', error);
-            setLoadingChats(false);
+            if (isMounted) setLoadingChats(false);
         });
 
-        return () => unsubscribe();
+        return () => {
+            isMounted = false;
+            unsubscribe();
+        };
     }, [userData?.uid]);
 
     useEffect(() => {
@@ -135,6 +146,45 @@ function MessagesClient() {
         }
     }, [searchParams, userData?.uid, router]);
 
+    // Handle Resize
+    const startResizing = (e: React.MouseEvent) => {
+        e.preventDefault();
+        setIsResizing(true);
+    };
+
+    const stopResizing = () => {
+        setIsResizing(false);
+    };
+
+    useEffect(() => {
+        const resize = (e: MouseEvent) => {
+            if (!isResizing || !containerRef.current) return;
+            
+            const containerLeft = containerRef.current.getBoundingClientRect().left;
+            let newWidth = e.clientX - containerLeft;
+            
+            // Limit bounds: 300px to 600px
+            if (newWidth < 300) newWidth = 300;
+            if (newWidth > 600) newWidth = 600;
+            
+            setSidebarWidth(newWidth);
+        };
+
+        if (isResizing) {
+            window.addEventListener('mousemove', resize);
+            window.addEventListener('mouseup', stopResizing);
+            document.body.style.cursor = 'col-resize';
+            document.body.style.userSelect = 'none';
+        }
+
+        return () => {
+            window.removeEventListener('mousemove', resize);
+            window.removeEventListener('mouseup', stopResizing);
+            document.body.style.cursor = 'default';
+            document.body.style.userSelect = 'auto';
+        };
+    }, [isResizing]);
+
     if (authLoading) {
         return (
             <div className="flex h-[calc(100vh-8rem)] items-center justify-center">
@@ -146,10 +196,13 @@ function MessagesClient() {
     if (!userData) return null;
 
     return (
-        <div className="h-[calc(100dvh-7rem)] w-full max-w-[1400px] mx-auto md:px-6 md:pb-6 animate-fade-in overflow-hidden">
-            <div className="flex bg-white/60 dark:bg-brand-parchment/10 backdrop-blur-2xl md:rounded-[2.5rem] shadow-premium ring-1 ring-white/50 dark:ring-white/10 border border-brand-ebony/5 h-full w-full overflow-hidden transition-all duration-500">
+        <div className="h-[calc(100dvh-7rem)] w-full max-w-[1700px] mx-auto md:px-4 md:pb-4 animate-fade-in overflow-hidden">
+            <div ref={containerRef} className="flex bg-white/60 dark:bg-brand-parchment/10 backdrop-blur-2xl md:rounded-[2rem] shadow-premium ring-1 ring-white/50 dark:ring-white/10 border border-brand-ebony/5 h-full w-full overflow-hidden transition-all duration-500">
                 {/* Left Pane: Chat List */}
-                <div className={`md:w-[350px] lg:w-[400px] w-full flex-shrink-0 border-r border-brand-ebony/[0.04] flex flex-col bg-white/40 dark:bg-black/5 ${(selectedChatId || selectedGroupId) ? 'hidden md:flex' : 'flex'}`}>
+                <div 
+                    style={{ width: sidebarWidth ? `${sidebarWidth}px` : undefined }}
+                    className={`flex-shrink-0 border-r border-brand-ebony/[0.04] flex flex-col bg-white/40 dark:bg-black/5 ${(selectedChatId || selectedGroupId) ? 'hidden md:flex' : 'flex'}`}
+                >
                     {loadingChats ? (
                         <div className="flex h-full items-center justify-center">
                             <Loader2 className="w-8 h-8 animate-spin text-brand-burgundy/20" />
@@ -167,6 +220,14 @@ function MessagesClient() {
                             onViewModeChange={setViewMode}
                         />
                     )}
+                </div>
+
+                {/* Resizer Handle */}
+                <div 
+                    onMouseDown={startResizing}
+                    className={`hidden md:block w-1 h-full cursor-col-resize hover:bg-brand-burgundy/30 active:bg-brand-burgundy/50 transition-colors z-50 -ml-0.5 relative group ${isResizing ? 'bg-brand-burgundy/40' : 'bg-transparent'}`}
+                >
+                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-0.5 h-12 bg-brand-ebony/10 rounded-full group-hover:bg-brand-burgundy/40" />
                 </div>
 
                 {/* Right Pane: Chat Window */}

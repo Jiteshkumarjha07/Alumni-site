@@ -116,14 +116,14 @@ export function ChatList({ currentUser, chats, onSelectChat, onStartChat, onSele
     return (
         <div className="w-full h-full flex flex-col bg-white/20 dark:bg-brand-parchment/5">
             {/* Header & Control Center */}
-            <div className="px-6 py-8 border-b border-brand-ebony/5 bg-white/40 dark:bg-brand-parchment/10 backdrop-blur-sm">
-                <div className="flex justify-between items-center mb-8">
+            <div className="px-4 py-4 border-b border-brand-ebony/5 bg-white/40 dark:bg-brand-parchment/10 backdrop-blur-sm">
+                <div className="flex justify-between items-center mb-4">
                     <div>
-                        <h2 className="text-3xl font-serif font-extrabold text-brand-ebony tracking-tight flex items-center gap-2">
+                        <h2 className="text-2xl font-serif font-extrabold text-brand-ebony tracking-tight flex items-center gap-2">
                             Inbox
                             <Sparkles className="w-4 h-4 text-brand-gold animate-pulse" />
                         </h2>
-                        <p className="text-[10px] font-bold text-brand-ebony/30 uppercase tracking-[0.2em] mt-1">Encrypted • Secure</p>
+                        <p className="text-[10px] font-bold text-brand-ebony/30 uppercase tracking-[0.2em] mt-0.5">Encrypted • Secure</p>
                     </div>
                     <div className="flex items-center gap-3">
                         <div className="relative">
@@ -141,7 +141,7 @@ export function ChatList({ currentUser, chats, onSelectChat, onStartChat, onSele
                             {isActionsPopupOpen && (
                                 <>
                                     <div className="fixed inset-0 z-[70]" onClick={() => setIsActionsPopupOpen(false)}></div>
-                                    <div className="absolute right-0 top-14 w-60 card-premium shadow-2xl z-[80] overflow-hidden animate-in fade-in slide-in-from-top-3 duration-300 border-brand-burgundy/10 bg-white/95 backdrop-blur-2xl">
+                                    <div className="absolute right-0 top-14 w-60 card-premium shadow-2xl z-[80] overflow-hidden animate-in fade-in slide-in-from-top-3 duration-300 border-brand-burgundy/10">
                                         <div className="p-2 space-y-1">
                                             <button 
                                                 onClick={() => {
@@ -177,12 +177,12 @@ export function ChatList({ currentUser, chats, onSelectChat, onStartChat, onSele
                 </div>
 
                 {/* Glassy Tabs */}
-                <div className="flex p-1.5 bg-brand-ebony/[0.03] rounded-xl mb-6 shadow-inner ring-1 ring-inset ring-brand-ebony/5">
+                <div className="flex p-1.5 bg-brand-ebony/[0.03] rounded-xl mb-4 shadow-inner ring-1 ring-inset ring-brand-ebony/5">
                     <button
                         onClick={() => onViewModeChange('chats')}
-                        className={`flex-1 flex items-center justify-center gap-1.5 py-3 text-[10px] font-extrabold uppercase tracking-[0.08em] rounded-lg transition-all ${
+                        className={`flex-1 flex items-center justify-center gap-1.5 py-2 text-[10px] font-extrabold uppercase tracking-[0.08em] rounded-lg transition-all ${
                             viewMode === 'chats' 
-                                ? 'bg-white dark:bg-brand-ebony/40 text-brand-burgundy shadow-sm ring-1 ring-brand-ebony/5' 
+                                ? 'bg-white dark:bg-brand-parchment text-brand-burgundy shadow-sm ring-1 ring-brand-ebony/5' 
                                 : 'text-brand-ebony/40 hover:text-brand-ebony/60 hover:bg-black/5'
                         }`}
                     >
@@ -196,9 +196,9 @@ export function ChatList({ currentUser, chats, onSelectChat, onStartChat, onSele
                     </button>
                     <button
                         onClick={() => onViewModeChange('groups')}
-                        className={`flex-1 flex items-center justify-center gap-1.5 py-3 text-[10px] font-extrabold uppercase tracking-[0.08em] rounded-lg transition-all ${
+                        className={`flex-1 flex items-center justify-center gap-1.5 py-2 text-[10px] font-extrabold uppercase tracking-[0.08em] rounded-lg transition-all ${
                             viewMode === 'groups' 
-                                ? 'bg-white dark:bg-brand-ebony/40 text-brand-burgundy shadow-sm ring-1 ring-brand-ebony/5' 
+                                ? 'bg-white dark:bg-brand-parchment text-brand-burgundy shadow-sm ring-1 ring-brand-ebony/5' 
                                 : 'text-brand-ebony/40 hover:text-brand-ebony/60 hover:bg-black/5'
                         }`}
                     >
@@ -214,9 +214,9 @@ export function ChatList({ currentUser, chats, onSelectChat, onStartChat, onSele
                         placeholder={viewMode === 'chats' ? "Search direct network..." : "Search circles..."}
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full pl-12 pr-5 py-3.5 bg-white shadow-inner border border-brand-ebony/5 rounded-2xl focus:ring-2 focus:ring-brand-burgundy/20 focus:border-brand-burgundy/30 outline-none transition-all placeholder:text-brand-ebony/25 font-bold text-sm"
+                        className="w-full pl-10 pr-5 py-2.5 bg-white dark:bg-brand-cream/20 border border-brand-ebony/5 dark:border-white/5 rounded-xl focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all font-bold text-xs shadow-inner text-brand-ebony"
                     />
-                    <Search className="w-4 h-4 text-brand-ebony/20 absolute left-4 top-1/2 -mt-2 group-focus-within:text-brand-burgundy transition-colors" />
+                    <Search className="w-3.5 h-3.5 text-brand-ebony/20 absolute left-3.5 top-1/2 -mt-1.5 group-focus-within:text-brand-burgundy transition-colors" />
                 </div>
             </div>
 
@@ -262,11 +262,11 @@ export function ChatList({ currentUser, chats, onSelectChat, onStartChat, onSele
                     <div className="p-4 space-y-1.5">
                         {viewMode === 'chats' ? (
                             activeChats.length === 0 ? (
-                                <div className="text-center py-24 px-10">
-                                    <div className="w-20 h-20 bg-brand-ebony/5 rounded-full flex items-center justify-center mx-auto mb-6">
-                                         <MessageSquare className="w-10 h-10 text-brand-ebony/10" />
+                                <div className="text-center py-16 px-6">
+                                    <div className="w-16 h-16 bg-brand-ebony/5 rounded-full flex items-center justify-center mx-auto mb-4">
+                                         <MessageSquare className="w-8 h-8 text-brand-ebony/10" />
                                     </div>
-                                    <p className="font-serif font-bold text-xl text-brand-ebony/60 italic mb-2">No conversations yet</p>
+                                    <p className="font-serif font-bold text-lg text-brand-ebony/60 italic mb-1">No conversations yet</p>
                                     <p className="text-[10px] font-bold uppercase tracking-widest text-brand-ebony/30">Start connecting with your circle</p>
                                 </div>
                             ) : (
@@ -282,9 +282,9 @@ export function ChatList({ currentUser, chats, onSelectChat, onStartChat, onSele
                                         <div
                                             key={chat.id}
                                             onClick={() => onSelectChat(chat.id)}
-                                            className={`w-full flex items-center p-4 rounded-2xl transition-all cursor-pointer group relative border ${
+                                            className={`w-full flex items-center p-2.5 rounded-xl transition-all cursor-pointer group relative border ${
                                                 isActive 
-                                                    ? 'bg-white dark:bg-brand-ebony/40 border-brand-burgundy/10 shadow-lg' 
+                                                    ? 'bg-white dark:bg-brand-parchment border-brand-burgundy/10 shadow-lg' 
                                                     : 'hover:bg-white dark:hover:bg-brand-ebony/10 border-transparent hover:border-brand-ebony/5'
                                             }`}
                                         >
@@ -292,7 +292,7 @@ export function ChatList({ currentUser, chats, onSelectChat, onStartChat, onSele
                                                 <img
                                                     src={profilePic}
                                                     alt={name}
-                                                    className={`w-14 h-14 rounded-2xl object-cover border-2 shadow-sm transition-all ${isActive ? 'border-brand-burgundy/50 scale-105' : 'border-white dark:border-brand-parchment group-hover:scale-105'}`}
+                                                    className={`w-9 h-9 rounded-xl object-cover border shadow-sm transition-all ${isActive ? 'border-brand-burgundy/50 scale-105' : 'border-white dark:border-brand-parchment group-hover:scale-105'}`}
                                                 />
                                                 {/* Online Status Indicator in Sidebar */}
                                                 <div className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-white dark:border-brand-ebony shadow-sm transition-transform duration-300 group-hover:scale-110 ${otherUserDetails?.isOnline ? 'bg-emerald-500' : 'bg-brand-ebony/20'}`}>
@@ -304,9 +304,9 @@ export function ChatList({ currentUser, chats, onSelectChat, onStartChat, onSele
                                                     </div>
                                                 )}
                                             </div>
-                                            <div className="text-left flex-1 min-w-0 pr-6">
+                                            <div className="text-left flex-1 min-w-0 pr-4">
                                                 <div className="flex justify-between items-baseline mb-1">
-                                                    <p className={`text-[15px] font-black tracking-tight truncate pr-2 ${isActive || unreadCount > 0 ? 'text-black dark:text-white' : 'text-brand-ebony/70 dark:text-white/60'}`}>
+                                                    <p className={`text-[13.5px] font-extrabold tracking-tight truncate pr-2 ${isActive || unreadCount > 0 ? 'text-black dark:text-white' : 'text-brand-ebony/70 dark:text-white/60'}`}>
                                                         {name}
                                                     </p>
                                                     {chat.lastMessageAt && (
@@ -335,15 +335,15 @@ export function ChatList({ currentUser, chats, onSelectChat, onStartChat, onSele
                         ) : (
                             // Circles View
                             loadingGroups ? (
-                                <div className="flex justify-center py-20">
-                                    <Loader2 className="w-8 h-8 animate-spin text-brand-burgundy/20" />
+                                <div className="flex justify-center py-12">
+                                    <Loader2 className="w-7 h-7 animate-spin text-brand-burgundy/20" />
                                 </div>
                             ) : userGroups.length === 0 ? (
-                                <div className="text-center py-24 px-10">
-                                    <div className="w-20 h-20 bg-brand-ebony/5 rounded-full flex items-center justify-center mx-auto mb-6">
-                                         <Users className="w-10 h-10 text-brand-ebony/10" />
+                                <div className="text-center py-16 px-6">
+                                    <div className="w-16 h-16 bg-brand-ebony/5 rounded-full flex items-center justify-center mx-auto mb-4">
+                                         <Users className="w-8 h-8 text-brand-ebony/10" />
                                     </div>
-                                    <p className="font-serif font-bold text-xl text-brand-ebony/60 italic mb-2">No circles yet</p>
+                                    <p className="font-serif font-bold text-lg text-brand-ebony/60 italic mb-1">No circles yet</p>
                                     <p className="text-[10px] font-bold uppercase tracking-widest text-brand-ebony/30">Connect with your community in groups</p>
                                 </div>
                             ) : (
@@ -353,18 +353,18 @@ export function ChatList({ currentUser, chats, onSelectChat, onStartChat, onSele
                                         <button
                                             key={group.id}
                                             onClick={() => onSelectGroup(group.id)}
-                                            className={`w-full flex items-center p-4 rounded-2xl transition-all mb-1 relative border ${
+                                            className={`w-full flex items-center p-2.5 rounded-xl transition-all mb-1 relative border ${
                                                 isActive 
-                                                    ? 'bg-white dark:bg-brand-ebony/40 border-brand-burgundy/10 shadow-lg' 
+                                                    ? 'bg-white dark:bg-brand-parchment border-brand-burgundy/10 shadow-lg' 
                                                     : 'hover:bg-white dark:hover:bg-brand-ebony/10 border-transparent hover:border-brand-ebony/5'
                                             }`}
                                         >
-                                            <div className={`w-14 h-14 rounded-2xl flex items-center justify-center mr-4 flex-shrink-0 border transition-all ${isActive ? 'bg-gradient-indigo text-white border-transparent' : 'bg-brand-burgundy/5 text-brand-burgundy border-brand-burgundy/10 group-hover:scale-105'}`}>
-                                                <Users className="w-7 h-7" />
+                                            <div className={`w-9 h-9 rounded-xl flex items-center justify-center mr-4 flex-shrink-0 border transition-all ${isActive ? 'bg-gradient-indigo text-white border-transparent' : 'bg-brand-burgundy/5 text-brand-burgundy border-brand-burgundy/10 group-hover:scale-105'}`}>
+                                                <Users className="w-5 h-5" />
                                             </div>
                                             <div className="text-left flex-1 min-w-0">
                                                 <div className="flex justify-between items-baseline mb-1">
-                                                    <p className={`font-extrabold truncate pr-2 ${isActive ? 'text-brand-ebony' : 'text-brand-ebony/80'}`}>
+                                                    <p className={`text-[13.5px] font-bold truncate pr-2 ${isActive ? 'text-brand-ebony' : 'text-brand-ebony/80'}`}>
                                                         {group.groupName}
                                                     </p>
                                                     {group.lastMessageAt && (

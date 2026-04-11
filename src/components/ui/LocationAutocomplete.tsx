@@ -65,25 +65,25 @@ export function LocationAutocomplete({ value, onChange }: LocationAutocompletePr
                         setIsFocused(true);
                         setIsManuallyClosed(false);
                     }}
-                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition text-gray-900 placeholder:text-gray-400"
+                    className="w-full pl-10 pr-4 py-3 border border-brand-ebony/15 rounded-lg focus:ring-2 focus:ring-brand-burgundy/20 focus:border-brand-burgundy/30 transition text-brand-ebony bg-white/80 dark:bg-brand-parchment/15 placeholder:text-brand-ebony/30 outline-none"
                     required
                 />
-                <MapPin className="w-5 h-5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                <MapPin className="w-5 h-5 text-brand-ebony/30 absolute left-3 top-1/2 -translate-y-1/2" />
                 <p className="text-xs text-brand-ebony/40 uppercase tracking-widest font-bold mt-1">Try &quot;Mumbai&quot; or &quot;California&quot;</p>
             </div>
 
             {/* Dropdown Menu */}
             {isOpen && (
-                <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                <div className="absolute z-50 w-full mt-1 sidebar-glass rounded-xl shadow-xl max-h-60 overflow-y-auto border border-brand-ebony/10">
                     {results.map((city, index) => (
                         <button
                             key={`${city.name}-${city.stateCode}-${city.countryCode}-${index}`}
                             type="button"
                             onClick={() => handleSelect(city)}
-                            className="w-full text-left px-4 py-2 hover:bg-blue-50 focus:bg-blue-50 focus:outline-none transition-colors border-b border-gray-50 last:border-b-0"
+                            className="w-full text-left px-4 py-2 hover:bg-brand-burgundy/8 dark:hover:bg-white/5 focus:bg-brand-burgundy/8 focus:outline-none transition-colors border-b border-brand-ebony/5 last:border-b-0"
                         >
-                            <span className="font-medium text-gray-900">{city.name}</span>
-                            <span className="text-gray-500 text-sm ml-2">
+                            <span className="font-medium text-brand-ebony">{city.name}</span>
+                            <span className="text-brand-ebony/50 text-sm ml-2">
                                 {city.stateCode}, {city.countryCode}
                             </span>
                         </button>
@@ -92,7 +92,7 @@ export function LocationAutocomplete({ value, onChange }: LocationAutocompletePr
             )}
 
             {isFocused && query.trim() && results.length === 0 && query !== value && (
-                <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg p-4 text-center text-gray-500 italic">
+                <div className="absolute z-50 w-full mt-1 sidebar-glass rounded-xl shadow-xl p-4 text-center text-brand-ebony/50 italic border border-brand-ebony/10">
                     No cities found matching &quot;{query}&quot;
                 </div>
             )}

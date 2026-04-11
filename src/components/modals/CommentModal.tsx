@@ -139,7 +139,7 @@ const CommentItem: React.FC<CommentItemProps> = ({
                     </button>
 
                     {showEmojiPicker && (
-                        <div className="absolute left-0 bottom-full mb-3 bg-white dark:bg-brand-ebony rounded-2xl shadow-2xl border border-brand-ebony/10 p-2 flex gap-1 z-50 animate-in fade-in zoom-in slide-in-from-bottom-2 duration-200">
+                        <div className="absolute left-0 bottom-full mb-3 bg-white dark:bg-brand-cream rounded-2xl shadow-2xl border border-brand-ebony/10 dark:border-white/10 p-2 flex gap-1 z-50 animate-in fade-in zoom-in slide-in-from-bottom-2 duration-200">
                             {REACTION_EMOJIS.map((emoji) => (
                                 <button
                                     key={emoji}

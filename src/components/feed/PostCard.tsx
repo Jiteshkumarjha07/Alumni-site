@@ -134,7 +134,7 @@ export const PostCard: React.FC<PostCardProps> = ({
                                     <MoreHorizontal className="w-4 h-4" />
                                 </button>
                                 {showMenu && (
-                                    <div className="absolute right-0 mt-1.5 w-44 bg-white/95 dark:bg-brand-ebony/95 backdrop-blur-xl rounded-2xl py-1.5 z-20 shadow-2xl border border-brand-ebony/8 animate-in fade-in slide-in-from-top-2 duration-150">
+                                    <div className="absolute right-0 mt-1.5 w-44 bg-white/95 dark:bg-brand-cream/95 backdrop-blur-xl rounded-2xl py-1.5 z-20 shadow-2xl border border-brand-ebony/8 dark:border-white/10 animate-in fade-in slide-in-from-top-2 duration-150">
                                         {onEdit && (
                                             <button
                                                 onClick={() => { onEdit?.(); setShowMenu(false); }}

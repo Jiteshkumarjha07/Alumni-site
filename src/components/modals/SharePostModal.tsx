@@ -186,7 +186,7 @@ export function SharePostModal({ isOpen, onClose, post, currentUser }: SharePost
                     {/* Footer Preview */}
                     <div className="pt-2">
                         <div className="flex items-center gap-4 p-5 bg-brand-burgundy/5 rounded-[2rem] border border-brand-burgundy/10 shadow-inner group/preview">
-                            <div className="w-16 h-16 bg-white dark:bg-brand-ebony/20 rounded-2xl overflow-hidden shadow-lg flex-shrink-0 relative border border-brand-burgundy/10">
+                            <div className="w-16 h-16 bg-white dark:bg-brand-cream/20 rounded-2xl overflow-hidden shadow-lg flex-shrink-0 relative border border-brand-burgundy/10">
                                 {post.imageUrl ? (
                                     <Image 
                                         src={post.imageUrl} 

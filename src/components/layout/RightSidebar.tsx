@@ -84,18 +84,12 @@ export function RightSidebar({ isOpen = false, onClose = () => {} }: RightSideba
 
             {/* Panel */}
             <div
-                className={`w-80 fixed right-0 top-0 h-full overflow-y-auto scrollbar-hide z-50 transition-transform duration-300 ease-out ${
+                className={`w-80 fixed right-0 top-0 h-full overflow-y-auto scrollbar-hide z-50 transition-transform duration-300 ease-out sidebar-glass ${
                     isOpen ? 'translate-x-0 shadow-2xl' : 'translate-x-full'
                 }`}
-                style={{
-                    background: 'rgba(244,246,255,0.94)',
-                    backdropFilter: 'blur(24px)',
-                    WebkitBackdropFilter: 'blur(24px)',
-                    borderLeft: '1px solid rgba(99,102,241,0.12)',
-                }}
             >
                 {/* Header */}
-                <div className="flex items-center justify-between px-5 pt-5 pb-4 border-b border-brand-ebony/6">
+                <div className="flex items-center justify-between px-5 pt-5 pb-4 border-b border-brand-ebony/8">
                     <div className="flex items-center gap-2">
                         <div
                             className="w-7 h-7 rounded-lg flex items-center justify-center"
@@ -107,7 +101,7 @@ export function RightSidebar({ isOpen = false, onClose = () => {} }: RightSideba
                     </div>
                     <button
                         onClick={onClose}
-                        className="p-1.5 text-brand-ebony/40 hover:text-brand-ebony hover:bg-brand-parchment rounded-lg transition-all"
+                        className="p-1.5 text-brand-ebony/40 hover:text-brand-ebony hover:bg-brand-ebony/8 dark:hover:bg-white/10 rounded-lg transition-all"
                     >
                         <X className="w-4 h-4" />
                     </button>

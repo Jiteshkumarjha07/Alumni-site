@@ -57,12 +57,12 @@ export function Sidebar() {
                         </div>
 
                         {/* Profile Info */}
-                        <div className="bg-brand-ebony/5 dark:bg-brand-ebony/40 rounded-3xl p-4 border border-brand-ebony/5">
+                        <div className="bg-brand-ebony/5 dark:bg-brand-cream/20 rounded-3xl p-4 border border-brand-ebony/5 dark:border-white/5">
                             <div className="flex items-center mb-4">
                                 <img
                                     src={userData.profilePic || `https://placehold.co/80x80/4f46e5/ffffff?text=${userData.name.substring(0, 1)}`}
                                     alt={userData.name}
-                                    className="w-11 h-11 rounded-2xl object-cover shadow-sm bg-white dark:bg-brand-ebony/20"
+                                    className="w-11 h-11 rounded-2xl object-cover shadow-sm bg-white dark:bg-brand-parchment"
                                 />
                                 <div className="ml-3 overflow-hidden">
                                     <p className="text-sm font-black text-brand-ebony truncate leading-none mb-1">{userData.name}</p>
@@ -73,13 +73,13 @@ export function Sidebar() {
                             <div className="grid grid-cols-2 gap-2">
                                 <Link 
                                     href="/profile"
-                                    className="flex items-center justify-center gap-2 py-2.5 bg-brand-cream/50 dark:bg-brand-ebony rounded-xl border border-brand-ebony/10 text-brand-ebony/60 hover:text-brand-ebony transition-all text-[10px] font-black uppercase tracking-wider"
+                                    className="flex items-center justify-center gap-2 py-2.5 bg-brand-cream/50 dark:bg-brand-parchment rounded-xl border border-brand-ebony/10 dark:border-white/5 text-brand-ebony/60 hover:text-brand-ebony transition-all text-[10px] font-black uppercase tracking-wider"
                                 >
                                     Profile
                                 </Link>
                                 <Link 
                                     href="/settings"
-                                    className="flex items-center justify-center gap-2 py-2.5 bg-brand-cream/50 dark:bg-brand-ebony rounded-xl border border-brand-ebony/10 text-brand-ebony/60 hover:text-brand-ebony transition-all text-[10px] font-black uppercase tracking-wider"
+                                    className="flex items-center justify-center gap-2 py-2.5 bg-brand-cream/50 dark:bg-brand-parchment rounded-xl border border-brand-ebony/10 dark:border-white/5 text-brand-ebony/60 hover:text-brand-ebony transition-all text-[10px] font-black uppercase tracking-wider"
                                 >
                                     Settings
                                 </Link>

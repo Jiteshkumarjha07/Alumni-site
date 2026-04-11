@@ -13,6 +13,9 @@ export function GlobalMessaging() {
     useEffect(() => {
         if (!userData?.uid) return;
 
+        // Guard: skip callbacks after cleanup to prevent dangling Firestore targets
+        let isMounted = true;
+
         // 1. Listen to all chats where the user is a participant
         const chatsRef = collection(db, 'chats');
         const userChatsQuery = query(
@@ -21,49 +24,48 @@ export function GlobalMessaging() {
         );
 
         const unsubscribeChats = onSnapshot(userChatsQuery, (snapshot) => {
+            if (!isMounted) return; // ← skip if unmounted mid-snapshot
+
             snapshot.docs.forEach(chatDoc => {
+                if (!isMounted) return;
                 const chatId = chatDoc.id;
-                
+
                 // Only attach a listener if we haven't already for this chat
                 if (!activeListeners.current.has(chatId)) {
-                    // 2. Fetch the latest messages to guarantee we catch undelivered ones
-                    // This ordered query is naturally indexed by Firebase, completely avoiding custom index errors.
                     const messagesRef = collection(db, 'chats', chatId, 'messages');
                     const recentMessagesQuery = query(
-                        messagesRef, 
+                        messagesRef,
                         orderBy('createdAt', 'desc'),
-                        limit(25) // Look at the last 25 messages to auto-deliver
+                        limit(25)
                     );
 
                     const unsubMessages = onSnapshot(recentMessagesQuery, (msgSnapshot) => {
+                        if (!isMounted) return; // ← skip if unmounted
                         msgSnapshot.docs.forEach(async (msgDoc) => {
+                            if (!isMounted) return;
                             const data = msgDoc.data() as Message;
-                            
-                            // 3. Filter in-memory for messages sent to us that aren't marked delivered
                             if (data.senderId !== userData.uid && data.isDelivered === false) {
                                 try {
-                                    await updateDoc(msgDoc.ref, {
-                                        isDelivered: true
-                                    });
+                                    await updateDoc(msgDoc.ref, { isDelivered: true });
                                 } catch (err) {
-                                    console.error('Error auto-marking message as delivered:', err);
+                                    console.error('[GlobalMessaging] Error auto-marking delivered:', err);
                                 }
                             }
                         });
                     }, (err) => {
-                        console.error('[GlobalMessaging] Error listening to recent messages:', err);
+                        console.error('[GlobalMessaging] Error listening to messages:', err);
                     });
 
                     activeListeners.current.set(chatId, unsubMessages);
                 }
             });
         }, (error) => {
-            console.error('Error in GlobalMessaging chat listener:', error);
+            console.error('[GlobalMessaging] Error in chat listener:', error);
         });
 
         return () => {
+            isMounted = false;
             unsubscribeChats();
-            // Cleanup all active message listeners
             activeListeners.current.forEach(unsub => unsub());
             activeListeners.current.clear();
         };

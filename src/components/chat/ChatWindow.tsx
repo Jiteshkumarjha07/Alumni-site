@@ -47,6 +47,10 @@ export function ChatWindow({ chatId, currentUser, otherUser, isGroup = false, gr
     const fileInputRef = useRef<HTMLInputElement>(null);
     const videoInputRef = useRef<HTMLInputElement>(null);
     const docInputRef = useRef<HTMLInputElement>(null);
+    const attachmentMenuRef = useRef<HTMLDivElement>(null);
+    const headerMoreMenuRef = useRef<HTMLDivElement>(null);
+    const emojiPickerRef = useRef<HTMLDivElement>(null);
+    const contextMenuRef = useRef<HTMLDivElement>(null);
 
     // Voice message recording state
     const [isRecording, setIsRecording] = useState(false);
@@ -196,6 +200,29 @@ export function ChatWindow({ chatId, currentUser, otherUser, isGroup = false, gr
         return () => clearInterval(interval);
     }, [otherUserStatus]);
 
+    // Click outside handlers for all pop-ups
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            const target = event.target as Node;
+            
+            if (showAttachmentMenu && attachmentMenuRef.current && !attachmentMenuRef.current.contains(target)) {
+                setShowAttachmentMenu(false);
+            }
+            if (showMoreMenu && headerMoreMenuRef.current && !headerMoreMenuRef.current.contains(target)) {
+                setShowMoreMenu(false);
+            }
+            if (showEmojiPicker && emojiPickerRef.current && !emojiPickerRef.current.contains(target)) {
+                setShowEmojiPicker(false);
+            }
+            if (contextMenu && contextMenuRef.current && !contextMenuRef.current.contains(target)) {
+                setContextMenu(null);
+            }
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, [showAttachmentMenu, showMoreMenu, showEmojiPicker, contextMenu]);
+
     useEffect(() => {
         if (isGroup || !otherUser?.uid) return;
         const unsubscribe = onSnapshot(doc(db, 'users', otherUser.uid), (docSnapshot) => {
@@ -214,39 +241,48 @@ export function ChatWindow({ chatId, currentUser, otherUser, isGroup = false, gr
     }, [messages]);
 
     useEffect(() => {
-        if (!chatId || (isGroup && !groupData)) return;
+        if (!chatId || (isGroup && !groupData?.id)) return;
 
+        let isMounted = true;
         setLoading(true);
         const collectionPath = isGroup ? 'groups' : 'chats';
         const q = query(collection(db, collectionPath, chatId, 'messages'), orderBy('createdAt', 'asc'));
 
         const unsubscribe = onSnapshot(q, (snapshot) => {
+            if (!isMounted) return;
             const fetchedMessages = snapshot.docs.map(doc => ({
                 id: doc.id,
                 ...doc.data({ serverTimestamps: 'estimate' })
             })) as Message[];
-            
+
             setMessages(fetchedMessages.filter(msg => !msg.hiddenBy?.includes(currentUser.uid)));
             setLoading(false);
 
             fetchedMessages.filter(msg => msg.senderId !== currentUser.uid && (!msg.isRead || !msg.isDelivered)).forEach(async (msg) => {
+                if (!isMounted) return;
                 await updateDoc(doc(db, collectionPath, chatId, 'messages', msg.id), {
                     readBy: arrayUnion(currentUser.uid),
                     isRead: true,
                     isDelivered: true
-                }).catch(err => console.error('[ChatWindow.tsx] Error updating message delivered/read status:', err));
+                }).catch(err => console.error('[ChatWindow] Error updating read status:', err));
             });
 
-            if (!isGroup) {
-                updateDoc(doc(db, 'chats', chatId), { [`unreadCount.${currentUser.uid}`]: 0 }).catch(err => console.error('[ChatWindow.tsx] Error updating chat unread count:', err));
+            if (!isGroup && isMounted) {
+                updateDoc(doc(db, 'chats', chatId), { [`unreadCount.${currentUser.uid}`]: 0 })
+                    .catch(err => console.error('[ChatWindow] Error clearing unread count:', err));
             }
         }, (error) => {
             console.error('Error fetching messages:', error);
-            setLoading(false);
+            if (isMounted) setLoading(false);
         });
 
-        return () => unsubscribe();
-    }, [chatId, currentUser.uid, isGroup, groupData]);
+        return () => {
+            isMounted = false;
+            unsubscribe();
+        };
+    // Use groupData?.id (stable string) instead of groupData (object reference)
+    // to prevent unnecessary re-mounts that race with cleanup
+    }, [chatId, currentUser.uid, isGroup, groupData?.id]);
 
     const handleSendMessage = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -384,9 +420,42 @@ export function ChatWindow({ chatId, currentUser, otherUser, isGroup = false, gr
         }
     };
 
+    const handleReact = async (messageId: string, emoji: string) => {
+        if (!chatId) return;
+        try {
+            const msgRef = doc(db, isGroup ? 'groups' : 'chats', chatId, 'messages', messageId);
+            const msg = messages.find(m => m.id === messageId);
+            if (!msg) return;
+
+            const currentReactions = msg.reactions || {};
+            const userHadEmoji = Object.keys(currentReactions).find(key => 
+                currentReactions[key].includes(currentUser.uid)
+            );
+
+            // Clear current user from all reactions
+            let newReactions: Record<string, string[]> = {};
+            Object.keys(currentReactions).forEach(key => {
+                const filtered = currentReactions[key].filter(uid => uid !== currentUser.uid);
+                if (filtered.length > 0) {
+                    newReactions[key] = filtered;
+                }
+            });
+            
+            // If they clicked a DIFFERENT emoji or had none, add the new one
+            if (userHadEmoji !== emoji) {
+                newReactions[emoji] = [...(newReactions[emoji] || []), currentUser.uid];
+            }
+
+            await updateDoc(msgRef, { reactions: newReactions });
+        } catch (error) {
+            console.error('Error reacting to message:', error);
+        }
+    };
+
     const handleUnsendMessage = async (message: Message, mode: 'me' | 'everyone') => {
         if (!chatId) return;
         try {
+            setUnsendingMessage(null);
             const msgRef = doc(db, isGroup ? 'groups' : 'chats', chatId, 'messages', message.id);
             if (mode === 'everyone') {
                 await updateDoc(msgRef, {
@@ -396,7 +465,6 @@ export function ChatWindow({ chatId, currentUser, otherUser, isGroup = false, gr
             } else {
                 await updateDoc(msgRef, { hiddenBy: arrayUnion(currentUser.uid) });
             }
-            setUnsendingMessage(null);
         } catch (error) {
             console.error('Error unsending message:', error);
         }
@@ -424,15 +492,25 @@ export function ChatWindow({ chatId, currentUser, otherUser, isGroup = false, gr
 
     if (!otherUser && !isGroup) {
         return (
-            <div className="flex-1 flex flex-col items-center justify-center bg-brand-cream/30 p-12 text-center animate-fade-in">
-                <div className="w-32 h-32 bg-white dark:bg-brand-parchment/10 rounded-[2.5rem] flex items-center justify-center mb-8 shadow-2xl border border-brand-ebony/5">
-                    <Send className="w-12 h-12 text-brand-burgundy/40 transform rotate-12" />
+            <div className="flex-1 flex flex-col items-center justify-center p-8 md:p-12 text-center bg-white/40 dark:bg-black/5 animate-fade-in gap-6">
+                <div className="relative">
+                    <div className="absolute inset-0 bg-brand-burgundy/10 rounded-full blur-3xl animate-pulse" />
+                    <div className="relative w-20 h-20 md:w-24 md:h-24 bg-white dark:bg-brand-parchment rounded-full flex items-center justify-center shadow-premium transform hover:scale-110 transition-transform duration-700">
+                        <div className="absolute inset-2 border-2 border-dashed border-brand-burgundy/20 rounded-full animate-[spin_20s_linear_infinite]" />
+                        <Sparkles className="w-8 h-8 md:w-10 md:h-10 text-brand-burgundy underline-offset-8" />
+                    </div>
                 </div>
-                <h3 className="text-3xl font-serif font-extrabold text-brand-ebony mb-4">Your Inbox</h3>
-                <p className="max-w-xs mx-auto text-sm font-serif italic text-brand-ebony/40 leading-relaxed">Choose a conversation from your circles to begin sharing memories.</p>
-                <div className="mt-8 flex items-center gap-2 px-4 py-2 bg-brand-burgundy/5 rounded-full border border-brand-burgundy/10">
-                    <ShieldCheck className="w-4 h-4 text-brand-burgundy/60" />
-                    <span className="text-[10px] font-extrabold uppercase tracking-widest text-brand-burgundy/60">Secured by AlumNest E2EE</span>
+                <div className="space-y-3 max-w-sm">
+                    <h3 className="text-2xl md:text-3xl font-serif font-black text-brand-ebony tracking-tight">Your Inbox</h3>
+                    <p className="text-[14px] md:text-base font-medium text-brand-ebony/40 leading-relaxed italic">
+                        Select a connection from your tribe to resume your secure legacy exchange.
+                    </p>
+                </div>
+                <div className="flex items-center gap-3 px-6 py-3 bg-brand-burgundy/5 rounded-2xl border border-brand-burgundy/10 shadow-inner group transition-all hover:bg-brand-burgundy/10">
+                    <ShieldCheck className="w-5 h-5 text-brand-burgundy/60 group-hover:scale-110 transition-transform" />
+                    <span className="text-[10px] md:text-[11px] font-black uppercase tracking-[0.2em] text-brand-burgundy/60">
+                        Secured by AlumNest E2EE
+                    </span>
                 </div>
             </div>
         );
@@ -445,51 +523,51 @@ export function ChatWindow({ chatId, currentUser, otherUser, isGroup = false, gr
         <div className="flex-1 flex flex-col h-full bg-white/20 dark:bg-brand-parchment/5 relative overflow-hidden">
             {/* Selection Mode Navbar */}
             {isSelectionMode && (
-                <div className="absolute top-0 left-0 right-0 z-[150] px-8 py-5 bg-gradient-indigo text-white flex items-center justify-between animate-in slide-in-from-top duration-300">
-                    <div className="flex items-center gap-6">
-                        <button onClick={() => { setIsSelectionMode(false); setSelectedMessageIds([]); }} className="p-2 hover:bg-white/10 rounded-full transition-all">
-                            <X className="w-6 h-6" />
+                <div className="absolute top-0 left-0 right-0 z-[150] px-4 py-3 bg-gradient-indigo text-white flex items-center justify-between animate-in slide-in-from-top duration-300">
+                    <div className="flex items-center gap-3">
+                        <button onClick={() => { setIsSelectionMode(false); setSelectedMessageIds([]); }} className="p-2 hover:bg-white/10 rounded-full transition-all shrink-0">
+                            <X className="w-5 h-5" />
                         </button>
-                        <span className="text-lg font-extrabold">{selectedMessageIds.length} Selected</span>
+                        <span className="text-sm font-extrabold">{selectedMessageIds.length} Selected</span>
                     </div>
-                    <div className="flex items-center gap-4">
-                        <button onClick={handleBulkDelete} className="px-6 py-2.5 bg-white/10 hover:bg-white/20 rounded-2xl text-xs font-extrabold uppercase tracking-widest transition-all">
-                            Delete for me
+                    <div className="flex items-center gap-2 flex-wrap justify-end">
+                        <button onClick={handleBulkDelete} className="px-4 py-2 bg-white/10 hover:bg-white/20 rounded-xl text-xs font-extrabold uppercase tracking-wider transition-all">
+                            Delete
                         </button>
-                        <button onClick={() => setSelectedMessageIds([])} className="px-6 py-2.5 bg-white text-brand-burgundy rounded-2xl text-xs font-extrabold uppercase tracking-widest shadow-xl">
-                            Deselect All
+                        <button onClick={() => setSelectedMessageIds([])} className="px-4 py-2 bg-white text-brand-burgundy rounded-xl text-xs font-extrabold uppercase tracking-wider shadow-xl">
+                            Deselect
                         </button>
                     </div>
                 </div>
             )}
 
             {/* Chat Header */}
-            <div className="flex items-center justify-between px-6 py-4 bg-white dark:bg-brand-ebony border-b border-brand-ebony/10 dark:border-white/10 z-30 sticky top-0 shadow-md">
+            <div className="flex items-center justify-between px-6 py-2 bg-white dark:bg-brand-cream border-b border-brand-ebony/10 dark:border-white/10 z-30 sticky top-0 shadow-sm">
                 <div className="flex items-center flex-1 min-w-0 pr-4">
                     {onBack && (
-                        <button onClick={onBack} className="md:hidden mr-4 p-2.5 hover:bg-brand-burgundy/5 text-brand-ebony/60 hover:text-brand-burgundy rounded-full transition-colors shrink-0">
+                        <button onClick={onBack} className="md:hidden -ml-2 mr-2 p-2.5 hover:bg-brand-burgundy/10 active:bg-brand-burgundy/20 text-brand-ebony/80 rounded-xl transition-all shrink-0 active:scale-90 flex items-center justify-center">
                             <ArrowLeft className="w-5 h-5" />
                         </button>
                     )}
                     <div className="relative mr-4 shrink-0">
                         {isGroup ? (
-                            <div className="w-12 h-12 bg-gradient-to-br from-brand-burgundy to-[#4a1c1f] rounded-2xl flex items-center justify-center text-white shadow-lg">
-                                <Users className="w-6 h-6" />
+                            <div className="w-10 h-10 bg-gradient-to-br from-brand-burgundy to-[#4a1c1f] rounded-xl flex items-center justify-center text-white shadow-lg">
+                                <Users className="w-5 h-5" />
                             </div>
                         ) : (
                             <Link href={`/profile/${otherUser?.uid}`} className="relative block group/avatar shrink-0">
-                                <img src={profilePic!} alt={title!} className="w-12 h-12 rounded-2xl object-cover border-2 border-white dark:border-brand-parchment shadow-md group-hover/avatar:scale-110 group-active/avatar:scale-95 transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] ring-0 group-hover/avatar:ring-4 group-hover/avatar:ring-brand-burgundy/20" />
-                                <div className={`absolute -bottom-1 -right-1 flex h-[14px] w-[14px] items-center justify-center rounded-full border-2 border-white dark:border-brand-ebony transition-transform duration-300 group-hover/avatar:scale-125 ${isUserOnline ? 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.8)]' : 'bg-brand-ebony/30'}`}>
+                                <img src={profilePic!} alt={title!} className="w-9 h-9 rounded-xl object-cover border-2 border-white dark:border-brand-parchment shadow-md group-hover/avatar:scale-110 group-active/avatar:scale-95 transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] ring-0 group-hover/avatar:ring-4 group-hover/avatar:ring-brand-burgundy/20" />
+                                <div className={`absolute -bottom-1 -right-1 flex h-[10px] w-[10px] items-center justify-center rounded-full border border-white dark:border-brand-ebony transition-transform duration-300 group-hover/avatar:scale-125 ${isUserOnline ? 'bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.8)]' : 'bg-brand-ebony/30'}`}>
                                     {isUserOnline && <div className="absolute inset-0 rounded-full animate-ping bg-emerald-400 opacity-60" />}
                                 </div>
                             </Link>
                         )}
                     </div>
                     <div className="min-w-0 flex flex-col justify-center pl-1">
-                        <h3 className="text-2xl md:text-3xl font-serif font-black text-black dark:text-white truncate leading-tight">{title}</h3>
+                        <h3 className="text-lg md:text-xl font-serif font-black text-black dark:text-white truncate leading-tight tracking-tight">{title}</h3>
                         <div className="flex items-center mt-0.5">
                             {isGroup ? (
-                                <p className="text-[11px] font-bold text-brand-ebony/60 dark:text-white/60 tracking-wider truncate uppercase">{groupData?.members.length} Contributor Circle</p>
+                                <p className="text-[13px] font-bold text-brand-ebony/60 dark:text-white/60 tracking-widest truncate uppercase">{groupData?.members.length} Contributor Circle</p>
                             ) : (
                                 <div className="h-5 overflow-hidden relative w-full translate-z-0">
                                     <div className={`flex flex-col transition-transform duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] ${isUserOnline ? 'translate-y-0' : '-translate-y-5'}`}>
@@ -523,12 +601,12 @@ export function ChatWindow({ chatId, currentUser, otherUser, isGroup = false, gr
 
                     <button 
                         onClick={() => setShowCallMenu(!showCallMenu)}
-                        className={`p-3 rounded-xl transition-all shadow-sm border ${showCallMenu ? 'bg-brand-burgundy text-white border-transparent scale-105' : 'bg-white dark:bg-brand-ebony/10 text-brand-burgundy border-white hover:bg-brand-burgundy/5 hover:border-brand-burgundy/20'}`}
+                        className={`p-3 rounded-xl transition-all shadow-sm border ${showCallMenu ? 'bg-brand-burgundy text-white border-transparent scale-105' : 'bg-white dark:bg-white/5 text-brand-burgundy border-white hover:bg-brand-burgundy/5 hover:border-brand-burgundy/20'}`}
                     >
                         <Phone className="w-4 h-4" />
                     </button>
 
-                    <div className="relative">
+                    <div className="relative" ref={headerMoreMenuRef}>
                         <button 
                             onClick={() => setShowMoreMenu(!showMoreMenu)}
                             className={`p-3 rounded-xl transition-all border ${showMoreMenu ? 'bg-white shadow-sm border-brand-ebony/10 text-brand-ebony' : 'bg-transparent text-brand-ebony/30 hover:bg-white border-transparent hover:border-brand-ebony/10 hover:shadow-sm'}`}
@@ -559,7 +637,8 @@ export function ChatWindow({ chatId, currentUser, otherUser, isGroup = false, gr
 
             {/* Messages Area */}
             <div
-                className="flex-1 overflow-y-auto px-4 md:px-6 pt-6 pb-40 space-y-4 scrollbar-hide bg-white/30 dark:bg-brand-parchment/5"
+                className="flex-1 overflow-y-auto px-2 md:px-6 pt-4 pb-24 space-y-2.5 scrollbar-hide bg-white/30 dark:bg-brand-parchment/5"
+                style={{ containerType: 'inline-size' }}
                 onContextMenu={(e) => {
                     e.preventDefault();
                     setContextMenu({ x: e.clientX, y: e.clientY });
@@ -597,6 +676,7 @@ export function ChatWindow({ chatId, currentUser, otherUser, isGroup = false, gr
                             onUnsend={setUnsendingMessage}
                             onReply={setReplyingToMessage}
                             onForward={setForwardingMessage}
+                            onReact={handleReact}
                             sharedSecret={encryptionSecret}
                             showSenderName={isGroup}
                             onVote={handleVote}
@@ -619,6 +699,7 @@ export function ChatWindow({ chatId, currentUser, otherUser, isGroup = false, gr
                         onContextMenu={(e) => { e.preventDefault(); setContextMenu(null); }}
                     />
                     <div
+                        ref={contextMenuRef}
                         className="fixed z-[100] w-56 bg-white/95 dark:bg-brand-parchment/10 backdrop-blur-2xl rounded-2xl border border-brand-ebony/10 dark:border-white/5 shadow-premium overflow-hidden animate-in fade-in zoom-in-95 duration-150 ring-1 ring-brand-ebony/5"
                         style={{ 
                             top: Math.min(contextMenu.y, typeof window !== 'undefined' ? window.innerHeight - 120 : contextMenu.y), 
@@ -647,7 +728,7 @@ export function ChatWindow({ chatId, currentUser, otherUser, isGroup = false, gr
             )}
 
             {/* Input Footer Area */}
-            <div className="absolute bottom-6 left-6 right-6 z-40 px-3 py-3 bg-white/70 dark:bg-brand-parchment/20 backdrop-blur-3xl rounded-[2.5rem] shadow-premium border border-white dark:border-brand-ebony/10 pointer-events-auto">
+            <div className="absolute bottom-3 left-2 right-2 md:bottom-6 md:left-6 md:right-6 z-40 px-2 py-2.5 md:px-3 md:py-3 bg-white/70 dark:bg-brand-parchment/20 backdrop-blur-3xl rounded-[2rem] shadow-premium border border-white dark:border-brand-ebony/10 pointer-events-auto">
                 {editingMessage && (
                     <div className="flex items-center justify-between mb-4 px-5 py-3 bg-brand-burgundy/10 rounded-2xl border border-brand-burgundy/20 animate-in slide-in-from-bottom-2 mx-2">
                         <div className="flex items-center gap-3 text-brand-burgundy">
@@ -702,13 +783,13 @@ export function ChatWindow({ chatId, currentUser, otherUser, isGroup = false, gr
                 )}
 
                 <div className="flex items-center gap-5">
-                    <div className="relative group shrink-0">
+                    <div className="relative group shrink-0" ref={attachmentMenuRef}>
                         <button
                             type="button"
                             onClick={() => setShowAttachmentMenu(!showAttachmentMenu)}
-                            className={`p-5 rounded-full transition-all border shadow-lg flex items-center justify-center ${showAttachmentMenu ? 'bg-brand-ebony text-white border-transparent scale-105' : 'bg-white dark:bg-brand-ebony/20 text-brand-burgundy border-white hover:bg-brand-burgundy/5'}`}
+                            className={`p-2.5 rounded-full transition-all border shadow-md flex items-center justify-center ${showAttachmentMenu ? 'bg-brand-ebony text-white border-transparent scale-105' : 'bg-white dark:bg-white/5 text-brand-burgundy border-white hover:bg-brand-burgundy/5'}`}
                         >
-                            <Plus className={`w-5 h-5 transition-transform duration-500 ${showAttachmentMenu ? 'rotate-45' : 'rotate-0'}`} />
+                            <Plus className={`w-4 h-4 transition-transform duration-500 ${showAttachmentMenu ? 'rotate-45' : 'rotate-0'}`} />
                         </button>
 
                         {showAttachmentMenu && (
@@ -749,7 +830,7 @@ export function ChatWindow({ chatId, currentUser, otherUser, isGroup = false, gr
                                 value={newMessage}
                                 onChange={(e) => setNewMessage(e.target.value)}
                                 placeholder={editingMessage ? 'Revising message...' : (replyingToMessage ? 'Drafting response...' : 'Share a thought with the circle...')}
-                                className="w-full px-8 py-5 pr-14 bg-white/60 dark:bg-brand-ebony/5 border border-white dark:border-brand-ebony/10 rounded-full focus:outline-none focus:ring-2 focus:ring-brand-burgundy/20 focus:border-brand-burgundy/50 transition-all font-bold text-sm shadow-inner placeholder:text-brand-ebony/30"
+                                className="w-full px-5 py-2.5 pr-14 bg-white/60 dark:bg-white/5 border border-white dark:border-white/10 rounded-full focus:outline-none focus:ring-2 focus:ring-brand-burgundy/20 focus:border-brand-burgundy/50 transition-all font-bold text-[13.5px] shadow-inner placeholder:text-brand-ebony/30"
                                 disabled={sending}
                             />
                             <button
@@ -757,11 +838,11 @@ export function ChatWindow({ chatId, currentUser, otherUser, isGroup = false, gr
                                 onClick={() => setShowEmojiPicker(!showEmojiPicker)}
                                 className={`absolute right-4 top-1/2 -translate-y-1/2 p-2 rounded-full transition-colors ${showEmojiPicker ? 'bg-brand-burgundy text-white' : 'text-brand-ebony/20 hover:text-brand-burgundy'}`}
                             >
-                                <Smile className="w-6 h-6" />
+                                <Smile className="w-5 h-5" />
                             </button>
                             
                             {showEmojiPicker && (
-                                <div className="absolute bottom-full right-0 mb-6 p-4 card-premium shadow-2xl z-[120] w-72 animate-in fade-in zoom-in-95">
+                                <div ref={emojiPickerRef} className="absolute bottom-full right-0 mb-6 p-4 card-premium shadow-2xl z-[120] w-72 animate-in fade-in zoom-in-95">
                                     <div className="grid grid-cols-6 gap-2">
                                         {COMMON_EMOJIS.slice(0, 18).map(emoji => (
                                             <button key={emoji} type="button" onClick={() => { setNewMessage(prev => prev + emoji); setShowEmojiPicker(false); }} className="text-xl p-2 hover:bg-brand-ebony/5 rounded-xl transition-all hover:scale-125">
@@ -778,10 +859,10 @@ export function ChatWindow({ chatId, currentUser, otherUser, isGroup = false, gr
                             <button
                                 type="button"
                                 onClick={isRecording ? () => stopRecording(true) : startRecording}
-                                className={`p-4 rounded-full transition-all flex items-center justify-center flex-shrink-0 shadow-lg ${isRecording ? 'bg-red-500 text-white animate-pulse' : 'bg-white dark:bg-brand-ebony/20 text-emerald-500 border border-white hover:bg-emerald-50 hover:border-emerald-100'}`}
+                                className={`p-2.5 rounded-full transition-all flex items-center justify-center flex-shrink-0 shadow-lg ${isRecording ? 'bg-red-500 text-white animate-pulse' : 'bg-white dark:bg-white/5 text-emerald-500 border border-white hover:bg-emerald-50 hover:border-emerald-100'}`}
                             >
-                                {isRecording ? <Mic className="w-5 h-5" /> : (
-                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6">
+                                {isRecording ? <Mic className="w-4 h-4" /> : (
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
                                         <path d="M8.25 4.5a3.75 3.75 0 1 1 7.5 0v8.25a3.75 3.75 0 1 1-7.5 0V4.5Z" />
                                         <path d="M6 10.5a.75.75 0 0 1 .75.75v1.5a5.25 5.25 0 1 0 10.5 0v-1.5a.75.75 0 0 1 1.5 0v1.5a6.751 6.751 0 0 1-6 6.709v2.291h3a.75.75 0 0 1 0 1.5h-7.5a.75.75 0 0 1 0-1.5h3v-2.291a6.751 6.751 0 0 1-6-6.709v-1.5A.75.75 0 0 1 6 10.5Z" />
                                     </svg>
@@ -791,9 +872,9 @@ export function ChatWindow({ chatId, currentUser, otherUser, isGroup = false, gr
                             <button
                                 type="submit"
                                 disabled={(!newMessage.trim() && !mediaPreview) || sending}
-                                className="p-5 bg-gradient-to-br from-brand-burgundy to-[#4a1c1f] text-white rounded-full shadow-premium hover:brightness-110 active:scale-95 transition-all disabled:opacity-30 flex items-center justify-center shrink-0"
+                                className="p-3 bg-gradient-to-br from-brand-burgundy to-[#4a1c1f] text-white rounded-full shadow-premium hover:brightness-110 active:scale-95 transition-all disabled:opacity-30 flex items-center justify-center shrink-0"
                             >
-                                {sending ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
+                                {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
                             </button>
                         </div>
                     </form>
@@ -805,13 +886,13 @@ export function ChatWindow({ chatId, currentUser, otherUser, isGroup = false, gr
                 <ForwardMessageModal isOpen={!!forwardingMessage} onClose={() => setForwardingMessage(null)} message={forwardingMessage!} currentUser={currentUser} originSharedSecret={encryptionSecret} />
             )}
             {unsendingMessage && (
-                <div className="fixed inset-0 bg-brand-ebony/60 backdrop-blur-md flex items-center justify-center z-[200] p-4">
-                    <div className="card-premium p-10 max-w-sm w-full shadow-2xl animate-in zoom-in-95 border-brand-burgundy/10">
+                <div className="fixed inset-0 bg-brand-ebony/60 backdrop-blur-md flex items-center justify-center z-[200] p-4" onClick={() => setUnsendingMessage(null)}>
+                    <div className="card-premium p-10 max-w-sm w-full shadow-2xl animate-in zoom-in-95 border-brand-burgundy/10" onClick={(e) => e.stopPropagation()}>
                         <h3 className="text-2xl font-serif font-extrabold text-brand-ebony mb-4">Unsend Memory?</h3>
                         <p className="text-xs text-brand-ebony/40 font-serif italic mb-8">This action cannot be undone on the blockchain ledger.</p>
                         <div className="space-y-4">
                             <button onClick={() => handleUnsendMessage(unsendingMessage!, 'me')} className="w-full py-4 bg-brand-ebony/5 hover:bg-brand-ebony/10 text-brand-ebony rounded-2xl font-extrabold text-xs uppercase tracking-widest transition-all">Delete for me</button>
-                            {unsendingMessage.senderId === currentUser.uid && (
+                            {unsendingMessage.senderId === currentUser.uid && !unsendingMessage.isDeleted && (
                                 <button onClick={() => handleUnsendMessage(unsendingMessage!, 'everyone')} className="w-full py-4 bg-red-500 hover:bg-red-600 text-white rounded-2xl font-extrabold text-xs uppercase tracking-widest shadow-lg shadow-red-500/20 transition-all">Unsend for Everyone</button>
                             )}
                             <button onClick={() => setUnsendingMessage(null)} className="w-full py-3 text-xs font-bold text-brand-ebony/30 hover:text-brand-ebony transition-all">Dismiss</button>

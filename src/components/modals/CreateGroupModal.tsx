@@ -154,7 +154,7 @@ export function CreateGroupModal({ isOpen, onClose, currentUser, onGroupCreated 
                                 placeholder="Search by name or profession..."
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
-                                className="w-full pl-12 pr-5 py-4 bg-white dark:bg-brand-ebony/10 border border-brand-ebony/5 rounded-2xl focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all font-bold text-sm shadow-inner"
+                                className="w-full pl-12 pr-5 py-4 bg-white dark:bg-brand-cream/20 border border-brand-ebony/5 dark:border-white/5 rounded-2xl focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all font-bold text-sm shadow-inner"
                             />
                             <Search className="w-5 h-5 text-brand-ebony/20 absolute left-4 top-1/2 -translate-y-1/2" />
                         </div>

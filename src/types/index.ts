@@ -144,6 +144,7 @@ export interface Message {
   audioUrl?: string;
   audioDuration?: number; // seconds
   poll?: Poll;
+  reactions?: Record<string, string[]>; // emoji -> array of user uids
 }
 
 export interface Poll {

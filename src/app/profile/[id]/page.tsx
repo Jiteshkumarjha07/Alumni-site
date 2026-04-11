@@ -221,7 +221,7 @@ export default function PublicProfilePage() {
         return (
             <div className="flex items-center justify-center min-h-screen">
                 <div className="text-center">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-burgundy mx-auto mb-4"></div>
                 </div>
             </div>
         );
@@ -231,8 +231,8 @@ export default function PublicProfilePage() {
         return (
             <div className="flex items-center justify-center min-h-screen">
                 <div className="text-center">
-                    <p className="text-gray-600 mb-4">Please log in to view profiles</p>
-                    <Link href="/login" className="text-blue-600 hover:text-blue-700 font-medium">
+                    <p className="text-brand-ebony/60 mb-4">Please log in to view profiles</p>
+                    <Link href="/login" className="text-brand-burgundy hover:text-brand-burgundy/80 font-medium">
                         Go to Login
                     </Link>
                 </div>
@@ -244,8 +244,8 @@ export default function PublicProfilePage() {
         return (
             <div className="flex items-center justify-center min-h-screen">
                 <div className="text-center">
-                    <p className="text-gray-600 mb-4">User not found</p>
-                    <Link href="/" className="text-blue-600 hover:text-blue-700 font-medium">
+                    <p className="text-brand-ebony/60 mb-4">User not found</p>
+                    <Link href="/" className="text-brand-burgundy hover:text-brand-burgundy/80 font-medium">
                         Return Home
                     </Link>
                 </div>

@@ -33,6 +33,8 @@ export const MessagingProvider: React.FC<{ children: ReactNode }> = ({ children 
             return;
         }
 
+        let isMounted = true;
+
         const chatsRef = collection(db, 'chats');
         const q = query(
             chatsRef,
@@ -40,6 +42,7 @@ export const MessagingProvider: React.FC<{ children: ReactNode }> = ({ children 
         );
 
         const unsubscribe = onSnapshot(q, (snapshot) => {
+            if (!isMounted) return;
             let total = 0;
             let users = 0;
 
@@ -55,10 +58,13 @@ export const MessagingProvider: React.FC<{ children: ReactNode }> = ({ children 
             setTotalUnreadCount(total);
             setUnreadUsersCount(users);
         }, (error) => {
-            console.error('Error fetching unread counts:', error);
+            console.error('[MessagingContext] Error fetching unread counts:', error);
         });
 
-        return () => unsubscribe();
+        return () => {
+            isMounted = false;
+            unsubscribe();
+        };
     }, [userData?.uid]);
 
     return (

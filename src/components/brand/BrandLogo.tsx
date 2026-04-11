@@ -55,7 +55,7 @@ export function BrandLogo({
     return (
         <div className={`flex items-center gap-3 ${className}`}>
             {/* Logo Image Container */}
-            <div className={`${config.container} relative flex-shrink-0 rounded-xl overflow-hidden bg-white dark:bg-brand-ebony/30 shadow-md border border-brand-ebony/5 p-1`}>
+            <div className={`${config.container} relative flex-shrink-0 rounded-xl overflow-hidden bg-white dark:bg-brand-parchment shadow-md border border-brand-ebony/5 p-1`}>
                 <Image
                     src="/logo.png"
                     alt="Alumnest — For the Tribe"
@@ -91,7 +91,7 @@ export function BrandIcon({ size = 'sm', className = '' }: { size?: LogoSize; cl
     const config = sizeMap[size];
     
     return (
-        <div className={`${config.container} relative flex-shrink-0 rounded-full overflow-hidden bg-white dark:bg-brand-ebony/40 shadow-lg border-2 border-white dark:border-white/10 p-1.5 ${className}`}>
+        <div className={`${config.container} relative flex-shrink-0 rounded-full overflow-hidden bg-white dark:bg-brand-cream shadow-lg border-2 border-white dark:border-white/10 p-1.5 ${className}`}>
             <Image
                 src="/logo.png"
                 alt="Alumnest"

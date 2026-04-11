@@ -73,6 +73,9 @@
   }
   .dark input, .dark textarea, .dark select {
     color-scheme: dark;
+    background-color: rgba(255,255,255,0.04);
+    border-color: rgba(255,255,255,0.08);
+    color: var(--color-brand-ebony);
   }
   
   input::placeholder, textarea::placeholder {
@@ -218,6 +221,11 @@
     border: 1px solid rgba(255,255,255,0.10);
     outline: none;
     transition: all 0.2s ease;
+    color: var(--color-brand-ebony);
+  }
+  .dark .input-premium {
+    background: rgba(255,255,255,0.04);
+    border-color: rgba(255,255,255,0.08);
   }
   .input-premium:focus {
     border-color: rgba(99,102,241,0.60);
