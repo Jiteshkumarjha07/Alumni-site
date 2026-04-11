@@ -26,7 +26,7 @@ export const decryptMessage = (encryptedText: string, secret: string): string =>
     if (!encryptedText || typeof encryptedText !== 'string') return '';
 
     try {
-        let bytes: CryptoJS.lib.WordArray;
+        let bytes: any;
         try {
             bytes = CryptoJS.AES.decrypt(encryptedText, secret);
         } catch {
