@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Message } from '@/types';
 import { format } from 'date-fns';
 import { Share2, Check, CheckCheck, FileText, MoreVertical, Pencil, Trash2, Paperclip, BarChart2, Circle, CheckCircle2 } from 'lucide-react';
