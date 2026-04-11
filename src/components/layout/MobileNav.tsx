@@ -54,11 +54,8 @@ export function MobileNav() {
                                     <item.icon className={`h-4 w-4 transition-colors ${isActive ? 'text-white' : 'text-brand-ebony/50'}`} />
 
                                     {item.name === 'Messages' && totalUnreadCount > 0 && (
-                                        <span className="absolute -top-1 -right-1 flex h-3.5 w-3.5">
-                                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-70" />
-                                            <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-red-500 border border-white dark:border-brand-parchment text-[7px] text-white items-center justify-center font-bold">
-                                                {totalUnreadCount > 9 ? '9+' : totalUnreadCount}
-                                            </span>
+                                        <span className="absolute -top-1 -right-1 flex items-center justify-center h-[14px] w-[14px] rounded-full bg-red-500 text-white border-[1.5px] border-white dark:border-[var(--brand-surface)] text-[7px] font-black shadow-[0_0_10px_2px_rgba(239,68,68,0.8)] animate-pulse will-change-transform z-10">
+                                            {totalUnreadCount > 9 ? '9+' : totalUnreadCount}
                                         </span>
                                     )}
                                 </div>

@@ -23,23 +23,13 @@ import Link from 'next/link';
 const EASE_IN  = 'cubic-bezier(0.22, 1, 0.36, 1)';   // spring settle
 const EASE_OUT = 'cubic-bezier(0.4, 0, 0.6, 1)';      // smooth fade out
 
-// Tiny global scroll-direction tracker (shared, no re-renders)
-let lastScrollY = 0;
-let scrollDir: 'down' | 'up' = 'down';
-if (typeof window !== 'undefined') {
-  window.addEventListener('scroll', () => {
-    scrollDir = window.scrollY > lastScrollY ? 'down' : 'up';
-    lastScrollY = window.scrollY;
-  }, { passive: true });
-}
-
 type CardState = 'below' | 'visible' | 'above';
 
 function ScrollRevealCard({ children, index = 0 }: { children: React.ReactNode; index?: number }) {
   const ref = useRef<HTMLDivElement>(null);
-  // Cards start in 'below' state (off-screen below viewport)
   const [state, setState] = useState<CardState>('below');
-  // Track if this card has ever been shown (for instant first load)
+  // Track whether a stagger delay has already played (only first appearance)
+  const hasStaggered = useRef(false);
   const hasBeenVisible = useRef(false);
 
   useEffect(() => {
@@ -52,36 +42,35 @@ function ScrollRevealCard({ children, index = 0 }: { children: React.ReactNode; 
           hasBeenVisible.current = true;
           setState('visible');
         } else {
-          if (!hasBeenVisible.current) return; // not yet shown, keep as 'below'
-          // Card left viewport — determine which direction
+          if (!hasBeenVisible.current) return; // never shown yet — stay 'below'
           const rect = entry.boundingClientRect;
           if (rect.top < 0) {
-            // Card scrolled above the viewport (user scrolled down past it)
+            // Card exited above viewport (user scrolled DOWN past it)
             setState('above');
           } else {
-            // Card scrolled below the viewport (user scrolled back up)
+            // Card exited below viewport (user scrolled UP past it)
             setState('below');
           }
         }
       },
-      // Slight margin so fade completes before card fully leaves
-      { threshold: 0.08, rootMargin: '0px 0px 0px 0px' }
+      // Negative rootMargin triggers fade-in/out slightly BEFORE the card
+      // fully enters/leaves — gives the smooth leading-edge animation feel
+      { threshold: 0.05, rootMargin: '0px 0px -40px 0px' }
     );
 
     obs.observe(el);
     return () => obs.disconnect();
   }, []);
 
-  // Stagger delay only on entry, not on fade out
-  const entryDelay = state === 'visible' && !hasBeenVisible.current
-    ? Math.min(index * 50, 220)
-    : 0;
+  // Stagger only plays ONCE per card (first appearance)
+  const shouldStagger = state === 'visible' && !hasStaggered.current;
+  if (shouldStagger) hasStaggered.current = true;
+  const entryDelay = shouldStagger ? Math.min(index * 60, 240) : 0;
 
-  // Define per-state transforms — only translateY + scale (GPU composited)
   const styles: Record<CardState, { opacity: number; transform: string }> = {
-    below:   { opacity: 0, transform: 'translateY(36px) scale(0.97)' },
-    visible: { opacity: 1, transform: 'translateY(0px)  scale(1)'    },
-    above:   { opacity: 0, transform: 'translateY(-18px) scale(0.98)' },
+    below:   { opacity: 0, transform: 'translateY(40px) scale(0.97)' },
+    visible: { opacity: 1, transform: 'translateY(0px)  scale(1)'   },
+    above:   { opacity: 0, transform: 'translateY(-20px) scale(0.98)' },
   };
 
   const isVisible = state === 'visible';
@@ -93,10 +82,9 @@ function ScrollRevealCard({ children, index = 0 }: { children: React.ReactNode; 
       style={{
         opacity: current.opacity,
         transform: current.transform,
-        // Entry: spring bounce. Exit: smooth ease-out (faster, feels intentional)
         transition: isVisible
-          ? `opacity 0.52s ${EASE_IN} ${entryDelay}ms, transform 0.58s ${EASE_IN} ${entryDelay}ms`
-          : `opacity 0.32s ${EASE_OUT}, transform 0.36s ${EASE_OUT}`,
+          ? `opacity 0.55s ${EASE_IN} ${entryDelay}ms, transform 0.60s ${EASE_IN} ${entryDelay}ms`
+          : `opacity 0.30s ${EASE_OUT}, transform 0.34s ${EASE_OUT}`,
         willChange: 'transform, opacity',
       }}
     >
@@ -165,7 +153,10 @@ export default function HomePage() {
     return () => unsubscribe();
   }, [userData?.instituteId]); // Explicitly depend ONLY on changes in instituteId
 
-  const handleCreatePost = async (content: string, imageUrl?: string) => {
+  const handleCreatePost = async (
+    content: string, 
+    mediaPayload?: { imageUrl?: string; mediaUrl?: string; mediaType?: 'image' | 'video' | 'file'; fileName?: string }
+  ) => {
     if (!userData) return;
 
     // Optimistic UI: Prepend to feed instantly
@@ -177,7 +168,10 @@ export default function HomePage() {
       authorBatch: userData.batch || 0,
       authorProfilePic: userData.profilePic,
       content,
-      imageUrl: imageUrl || '',
+      imageUrl: mediaPayload?.imageUrl || '',
+      mediaUrl: mediaPayload?.mediaUrl,
+      mediaType: mediaPayload?.mediaType,
+      fileName: mediaPayload?.fileName,
       likes: [],
       comments: [],
       instituteId: userData.instituteId || '',
@@ -187,18 +181,24 @@ export default function HomePage() {
     setPosts(current => [newPost, ...current]);
 
     // Background Firebase operation
-    addDoc(collection(db, 'posts'), {
+    const payloadFields: any = {
       authorUid: userData.uid,
       authorName: userData.name,
       authorBatch: userData.batch || 0,
       authorProfilePic: userData.profilePic || '',
       content,
-      imageUrl: imageUrl || '',
+      imageUrl: mediaPayload?.imageUrl || '',
       likes: [],
       comments: [],
       instituteId: userData.instituteId || '',
       createdAt: serverTimestamp()
-    }).catch(err => console.error('[page.tsx] Error adding post:', err));
+    };
+
+    if (mediaPayload?.mediaUrl) payloadFields.mediaUrl = mediaPayload.mediaUrl;
+    if (mediaPayload?.mediaType) payloadFields.mediaType = mediaPayload.mediaType;
+    if (mediaPayload?.fileName) payloadFields.fileName = mediaPayload.fileName;
+
+    addDoc(collection(db, 'posts'), payloadFields).catch(err => console.error('[page.tsx] Error adding post:', err));
   };
 
   const handleUpdatePost = async (postId: string, newContent: string) => {

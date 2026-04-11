@@ -1,14 +1,17 @@
 'use client';
 
 import { useState } from 'react';
-import { X, Image as ImageIcon, Loader2, Send, Sparkles } from 'lucide-react';
-import { uploadMedia } from '@/lib/media';
+import { X, Image as ImageIcon, Loader2, Send, Sparkles, Video, FileText, File as FileIcon } from 'lucide-react';
+import { uploadMedia, uploadVideo, uploadFile } from '@/lib/media';
 import { Portal } from '../ui/Portal';
 
 interface CreatePostModalProps {
     isOpen: boolean;
     onClose: () => void;
-    onSubmit: (content: string, imageUrl?: string) => Promise<void>;
+    onSubmit: (
+        content: string, 
+        mediaPayload?: { imageUrl?: string; mediaUrl?: string; mediaType?: 'image' | 'video' | 'file'; fileName?: string }
+    ) => Promise<void>;
     currentUser: {
         name: string;
         profilePic?: string;
@@ -22,49 +25,78 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
     currentUser,
 }) => {
     const [content, setContent] = useState('');
-    const [imageFile, setImageFile] = useState<File | null>(null);
-    const [imagePreview, setImagePreview] = useState<string>('');
+    const [selectedFile, setSelectedFile] = useState<File | null>(null);
+    const [previewUrl, setPreviewUrl] = useState<string>('');
+    const [fileType, setFileType] = useState<'image' | 'video' | 'file' | null>(null);
     const [loading, setLoading] = useState(false);
 
     if (!isOpen) return null;
 
-    const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) {
-            if (file.size > 5 * 1024 * 1024) {
-                alert('Image size should be less than 5MB');
+            const type = file.type;
+            const isVideo = type.startsWith('video/');
+
+            // Storage threshold: 10MB max for videos, 5MB for everything else
+            const limitMB = isVideo ? 10 : 5;
+            if (file.size > limitMB * 1024 * 1024) {
+                alert(`File size exceeds limit (${limitMB}MB max). Please choose a smaller file.`);
                 return;
             }
-            if (!file.type.startsWith('image/')) {
-                alert('Please select an image file');
-                return;
+
+            if (type.startsWith('image/')) {
+                setFileType('image');
+                setPreviewUrl(URL.createObjectURL(file));
+            } else if (isVideo) {
+                setFileType('video');
+                setPreviewUrl(URL.createObjectURL(file));
+            } else {
+                setFileType('file');
+                setPreviewUrl(''); // No true visual preview for raw files
             }
-            setImageFile(file);
-            setImagePreview(URL.createObjectURL(file));
+            setSelectedFile(file);
         }
     };
 
-    const handleRemoveImage = () => {
-        setImageFile(null);
-        setImagePreview('');
+    const handleRemoveFile = () => {
+        setSelectedFile(null);
+        setPreviewUrl('');
+        setFileType(null);
     };
 
     const handleSubmit = async () => {
-        if (!content.trim() && !imageFile) {
-            return;
-        }
+        if (!content.trim() && !selectedFile) return;
 
         setLoading(true);
         try {
-            let imageUrl: string | undefined = undefined;
-            if (imageFile) {
-                imageUrl = await uploadMedia(imageFile) || undefined;
+            let payload: Parameters<typeof onSubmit>[1] = undefined;
+
+            if (selectedFile) {
+                let uploadedUrl: string | null = null;
+                
+                if (fileType === 'image') {
+                    uploadedUrl = await uploadMedia(selectedFile);
+                } else if (fileType === 'video') {
+                    uploadedUrl = await uploadVideo(selectedFile, 'posts/videos');
+                } else {
+                    uploadedUrl = await uploadFile(selectedFile, 'posts/files');
+                }
+
+                if (uploadedUrl) {
+                    if (fileType === 'image') {
+                        payload = { imageUrl: uploadedUrl, mediaUrl: uploadedUrl, mediaType: 'image', fileName: selectedFile.name };
+                    } else if (fileType === 'video') {
+                        payload = { mediaUrl: uploadedUrl, mediaType: 'video', fileName: selectedFile.name };
+                    } else {
+                        payload = { mediaUrl: uploadedUrl, mediaType: 'file', fileName: selectedFile.name };
+                    }
+                }
             }
 
-            await onSubmit(content.trim(), imageUrl);
+            await onSubmit(content.trim(), payload);
             setContent('');
-            setImageFile(null);
-            setImagePreview('');
+            handleRemoveFile();
             onClose();
         } catch (error) {
             console.error('Error creating post:', error);
@@ -123,47 +155,86 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
                                 value={content}
                                 onChange={(e) => setContent(e.target.value)}
                                 placeholder="What's on your mind? Share an update, a milestone, or start a discussion..."
-                                className="w-full min-h-[220px] p-0 bg-transparent border-none focus:ring-0 outline-none resize-none text-brand-ebony placeholder-brand-ebony/20 transition-all font-sans text-xl leading-[1.6] tracking-tight"
+                                className="w-full min-h-[160px] p-0 bg-transparent border-none focus:ring-0 outline-none resize-none text-brand-ebony placeholder-brand-ebony/20 transition-all font-sans text-xl leading-[1.6] tracking-tight"
                                 disabled={loading}
                                 autoFocus
                             />
 
-                            {/* Image Preview Area */}
-                            {imagePreview && (
-                                <div className="mt-6 relative rounded-[2rem] overflow-hidden border border-brand-ebony/5 shadow-premium group/img max-h-[450px]">
-                                    <img
-                                        src={imagePreview}
-                                        alt="Preview"
-                                        className="w-full h-full object-cover group-hover/img:scale-[1.02] transition-transform duration-700 ease-out"
-                                    />
-                                    <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent opacity-0 group-hover/img:opacity-100 transition-opacity duration-500"></div>
+                            {/* Media Preview Area */}
+                            {selectedFile && (
+                                <div className="mt-6 relative rounded-2xl overflow-hidden border border-brand-ebony/10 bg-brand-ebony/5 shadow-premium group/media">
                                     <button
-                                        onClick={handleRemoveImage}
+                                        onClick={handleRemoveFile}
                                         disabled={loading}
-                                        className="absolute top-6 right-6 p-3 bg-black/60 hover:bg-red-500 text-white rounded-2xl transition-all disabled:opacity-50 shadow-2xl backdrop-blur-md active:scale-90"
+                                        className="absolute top-4 right-4 z-10 p-2.5 bg-black/60 hover:bg-red-500 text-white rounded-full transition-all disabled:opacity-50 shadow-xl backdrop-blur-md active:scale-90"
                                     >
-                                        <X className="w-5 h-5" />
+                                        <X className="w-4 h-4" />
                                     </button>
+
+                                    {fileType === 'image' && previewUrl && (
+                                        <div className="flex items-center justify-center bg-black/5 w-full max-h-[300px]">
+                                            <img
+                                                src={previewUrl}
+                                                alt="Preview"
+                                                className="w-full max-h-[300px] object-contain transition-transform duration-700 ease-out"
+                                            />
+                                        </div>
+                                    )}
+
+                                    {fileType === 'video' && previewUrl && (
+                                        <div className="flex items-center justify-center bg-black w-full max-h-[300px]">
+                                            <video 
+                                                src={previewUrl} 
+                                                controls 
+                                                className="w-full max-h-[300px] object-contain"
+                                            />
+                                        </div>
+                                    )}
+
+                                    {fileType === 'file' && (
+                                        <div className="flex items-center gap-4 p-6 bg-white dark:bg-[#1c1a2c]">
+                                            <div className="w-12 h-12 rounded-xl bg-indigo-500/10 text-indigo-500 flex items-center justify-center shrink-0">
+                                                <FileIcon className="w-6 h-6" />
+                                            </div>
+                                            <div className="min-w-0">
+                                                <p className="font-bold text-sm text-brand-ebony truncate">{selectedFile.name}</p>
+                                                <p className="text-[11px] font-semibold text-brand-ebony/40 uppercase tracking-widest mt-0.5">
+                                                    {(selectedFile.size / 1024 / 1024).toFixed(2)} MB • File Payload
+                                                </p>
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                             )}
 
-                            {/* Image Upload Hint if no image */}
-                            {!imagePreview && (
-                                <div className="mt-8 flex flex-wrap items-center gap-6">
-                                     <label className="flex items-center gap-3 px-6 py-3.5 bg-brand-burgundy/5 text-brand-burgundy hover:bg-brand-burgundy/10 rounded-2xl cursor-pointer transition-all border border-brand-burgundy/10 group/btn active:scale-95">
-                                        <ImageIcon className="w-5 h-5 group-hover/btn:scale-110 transition-transform" />
-                                        <span className="text-[11px] font-bold uppercase tracking-widest">Incorporate Media</span>
+                            {/* Upload Buttons if no file selected */}
+                            {!selectedFile && (
+                                <div className="mt-6 flex flex-wrap items-center gap-3">
+                                    {/* Upload trigger hidden input */}
+                                    <label className="flex items-center gap-2 px-5 py-3 bg-brand-ebony/4 hover:bg-brand-burgundy/10 text-brand-ebony/60 hover:text-brand-burgundy rounded-xl cursor-pointer transition-all border border-transparent hover:border-brand-burgundy/10 active:scale-95">
+                                        <ImageIcon className="w-4 h-4" />
+                                        <span className="text-[11px] font-bold uppercase tracking-widest">Image</span>
                                         <input
                                             type="file"
                                             accept="image/*"
-                                            onChange={handleImageChange}
+                                            onChange={handleFileChange}
                                             className="hidden"
                                             disabled={loading}
                                         />
                                     </label>
-                                    <p className="text-[10px] text-brand-ebony/25 font-bold uppercase tracking-widest max-w-[150px] leading-relaxed">
-                                        High-fidelity assets only • Up to 5MB
-                                    </p>
+
+
+                                    <label className="flex items-center gap-2 px-5 py-3 bg-brand-ebony/4 hover:bg-emerald-500/10 text-brand-ebony/60 hover:text-emerald-600 rounded-xl cursor-pointer transition-all border border-transparent hover:border-emerald-500/10 active:scale-95">
+                                        <FileText className="w-4 h-4" />
+                                        <span className="text-[11px] font-bold uppercase tracking-widest">Doc</span>
+                                        <input
+                                            type="file"
+                                            accept=".pdf,.doc,.docx,.txt,.csv,.xlsx,.xls"
+                                            onChange={handleFileChange}
+                                            className="hidden"
+                                            disabled={loading}
+                                        />
+                                    </label>
                                 </div>
                             )}
                         </div>
@@ -195,7 +266,7 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
                             </button>
                             <button
                                 onClick={handleSubmit}
-                                disabled={loading || (!content.trim() && !imageFile)}
+                                disabled={loading || (!content.trim() && !selectedFile)}
                                 className="flex-1 sm:flex-none px-10 py-4 bg-brand-burgundy text-white rounded-2xl font-bold text-[11px] tracking-[0.25em] uppercase shadow-lg hover:shadow-indigo-500/30 transition-all disabled:opacity-20 disabled:cursor-not-allowed group relative overflow-hidden active:scale-[0.97]"
                             >
                                 <div className="relative z-10 flex items-center justify-center gap-3">

@@ -125,67 +125,69 @@ export function ChatList({ currentUser, chats, onSelectChat, onStartChat, onSele
                         </h2>
                         <p className="text-[10px] font-bold text-brand-ebony/30 uppercase tracking-[0.2em] mt-1">Encrypted • Secure</p>
                     </div>
-                    <div className="relative">
-                        <button
-                            onClick={() => setIsActionsPopupOpen(!isActionsPopupOpen)}
-                            className={`p-3 rounded-2xl transition-all shadow-sm border ${
-                                isActionsPopupOpen 
-                                    ? 'bg-gradient-indigo text-white border-transparent' 
-                                    : 'bg-brand-burgundy/5 text-brand-burgundy hover:bg-brand-burgundy/10 border-brand-burgundy/10'
-                            }`}
-                        >
-                            <Plus className="w-6 h-6" />
-                        </button>
+                    <div className="flex items-center gap-3">
+                        <div className="relative">
+                            <button
+                                onClick={() => setIsActionsPopupOpen(!isActionsPopupOpen)}
+                                className={`p-3 rounded-2xl transition-all shadow-sm border ${
+                                    isActionsPopupOpen 
+                                        ? 'bg-gradient-indigo text-white border-transparent' 
+                                        : 'bg-brand-burgundy/5 text-brand-burgundy hover:bg-brand-burgundy/10 border-brand-burgundy/10'
+                                }`}
+                            >
+                                <Plus className="w-5 h-5" />
+                            </button>
 
-                        {isActionsPopupOpen && (
-                            <>
-                                <div className="fixed inset-0 z-[70]" onClick={() => setIsActionsPopupOpen(false)}></div>
-                                <div className="absolute right-0 top-14 w-60 card-premium shadow-2xl z-[80] overflow-hidden animate-in fade-in slide-in-from-top-3 duration-300 border-brand-burgundy/10">
-                                    <div className="p-2 space-y-1">
-                                        <button 
-                                            onClick={() => {
-                                                setIsActionsPopupOpen(false);
-                                                setSearchQuery('');
-                                                document.getElementById('chat-search-input')?.focus();
-                                            }}
-                                            className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-brand-ebony hover:bg-brand-burgundy/5 rounded-xl transition-all"
-                                        >
-                                            <div className="p-2 bg-brand-burgundy/10 rounded-lg">
-                                                <MessageCircle className="w-4 h-4 text-brand-burgundy" />
-                                            </div>
-                                            New Chat
-                                        </button>
-                                        <button 
-                                            onClick={() => {
-                                                setIsActionsPopupOpen(false);
-                                                setIsCreateGroupModalOpen(true);
-                                            }}
-                                            className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-brand-ebony hover:bg-brand-burgundy/5 rounded-xl transition-all"
-                                        >
-                                            <div className="p-2 bg-indigo-500/10 rounded-lg">
-                                                <Users className="w-4 h-4 text-indigo-500" />
-                                            </div>
-                                            Create Group
-                                        </button>
+                            {isActionsPopupOpen && (
+                                <>
+                                    <div className="fixed inset-0 z-[70]" onClick={() => setIsActionsPopupOpen(false)}></div>
+                                    <div className="absolute right-0 top-14 w-60 card-premium shadow-2xl z-[80] overflow-hidden animate-in fade-in slide-in-from-top-3 duration-300 border-brand-burgundy/10 bg-white/95 backdrop-blur-2xl">
+                                        <div className="p-2 space-y-1">
+                                            <button 
+                                                onClick={() => {
+                                                    setIsActionsPopupOpen(false);
+                                                    setSearchQuery('');
+                                                    document.getElementById('chat-search-input')?.focus();
+                                                }}
+                                                className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-brand-ebony hover:bg-brand-burgundy/5 rounded-xl transition-all"
+                                            >
+                                                <div className="p-2 bg-brand-burgundy/10 rounded-lg">
+                                                    <MessageCircle className="w-4 h-4 text-brand-burgundy" />
+                                                </div>
+                                                New Chat
+                                            </button>
+                                            <button 
+                                                onClick={() => {
+                                                    setIsActionsPopupOpen(false);
+                                                    setIsCreateGroupModalOpen(true);
+                                                }}
+                                                className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-brand-ebony hover:bg-brand-burgundy/5 rounded-xl transition-all"
+                                            >
+                                                <div className="p-2 bg-indigo-500/10 rounded-lg">
+                                                    <Users className="w-4 h-4 text-indigo-500" />
+                                                </div>
+                                                Create Group
+                                            </button>
+                                        </div>
                                     </div>
-                                </div>
-                            </>
-                        )}
+                                </>
+                            )}
+                        </div>
                     </div>
                 </div>
 
                 {/* Glassy Tabs */}
-                <div className="flex p-1.5 bg-brand-ebony/5 rounded-2xl mb-8 border border-brand-ebony/5">
+                <div className="flex p-1.5 bg-brand-ebony/[0.03] rounded-xl mb-6 shadow-inner ring-1 ring-inset ring-brand-ebony/5">
                     <button
                         onClick={() => onViewModeChange('chats')}
-                        className={`flex-1 flex items-center justify-center gap-1.5 py-3 text-[9px] font-extrabold uppercase tracking-[0.1em] rounded-xl transition-all ${
+                        className={`flex-1 flex items-center justify-center gap-1.5 py-3 text-[10px] font-extrabold uppercase tracking-[0.08em] rounded-lg transition-all ${
                             viewMode === 'chats' 
-                                ? 'bg-white dark:bg-brand-ebony/40 text-brand-burgundy shadow-sm' 
-                                : 'text-brand-ebony/40 hover:text-brand-ebony/60'
+                                ? 'bg-white dark:bg-brand-ebony/40 text-brand-burgundy shadow-sm ring-1 ring-brand-ebony/5' 
+                                : 'text-brand-ebony/40 hover:text-brand-ebony/60 hover:bg-black/5'
                         }`}
                     >
                         <MessageSquare className="w-3.5 h-3.5 shrink-0" />
-                        <span className="truncate">Conversations</span>
+                        <span className="truncate">Direct</span>
                         {unreadUsersCount > 0 && (
                             <span className="w-4 h-4 flex items-center justify-center bg-red-500 text-white rounded-full text-[8px] animate-in zoom-in shrink-0">
                                 {unreadUsersCount}
@@ -194,10 +196,10 @@ export function ChatList({ currentUser, chats, onSelectChat, onStartChat, onSele
                     </button>
                     <button
                         onClick={() => onViewModeChange('groups')}
-                        className={`flex-1 flex items-center justify-center gap-1.5 py-3 text-[9px] font-extrabold uppercase tracking-[0.1em] rounded-xl transition-all ${
+                        className={`flex-1 flex items-center justify-center gap-1.5 py-3 text-[10px] font-extrabold uppercase tracking-[0.08em] rounded-lg transition-all ${
                             viewMode === 'groups' 
-                                ? 'bg-white dark:bg-brand-ebony/40 text-brand-burgundy shadow-sm' 
-                                : 'text-brand-ebony/40 hover:text-brand-ebony/60'
+                                ? 'bg-white dark:bg-brand-ebony/40 text-brand-burgundy shadow-sm ring-1 ring-brand-ebony/5' 
+                                : 'text-brand-ebony/40 hover:text-brand-ebony/60 hover:bg-black/5'
                         }`}
                     >
                         <Users className="w-3.5 h-3.5 shrink-0" />
@@ -205,16 +207,16 @@ export function ChatList({ currentUser, chats, onSelectChat, onStartChat, onSele
                     </button>
                 </div>
 
-                <div className="relative group">
+                <div className="relative group shadow-sm rounded-2xl">
                     <input
                         id="chat-search-input"
                         type="text"
-                        placeholder={viewMode === 'chats' ? "Search for alumni..." : "Search your circles..."}
+                        placeholder={viewMode === 'chats' ? "Search direct network..." : "Search circles..."}
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full pl-12 pr-5 py-4 bg-white/50 dark:bg-brand-ebony/20 border border-brand-ebony/5 rounded-2xl focus:ring-4 focus:ring-brand-burgundy/10 focus:border-brand-burgundy/30 outline-none transition-all placeholder:text-brand-ebony/25 font-bold text-sm"
+                        className="w-full pl-12 pr-5 py-3.5 bg-white shadow-inner border border-brand-ebony/5 rounded-2xl focus:ring-2 focus:ring-brand-burgundy/20 focus:border-brand-burgundy/30 outline-none transition-all placeholder:text-brand-ebony/25 font-bold text-sm"
                     />
-                    <Search className="w-5 h-5 text-brand-ebony/20 absolute left-4 top-1/2 -track-y-1/2 group-focus-within:text-brand-burgundy transition-colors" style={{ top: '50%', transform: 'translateY(-50%)' }} />
+                    <Search className="w-4 h-4 text-brand-ebony/20 absolute left-4 top-1/2 -mt-2 group-focus-within:text-brand-burgundy transition-colors" />
                 </div>
             </div>
 
@@ -290,17 +292,21 @@ export function ChatList({ currentUser, chats, onSelectChat, onStartChat, onSele
                                                 <img
                                                     src={profilePic}
                                                     alt={name}
-                                                    className={`w-14 h-14 rounded-full object-cover border-2 shadow-sm transition-all ${isActive ? 'border-brand-burgundy/50 ' : 'border-white dark:border-brand-parchment group-hover:scale-105'}`}
+                                                    className={`w-14 h-14 rounded-2xl object-cover border-2 shadow-sm transition-all ${isActive ? 'border-brand-burgundy/50 scale-105' : 'border-white dark:border-brand-parchment group-hover:scale-105'}`}
                                                 />
+                                                {/* Online Status Indicator in Sidebar */}
+                                                <div className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-white dark:border-brand-ebony shadow-sm transition-transform duration-300 group-hover:scale-110 ${otherUserDetails?.isOnline ? 'bg-emerald-500' : 'bg-brand-ebony/20'}`}>
+                                                    {otherUserDetails?.isOnline && <div className="absolute inset-0 rounded-full animate-ping bg-emerald-400 opacity-60" />}
+                                                </div>
                                                 {unreadCount > 0 && (
-                                                    <div className="absolute -top-1 -right-1 bg-red-500 text-white text-[9px] font-extrabold rounded-full w-5 h-5 flex items-center justify-center border-2 border-white dark:border-brand-ebony animate-bounce shadow-sm">
+                                                    <div className="absolute -top-1 -right-1 bg-red-500 text-white text-[9px] font-extrabold rounded-full w-5 h-5 flex items-center justify-center border-2 border-white dark:border-brand-ebony animate-bounce shadow-sm z-10">
                                                         {unreadCount > 9 ? '9+' : unreadCount}
                                                     </div>
                                                 )}
                                             </div>
                                             <div className="text-left flex-1 min-w-0 pr-6">
                                                 <div className="flex justify-between items-baseline mb-1">
-                                                    <p className={`font-extrabold truncate pr-2 ${isActive || unreadCount > 0 ? 'text-brand-ebony' : 'text-brand-ebony/60'}`}>
+                                                    <p className={`text-[15px] font-black tracking-tight truncate pr-2 ${isActive || unreadCount > 0 ? 'text-black dark:text-white' : 'text-brand-ebony/70 dark:text-white/60'}`}>
                                                         {name}
                                                     </p>
                                                     {chat.lastMessageAt && (

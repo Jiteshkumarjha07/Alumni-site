@@ -75,7 +75,7 @@ export function Sidebar() {
                                     href="/profile"
                                     className="flex items-center justify-center gap-2 py-2.5 bg-brand-cream/50 dark:bg-brand-ebony rounded-xl border border-brand-ebony/10 text-brand-ebony/60 hover:text-brand-ebony transition-all text-[10px] font-black uppercase tracking-wider"
                                 >
-                                    Archives
+                                    Profile
                                 </Link>
                                 <Link 
                                     href="/settings"

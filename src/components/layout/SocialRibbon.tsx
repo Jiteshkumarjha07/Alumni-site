@@ -40,11 +40,8 @@ export function SocialRibbon() {
                                 <div className="relative shrink-0 flex items-center justify-center">
                                     <item.icon className={`w-[19px] h-[19px] ${isActive ? 'text-white' : ''}`} />
                                     {item.name === 'Messages' && totalUnreadCount > 0 && (
-                                        <span className="absolute -top-1.5 -right-1.5 flex h-4 w-4">
-                                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-60" />
-                                            <span className="relative inline-flex rounded-full h-4 w-4 bg-red-500 border-2 border-white text-[8px] text-white items-center justify-center font-black">
-                                                {totalUnreadCount > 9 ? '9+' : totalUnreadCount}
-                                            </span>
+                                        <span className="absolute -top-2 -right-2 flex items-center justify-center h-4 w-4 rounded-full bg-red-500 text-white border-[1.5px] border-white text-[8px] font-black shadow-[0_0_12px_2px_rgba(239,68,68,0.8)] animate-pulse will-change-transform z-10 ring-1 ring-red-500/30">
+                                            {totalUnreadCount > 9 ? '9+' : totalUnreadCount}
                                         </span>
                                     )}
                                 </div>

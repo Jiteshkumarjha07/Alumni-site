@@ -56,6 +56,9 @@ export interface Post {
   authorProfession?: string;
   content: string;
   imageUrl?: string;
+  mediaUrl?: string;
+  mediaType?: 'image' | 'video' | 'file';
+  fileName?: string;
   likes?: string[];
   comments?: Comment[];
   createdAt: Timestamp;

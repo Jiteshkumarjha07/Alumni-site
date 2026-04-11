@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef, useMemo } from 'react';
+import Link from 'next/link';
 import { User, Message, Group, Poll } from '@/types';
 import { collection, query, orderBy, onSnapshot, addDoc, serverTimestamp, setDoc, doc, updateDoc, arrayUnion } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
@@ -170,13 +171,29 @@ export function ChatWindow({ chatId, currentUser, otherUser, isGroup = false, gr
 
     const [otherUserStatus, setOtherUserStatus] = useState<{ isOnline: boolean; lastSeen?: any } | null>(null);
 
-    const isUserOnline = useMemo(() => {
-        if (!otherUserStatus || !otherUserStatus.isOnline || !otherUserStatus.lastSeen) return false;
-        try {
-            return (Date.now() - otherUserStatus.lastSeen.toMillis()) < 60000;
-        } catch (e) {
-            return otherUserStatus.isOnline;
+    const [isUserOnline, setIsUserOnline] = useState(false);
+
+    useEffect(() => {
+        if (!otherUserStatus) {
+            setIsUserOnline(false);
+            return;
         }
+        const checkOnline = () => {
+            if (!otherUserStatus.isOnline || !otherUserStatus.lastSeen) {
+                setIsUserOnline(false);
+                return;
+            }
+            try {
+                const diff = Date.now() - otherUserStatus.lastSeen.toMillis();
+                setIsUserOnline(diff < 60000);
+            } catch (e) {
+                setIsUserOnline(otherUserStatus.isOnline);
+            }
+        };
+
+        checkOnline();
+        const interval = setInterval(checkOnline, 5000); // Faster checks for "immediate" updates
+        return () => clearInterval(interval);
     }, [otherUserStatus]);
 
     useEffect(() => {
@@ -447,71 +464,89 @@ export function ChatWindow({ chatId, currentUser, otherUser, isGroup = false, gr
             )}
 
             {/* Chat Header */}
-            <div className="flex items-center justify-between px-8 py-6 bg-white/70 dark:bg-brand-parchment/10 backdrop-blur-xl border-b border-brand-ebony/5 z-20 sticky top-0">
-                <div className="flex items-center">
+            <div className="flex items-center justify-between px-6 py-4 bg-white dark:bg-brand-ebony border-b border-brand-ebony/10 dark:border-white/10 z-30 sticky top-0 shadow-md">
+                <div className="flex items-center flex-1 min-w-0 pr-4">
                     {onBack && (
-                        <button onClick={onBack} className="md:hidden mr-4 p-2 hover:bg-brand-ebony/5 rounded-full">
-                            <ArrowLeft className="w-6 h-6 text-brand-ebony" />
+                        <button onClick={onBack} className="md:hidden mr-4 p-2.5 hover:bg-brand-burgundy/5 text-brand-ebony/60 hover:text-brand-burgundy rounded-full transition-colors shrink-0">
+                            <ArrowLeft className="w-5 h-5" />
                         </button>
                     )}
                     <div className="relative mr-4 shrink-0">
                         {isGroup ? (
-                            <div className="w-14 h-14 bg-gradient-indigo rounded-2xl flex items-center justify-center text-white shadow-lg">
-                                <Users className="w-7 h-7" />
+                            <div className="w-12 h-12 bg-gradient-to-br from-brand-burgundy to-[#4a1c1f] rounded-2xl flex items-center justify-center text-white shadow-lg">
+                                <Users className="w-6 h-6" />
                             </div>
                         ) : (
-                            <>
-                                <img src={profilePic!} alt={title!} className="w-14 h-14 rounded-2xl object-cover border-2 border-white dark:border-brand-parchment shadow-md" />
-                                <div className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-white dark:border-brand-ebony shadow-sm ${isUserOnline ? 'bg-emerald-500' : 'bg-gray-300'}`} />
-                            </>
+                            <Link href={`/profile/${otherUser?.uid}`} className="relative block group/avatar shrink-0">
+                                <img src={profilePic!} alt={title!} className="w-12 h-12 rounded-2xl object-cover border-2 border-white dark:border-brand-parchment shadow-md group-hover/avatar:scale-110 group-active/avatar:scale-95 transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] ring-0 group-hover/avatar:ring-4 group-hover/avatar:ring-brand-burgundy/20" />
+                                <div className={`absolute -bottom-1 -right-1 flex h-[14px] w-[14px] items-center justify-center rounded-full border-2 border-white dark:border-brand-ebony transition-transform duration-300 group-hover/avatar:scale-125 ${isUserOnline ? 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.8)]' : 'bg-brand-ebony/30'}`}>
+                                    {isUserOnline && <div className="absolute inset-0 rounded-full animate-ping bg-emerald-400 opacity-60" />}
+                                </div>
+                            </Link>
                         )}
                     </div>
-                    <div>
-                        <h3 className="text-xl font-serif font-extrabold text-brand-ebony tracking-tight">{title}</h3>
-                        <div className="flex items-center gap-2 mt-1">
+                    <div className="min-w-0 flex flex-col justify-center pl-1">
+                        <h3 className="text-2xl md:text-3xl font-serif font-black text-black dark:text-white truncate leading-tight">{title}</h3>
+                        <div className="flex items-center mt-0.5">
                             {isGroup ? (
-                                <p className="text-[10px] font-extrabold text-brand-ebony/30 uppercase tracking-[0.2em]">{groupData?.members.length} Contributor Circle</p>
+                                <p className="text-[11px] font-bold text-brand-ebony/60 dark:text-white/60 tracking-wider truncate uppercase">{groupData?.members.length} Contributor Circle</p>
                             ) : (
-                                <p className={`text-[10px] font-extrabold uppercase tracking-[0.2em] transition-colors ${isUserOnline ? 'text-emerald-500' : 'text-brand-ebony/30'}`}>
-                                    {isUserOnline ? 'Active Now' : 'Last seen recently'}
-                                </p>
+                                <div className="h-5 overflow-hidden relative w-full translate-z-0">
+                                    <div className={`flex flex-col transition-transform duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] ${isUserOnline ? 'translate-y-0' : '-translate-y-5'}`}>
+                                        <div className="h-5 flex items-center gap-2.5 shrink-0">
+                                            <div className="relative flex h-2.5 w-2.5">
+                                                <div className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75 duration-1000"></div>
+                                                <div className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500 shadow-[0_0_15px_2px_rgba(16,185,129,0.8)]"></div>
+                                            </div>
+                                            <p className="text-[12px] font-black tracking-[0.1em] truncate text-emerald-600 dark:text-emerald-400 uppercase">
+                                                Online
+                                            </p>
+                                        </div>
+                                        <div className="h-5 flex items-center gap-2.5 shrink-0">
+                                            <div className="h-2.5 w-2.5 rounded-full bg-brand-ebony/20 dark:bg-white/10"></div>
+                                            <p className="text-[12px] font-bold tracking-[0.1em] truncate text-brand-ebony/40 dark:text-white/30 uppercase">
+                                                Away
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
                             )}
                         </div>
                     </div>
                 </div>
                 
-                <div className="flex items-center gap-2">
-                    <div className="hidden lg:flex items-center gap-2 px-4 py-2 bg-brand-burgundy/5 border border-brand-burgundy/10 rounded-full mr-4">
-                        <Lock className="w-3.5 h-3.5 text-brand-burgundy/60" />
-                        <span className="text-[9px] font-extrabold text-brand-burgundy/60 uppercase tracking-widest whitespace-nowrap">End-to-End Encrypted</span>
+                <div className="flex items-center gap-2 shrink-0">
+                    <div className="hidden lg:flex items-center gap-1.5 px-4 py-2 bg-brand-ebony/[0.03] rounded-full mr-2 ring-1 ring-brand-ebony/5">
+                        <Lock className="w-3.5 h-3.5 text-brand-ebony/40" />
+                        <span className="text-[9px] font-extrabold text-brand-ebony/40 uppercase tracking-widest whitespace-nowrap">End-to-End Encrypted</span>
                     </div>
 
                     <button 
                         onClick={() => setShowCallMenu(!showCallMenu)}
-                        className={`p-3.5 rounded-2xl transition-all shadow-sm border ${showCallMenu ? 'bg-gradient-indigo text-white border-transparent scale-110' : 'bg-white dark:bg-brand-ebony/20 text-indigo-500 border-brand-ebony/5 hover:bg-indigo-500 hover:text-white'}`}
+                        className={`p-3 rounded-xl transition-all shadow-sm border ${showCallMenu ? 'bg-brand-burgundy text-white border-transparent scale-105' : 'bg-white dark:bg-brand-ebony/10 text-brand-burgundy border-white hover:bg-brand-burgundy/5 hover:border-brand-burgundy/20'}`}
                     >
-                        <Phone className="w-5 h-5" />
+                        <Phone className="w-4 h-4" />
                     </button>
 
                     <div className="relative">
                         <button 
                             onClick={() => setShowMoreMenu(!showMoreMenu)}
-                            className="p-3.5 bg-white dark:bg-brand-ebony/20 text-brand-ebony/30 border border-brand-ebony/5 rounded-2xl hover:text-brand-ebony transition-all"
+                            className={`p-3 rounded-xl transition-all border ${showMoreMenu ? 'bg-white shadow-sm border-brand-ebony/10 text-brand-ebony' : 'bg-transparent text-brand-ebony/30 hover:bg-white border-transparent hover:border-brand-ebony/10 hover:shadow-sm'}`}
                         >
-                            <MoreHorizontal className="w-5 h-5" />
+                            <MoreHorizontal className="w-4 h-4" />
                         </button>
                         {showMoreMenu && (
                             <div className="absolute right-0 top-14 w-60 card-premium shadow-2xl z-[80] overflow-hidden animate-in fade-in slide-in-from-top-2 duration-300">
                                 <div className="p-2 space-y-1">
                                     <button onClick={() => { setIsSelectionMode(true); setShowMoreMenu(false); }} className="w-full flex items-center gap-3 px-4 py-3 text-xs font-bold text-brand-ebony hover:bg-brand-ebony/5 rounded-xl transition-all">
-                                        <ListChecks className="w-4 h-4 text-indigo-500" />
+                                        <ListChecks className="w-4 h-4 text-brand-burgundy" />
                                         Select Messages
                                     </button>
                                     <button className="w-full flex items-center gap-3 px-4 py-3 text-xs font-bold text-brand-ebony hover:bg-brand-ebony/5 rounded-xl transition-all opacity-50 cursor-not-allowed">
-                                        <Info className="w-4 h-4 text-indigo-500" />
+                                        <Info className="w-4 h-4 text-brand-burgundy" />
                                         Circle Info
                                     </button>
-                                    <button onClick={() => { onBack?.(); setShowMoreMenu(false); }} className="w-full flex items-center gap-3 px-4 py-3 text-xs font-bold text-red-500 hover:bg-red-500/5 rounded-xl transition-all">
+                                    <button onClick={() => { onBack?.(); setShowMoreMenu(false); }} className="w-full flex items-center gap-3 px-4 py-3 text-xs font-bold text-rose-500 hover:bg-rose-500/5 rounded-xl transition-all">
                                         <LogOut className="w-4 h-4" />
                                         Close Conversation
                                     </button>
@@ -524,7 +559,7 @@ export function ChatWindow({ chatId, currentUser, otherUser, isGroup = false, gr
 
             {/* Messages Area */}
             <div
-                className="flex-1 overflow-y-auto px-4 md:px-6 py-6 space-y-4 scrollbar-hide bg-white/30 dark:bg-brand-parchment/5"
+                className="flex-1 overflow-y-auto px-4 md:px-6 pt-6 pb-40 space-y-4 scrollbar-hide bg-white/30 dark:bg-brand-parchment/5"
                 onContextMenu={(e) => {
                     e.preventDefault();
                     setContextMenu({ x: e.clientX, y: e.clientY });
@@ -584,23 +619,26 @@ export function ChatWindow({ chatId, currentUser, otherUser, isGroup = false, gr
                         onContextMenu={(e) => { e.preventDefault(); setContextMenu(null); }}
                     />
                     <div
-                        className="fixed z-[100] w-56 card-premium shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150"
-                        style={{ top: contextMenu.y, left: contextMenu.x }}
+                        className="fixed z-[100] w-56 bg-white/95 dark:bg-brand-parchment/10 backdrop-blur-2xl rounded-2xl border border-brand-ebony/10 dark:border-white/5 shadow-premium overflow-hidden animate-in fade-in zoom-in-95 duration-150 ring-1 ring-brand-ebony/5"
+                        style={{ 
+                            top: Math.min(contextMenu.y, typeof window !== 'undefined' ? window.innerHeight - 120 : contextMenu.y), 
+                            left: Math.min(contextMenu.x, typeof window !== 'undefined' ? window.innerWidth - 240 : contextMenu.x) 
+                        }}
                     >
-                        <div className="p-1.5 space-y-0.5">
+                        <div className="p-1.5 space-y-1">
                             <button
                                 onClick={() => { setIsSelectionMode(true); setContextMenu(null); }}
-                                className="w-full flex items-center gap-3 px-4 py-2.5 text-xs font-bold text-brand-ebony hover:bg-indigo-500/10 hover:text-indigo-600 rounded-xl transition-all"
+                                className="w-full flex items-center gap-3 px-4 py-3 text-xs font-extrabold text-brand-ebony dark:text-white/90 hover:bg-brand-burgundy/10 hover:text-brand-burgundy rounded-xl transition-all group"
                             >
-                                <ListChecks className="w-4 h-4 text-indigo-500" />
+                                <ListChecks className="w-4 h-4 text-brand-burgundy group-hover:scale-110 transition-transform" />
                                 Select Messages
                             </button>
-                            <div className="h-px bg-brand-ebony/5 mx-2" />
+                            <div className="h-px bg-brand-ebony/10 dark:bg-white/10 mx-3" />
                             <button
                                 onClick={() => { onBack?.(); setContextMenu(null); }}
-                                className="w-full flex items-center gap-3 px-4 py-2.5 text-xs font-bold text-red-500 hover:bg-red-500/10 rounded-xl transition-all"
+                                className="w-full flex items-center gap-3 px-4 py-3 text-xs font-extrabold text-red-500 hover:bg-red-500/10 rounded-xl transition-all group"
                             >
-                                <LogOut className="w-4 h-4" />
+                                <LogOut className="w-4 h-4 group-hover:scale-110 transition-transform" />
                                 Close Chat
                             </button>
                         </div>
@@ -609,22 +647,22 @@ export function ChatWindow({ chatId, currentUser, otherUser, isGroup = false, gr
             )}
 
             {/* Input Footer Area */}
-            <div className="px-4 md:px-6 py-4 bg-white/50 dark:bg-brand-parchment/10 backdrop-blur-3xl border-t border-brand-ebony/5 relative z-20">
+            <div className="absolute bottom-6 left-6 right-6 z-40 px-3 py-3 bg-white/70 dark:bg-brand-parchment/20 backdrop-blur-3xl rounded-[2.5rem] shadow-premium border border-white dark:border-brand-ebony/10 pointer-events-auto">
                 {editingMessage && (
-                    <div className="flex items-center justify-between mb-4 px-5 py-3 bg-indigo-500/10 rounded-2xl border border-indigo-500/20 animate-in slide-in-from-bottom-2">
-                        <div className="flex items-center gap-3 text-indigo-600">
+                    <div className="flex items-center justify-between mb-4 px-5 py-3 bg-brand-burgundy/10 rounded-2xl border border-brand-burgundy/20 animate-in slide-in-from-bottom-2 mx-2">
+                        <div className="flex items-center gap-3 text-brand-burgundy">
                             <Pencil className="w-4 h-4" />
                             <p className="text-[11px] font-extrabold uppercase tracking-widest">Revising Message...</p>
                         </div>
-                        <button onClick={() => { setEditingMessage(null); setNewMessage(''); }} className="text-indigo-500 hover:text-indigo-700 transition-all p-1">
+                        <button onClick={() => { setEditingMessage(null); setNewMessage(''); }} className="text-brand-burgundy hover:text-brand-burgundy/70 transition-all p-1">
                             <X className="w-4 h-4" />
                         </button>
                     </div>
                 )}
                 {replyingToMessage && (
-                    <div className="flex items-center justify-between mb-4 px-5 py-4 bg-brand-ebony/5 rounded-2xl border-l-[6px] border-indigo-500 animate-in slide-in-from-bottom-2 shadow-sm">
+                    <div className="flex items-center justify-between mb-4 px-5 py-4 bg-brand-ebony/5 rounded-2xl border-l-[6px] border-brand-burgundy animate-in slide-in-from-bottom-2 shadow-sm mx-2">
                         <div className="overflow-hidden pr-4">
-                            <p className="text-[10px] text-indigo-600 font-extrabold uppercase tracking-[0.15em] mb-1.5 flex items-center gap-2">
+                            <p className="text-[10px] text-brand-burgundy font-extrabold uppercase tracking-[0.15em] mb-1.5 flex items-center gap-2">
                                 <Paperclip className="w-3 h-3" /> Responding to {replyingToMessage.senderName}
                             </p>
                             <p className="text-xs text-brand-ebony/40 font-medium italic truncate">"{replyingToMessage.text}"</p>
@@ -643,16 +681,16 @@ export function ChatWindow({ chatId, currentUser, otherUser, isGroup = false, gr
                             ) : mediaPreview.type === 'video' ? (
                                 <video src={mediaPreview.url} className="h-44 w-auto object-cover" muted />
                             ) : (
-                                <div className="h-44 w-52 bg-indigo-50/50 flex flex-col items-center justify-center p-6 gap-4">
-                                    <FileText className="w-12 h-12 text-indigo-500/40" />
+                                <div className="h-44 w-52 bg-brand-burgundy/5 flex flex-col items-center justify-center p-6 gap-4">
+                                    <FileText className="w-12 h-12 text-brand-burgundy/40" />
                                     <div className="text-center">
-                                        <p className="text-[11px] font-extrabold text-indigo-900 truncate w-36">{mediaPreview.name}</p>
-                                        <p className="text-[9px] text-indigo-900/40 uppercase font-extrabold tracking-widest mt-1">{(mediaPreview.size! / 1024).toFixed(1)} KB</p>
+                                        <p className="text-[11px] font-extrabold text-brand-burgundy truncate w-36">{mediaPreview.name}</p>
+                                        <p className="text-[9px] text-brand-burgundy/40 uppercase font-extrabold tracking-widest mt-1">{(mediaPreview.size! / 1024).toFixed(1)} KB</p>
                                     </div>
                                 </div>
                             )}
                             {uploadingMedia && (
-                                <div className="absolute inset-0 bg-indigo-900/40 flex items-center justify-center backdrop-blur-[2px]">
+                                <div className="absolute inset-0 bg-brand-ebony/60 flex items-center justify-center backdrop-blur-[2px]">
                                     <Loader2 className="w-10 h-10 animate-spin text-white" />
                                 </div>
                             )}
@@ -664,13 +702,13 @@ export function ChatWindow({ chatId, currentUser, otherUser, isGroup = false, gr
                 )}
 
                 <div className="flex items-center gap-5">
-                    <div className="relative group">
+                    <div className="relative group shrink-0">
                         <button
                             type="button"
                             onClick={() => setShowAttachmentMenu(!showAttachmentMenu)}
-                            className={`p-5 rounded-[1.5rem] transition-all border shadow-lg flex items-center justify-center ${showAttachmentMenu ? 'bg-gradient-indigo text-white border-transparent' : 'bg-white dark:bg-brand-ebony/20 text-indigo-500 border-brand-ebony/5 hover:bg-indigo-500 hover:text-white'}`}
+                            className={`p-5 rounded-full transition-all border shadow-lg flex items-center justify-center ${showAttachmentMenu ? 'bg-brand-ebony text-white border-transparent scale-105' : 'bg-white dark:bg-brand-ebony/20 text-brand-burgundy border-white hover:bg-brand-burgundy/5'}`}
                         >
-                            <Plus className={`w-6 h-6 transition-transform duration-500 ${showAttachmentMenu ? 'rotate-45' : 'rotate-0'}`} />
+                            <Plus className={`w-5 h-5 transition-transform duration-500 ${showAttachmentMenu ? 'rotate-45' : 'rotate-0'}`} />
                         </button>
 
                         {showAttachmentMenu && (
@@ -711,13 +749,13 @@ export function ChatWindow({ chatId, currentUser, otherUser, isGroup = false, gr
                                 value={newMessage}
                                 onChange={(e) => setNewMessage(e.target.value)}
                                 placeholder={editingMessage ? 'Revising message...' : (replyingToMessage ? 'Drafting response...' : 'Share a thought with the circle...')}
-                                className="w-full px-8 py-5 pr-14 bg-white dark:bg-brand-ebony/10 border border-brand-ebony/5 rounded-[1.5rem] focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all font-bold text-sm shadow-inner placeholder:text-brand-ebony/30"
+                                className="w-full px-8 py-5 pr-14 bg-white/60 dark:bg-brand-ebony/5 border border-white dark:border-brand-ebony/10 rounded-full focus:outline-none focus:ring-2 focus:ring-brand-burgundy/20 focus:border-brand-burgundy/50 transition-all font-bold text-sm shadow-inner placeholder:text-brand-ebony/30"
                                 disabled={sending}
                             />
                             <button
                                 type="button"
                                 onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-                                className={`absolute right-4 top-1/2 -translate-y-1/2 p-2 rounded-full transition-colors ${showEmojiPicker ? 'bg-indigo-500 text-white' : 'text-brand-ebony/20 hover:text-indigo-500'}`}
+                                className={`absolute right-4 top-1/2 -translate-y-1/2 p-2 rounded-full transition-colors ${showEmojiPicker ? 'bg-brand-burgundy text-white' : 'text-brand-ebony/20 hover:text-brand-burgundy'}`}
                             >
                                 <Smile className="w-6 h-6" />
                             </button>
@@ -736,13 +774,13 @@ export function ChatWindow({ chatId, currentUser, otherUser, isGroup = false, gr
                         </div>
 
                         {/* Mic & Send */}
-                        <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-2 shrink-0">
                             <button
                                 type="button"
                                 onClick={isRecording ? () => stopRecording(true) : startRecording}
-                                className={`p-5 rounded-[1.5rem] transition-all flex items-center justify-center flex-shrink-0 shadow-lg ${isRecording ? 'bg-red-500 text-white animate-pulse' : 'bg-white dark:bg-brand-ebony/20 text-emerald-500 border border-brand-ebony/5 hover:bg-emerald-500 hover:text-white'}`}
+                                className={`p-4 rounded-full transition-all flex items-center justify-center flex-shrink-0 shadow-lg ${isRecording ? 'bg-red-500 text-white animate-pulse' : 'bg-white dark:bg-brand-ebony/20 text-emerald-500 border border-white hover:bg-emerald-50 hover:border-emerald-100'}`}
                             >
-                                {isRecording ? <Mic className="w-6 h-6" /> : (
+                                {isRecording ? <Mic className="w-5 h-5" /> : (
                                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6">
                                         <path d="M8.25 4.5a3.75 3.75 0 1 1 7.5 0v8.25a3.75 3.75 0 1 1-7.5 0V4.5Z" />
                                         <path d="M6 10.5a.75.75 0 0 1 .75.75v1.5a5.25 5.25 0 1 0 10.5 0v-1.5a.75.75 0 0 1 1.5 0v1.5a6.751 6.751 0 0 1-6 6.709v2.291h3a.75.75 0 0 1 0 1.5h-7.5a.75.75 0 0 1 0-1.5h3v-2.291a6.751 6.751 0 0 1-6-6.709v-1.5A.75.75 0 0 1 6 10.5Z" />
@@ -753,9 +791,9 @@ export function ChatWindow({ chatId, currentUser, otherUser, isGroup = false, gr
                             <button
                                 type="submit"
                                 disabled={(!newMessage.trim() && !mediaPreview) || sending}
-                                className="p-5 bg-gradient-indigo text-white rounded-[1.5rem] shadow-xl shadow-indigo-500/20 hover:brightness-110 active:scale-95 transition-all disabled:opacity-30 flex items-center justify-center"
+                                className="p-5 bg-gradient-to-br from-brand-burgundy to-[#4a1c1f] text-white rounded-full shadow-premium hover:brightness-110 active:scale-95 transition-all disabled:opacity-30 flex items-center justify-center shrink-0"
                             >
-                                {sending ? <Loader2 className="w-6 h-6 animate-spin" /> : <Send className="w-6 h-6" />}
+                                {sending ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
                             </button>
                         </div>
                     </form>

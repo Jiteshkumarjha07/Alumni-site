@@ -165,17 +165,59 @@ export const PostCard: React.FC<PostCardProps> = ({
                     {post.content}
                 </p>
 
-                {/* ── Image ── */}
-                {post.imageUrl && (
-                    <div className="rounded-2xl overflow-hidden mb-5 relative group/img shadow-sm hover:shadow-lg transition-all duration-500 -mx-1">
-                        <img
-                            src={post.imageUrl}
-                            alt="Post"
-                            className="w-full object-cover group-hover/img:scale-[1.02] transition-transform duration-700 ease-out max-h-[480px]"
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent opacity-0 group-hover/img:opacity-100 transition-opacity duration-500" />
-                    </div>
-                )}
+                {/* ── Media Renderer ── */}
+                {(() => {
+                    const type = post.mediaType || (post.imageUrl ? 'image' : null);
+                    const url = post.mediaUrl || post.imageUrl;
+
+                    if (!url || !type) return null;
+
+                    if (type === 'image') {
+                        return (
+                            <div className="rounded-2xl overflow-hidden mb-5 relative group/img shadow-sm border border-brand-ebony/5 bg-brand-ebony/5 -mx-1">
+                                <img
+                                    src={url}
+                                    alt="Post"
+                                    className="w-full max-h-[360px] object-contain group-hover/img:scale-[1.01] transition-transform duration-700 ease-out"
+                                />
+                                <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent opacity-0 group-hover/img:opacity-100 transition-opacity duration-500 pointer-events-none" />
+                            </div>
+                        );
+                    }
+
+                    if (type === 'video') {
+                        return (
+                            <div className="rounded-2xl overflow-hidden mb-5 relative shadow-sm border border-brand-ebony/10 bg-black -mx-1">
+                                <video
+                                    src={url}
+                                    controls
+                                    className="w-full max-h-[360px] object-contain"
+                                />
+                            </div>
+                        );
+                    }
+
+                    if (type === 'file') {
+                        return (
+                            <a 
+                                href={url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex items-center gap-4 p-4 mb-5 rounded-2xl bg-white dark:bg-white/5 border border-brand-ebony/10 hover:border-brand-burgundy/30 hover:shadow-md transition-all group/file -mx-1"
+                            >
+                                <div className="w-12 h-12 rounded-xl bg-indigo-500/10 text-indigo-500 flex items-center justify-center shrink-0 group-hover/file:bg-indigo-500 group-hover/file:text-white transition-colors">
+                                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
+                                </div>
+                                <div className="min-w-0 flex-1">
+                                    <p className="font-bold text-sm text-brand-ebony truncate group-hover/file:text-brand-burgundy transition-colors">{post.fileName || 'Shared Document'}</p>
+                                    <p className="text-[11px] font-semibold text-brand-ebony/40 uppercase tracking-widest mt-0.5">Click to view / download</p>
+                                </div>
+                            </a>
+                        );
+                    }
+
+                    return null;
+                })()}
 
                 {/* ── Comment Previews ── */}
                 {previewComments.length > 0 && (

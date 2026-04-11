@@ -146,10 +146,10 @@ function MessagesClient() {
     if (!userData) return null;
 
     return (
-        <div className="h-[calc(100dvh-7rem)] w-full max-w-[1400px] mx-auto md:px-4 md:pb-4 animate-fade-in overflow-hidden">
-            <div className="flex bg-white/40 dark:bg-brand-parchment/10 backdrop-blur-xl md:rounded-3xl shadow-2xl border border-white/20 dark:border-brand-ebony/10 h-full w-full overflow-hidden transition-all duration-500">
+        <div className="h-[calc(100dvh-7rem)] w-full max-w-[1400px] mx-auto md:px-6 md:pb-6 animate-fade-in overflow-hidden">
+            <div className="flex bg-white/60 dark:bg-brand-parchment/10 backdrop-blur-2xl md:rounded-[2.5rem] shadow-premium ring-1 ring-white/50 dark:ring-white/10 border border-brand-ebony/5 h-full w-full overflow-hidden transition-all duration-500">
                 {/* Left Pane: Chat List */}
-                <div className={`md:w-1/3 xl:w-1/4 w-full flex-shrink-0 border-r border-brand-ebony/5 flex flex-col ${(selectedChatId || selectedGroupId) ? 'hidden md:flex' : 'flex'}`}>
+                <div className={`md:w-[350px] lg:w-[400px] w-full flex-shrink-0 border-r border-brand-ebony/[0.04] flex flex-col bg-white/40 dark:bg-black/5 ${(selectedChatId || selectedGroupId) ? 'hidden md:flex' : 'flex'}`}>
                     {loadingChats ? (
                         <div className="flex h-full items-center justify-center">
                             <Loader2 className="w-8 h-8 animate-spin text-brand-burgundy/20" />

@@ -105,7 +105,7 @@ export function MessageBubble({
                 {isSelectionMode && (
                     <div className="flex items-center justify-center p-2 mb-2">
                         {isSelected ? (
-                            <CheckCircle2 className="w-5 h-5 text-indigo-500 animate-in zoom-in" />
+                            <CheckCircle2 className="w-5 h-5 text-brand-burgundy animate-in zoom-in" />
                         ) : (
                             <Circle className="w-5 h-5 text-brand-ebony/20" />
                         )}
@@ -113,13 +113,13 @@ export function MessageBubble({
                 )}
                 
                 {!isOwnMessage && message.senderProfilePic && (
-                    <div className="relative flex-shrink-0 mb-1">
+                    <Link href={`/profile/${message.senderId}`} className="relative flex-shrink-0 mb-1 block group/avatar">
                          <img
                             src={message.senderProfilePic}
                             alt={message.senderName || 'Sender'}
-                            className="w-8 h-8 rounded-full object-cover border-2 border-white dark:border-brand-parchment shadow-sm"
+                            className="w-8 h-8 rounded-full object-cover border-2 border-white dark:border-brand-parchment shadow-sm group-hover/avatar:scale-125 group-hover/avatar:-rotate-6 group-active/avatar:scale-95 transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] ring-0 group-hover/avatar:ring-4 group-hover/avatar:ring-brand-burgundy/20"
                         />
-                    </div>
+                    </Link>
                 )}
                 
                 <div className={`flex flex-col ${isOwnMessage ? 'items-end' : 'items-start'}`}>
@@ -131,9 +131,9 @@ export function MessageBubble({
                     
                     <div className="relative group max-w-full">
                         <div
-                            className={`px-4 py-3 relative shadow-md max-w-full w-fit transition-all duration-300 ${isOwnMessage
-                                ? 'bg-gradient-indigo text-white rounded-2xl rounded-tr-sm'
-                                : 'bg-white dark:bg-brand-parchment/10 text-brand-ebony border border-brand-ebony/5 rounded-2xl rounded-tl-sm'
+                            className={`px-5 py-3.5 relative shadow-premium max-w-full w-fit transition-all duration-300 ${isOwnMessage
+                                ? 'bg-gradient-to-br from-brand-burgundy to-[#4a1c1f] text-white rounded-[1.5rem] rounded-tr-sm border border-white/5'
+                                : 'bg-white/90 dark:bg-brand-parchment/10 backdrop-blur-md text-brand-ebony border border-white dark:border-white/5 rounded-[1.5rem] rounded-tl-sm ring-1 ring-brand-ebony/5'
                             }`}
                         >
                             {/* Reply Context */}
@@ -215,7 +215,7 @@ export function MessageBubble({
                             <div className="flex flex-col">
                                 {decryptedText && (
                                     <p className={`text-[15px] leading-relaxed whitespace-pre-wrap [overflow-wrap:anywhere] break-words ${
-                                        decryptedText.length < 50 && !decryptedImageUrl && !decryptedVideoUrl && !message.sharedPostId ? 'text-lg font-bold tracking-tight' : 'font-medium'
+                                        decryptedText.length < 50 && !decryptedImageUrl && !decryptedVideoUrl && !message.sharedPostId ? 'text-lg font-bold tracking-tight' : 'font-medium opacity-90'
                                     }`}>
                                         {decryptedText}
                                     </p>
@@ -231,7 +231,7 @@ export function MessageBubble({
                         {/* Status Reveal (Legacy) - Kept mostly same but indigo-ified */}
                         {isOwnMessage && showStatus && (
                             <div className="text-right mt-1.5 mr-1 animate-in fade-in slide-in-from-top-1 duration-300">
-                                <span className="text-[9px] font-extrabold uppercase tracking-widest text-indigo-500/60 transition-all">
+                                <span className="text-[9px] font-extrabold uppercase tracking-widest text-brand-burgundy/60 transition-all">
                                     {isRead ? 'Seen' : message.isDelivered ? 'Delivered' : 'Sent'}
                                 </span>
                             </div>
