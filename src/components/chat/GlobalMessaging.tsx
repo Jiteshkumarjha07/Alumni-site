@@ -39,8 +39,10 @@ export function GlobalMessaging() {
                         limit(25)
                     );
 
+                    console.log(`[GlobalMessaging] Attaching listener for chat: ${chatId}`);
+                    
                     const unsubMessages = onSnapshot(recentMessagesQuery, (msgSnapshot) => {
-                        if (!isMounted) return; // ← skip if unmounted
+                        if (!isMounted) return; 
                         msgSnapshot.docs.forEach(async (msgDoc) => {
                             if (!isMounted) return;
                             const data = msgDoc.data() as Message;
@@ -48,12 +50,14 @@ export function GlobalMessaging() {
                                 try {
                                     await updateDoc(msgDoc.ref, { isDelivered: true });
                                 } catch (err) {
-                                    console.error('[GlobalMessaging] Error auto-marking delivered:', err);
+                                    // Ignore errors if the document was deleted or permissions changed
                                 }
                             }
                         });
                     }, (err) => {
-                        console.error('[GlobalMessaging] Error listening to messages:', err);
+                        console.error(`[GlobalMessaging] Error in message listener for ${chatId}:`, err);
+                        // If we hit an error (like index required), remove from tracking so we can retry later if needed
+                        activeListeners.current.delete(chatId);
                     });
 
                     activeListeners.current.set(chatId, unsubMessages);

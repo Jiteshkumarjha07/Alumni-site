@@ -4,7 +4,7 @@ import React, { useState, createContext, useContext } from 'react';
 import { useSwipeable } from 'react-swipeable';
 import { useRouter, usePathname } from 'next/navigation';
 
-const tabs = ['/', '/messages', '/events', '/jobs', '/network', '/profile'];
+const tabs = ['/', '/messages', '/jobs', '/events', '/network', '/profile'];
 
 interface SwipeContextType {
     direction: number;
@@ -22,21 +22,27 @@ export function SwipeProvider({ children }: { children: React.ReactNode }) {
     const currentIndex = tabs.indexOf(pathname);
 
     const handlers = useSwipeable({
-        onSwipedLeft: () => {
+        onSwipedLeft: (eventData) => {
+            // Ignore swipes that start near the edges (common for back gestures)
+            if (eventData.initial[0] < 80 || eventData.initial[0] > window.innerWidth - 80) return;
+            
             if (currentIndex !== -1 && currentIndex < tabs.length - 1) {
                 setDirection(1);
                 router.push(tabs[currentIndex + 1]);
             }
         },
-        onSwipedRight: () => {
+        onSwipedRight: (eventData) => {
+            // Ignore swipes that start near the edges (common for back gestures)
+            if (eventData.initial[0] < 80 || eventData.initial[0] > window.innerWidth - 80) return;
+
             if (currentIndex > 0) {
                 setDirection(-1);
                 router.push(tabs[currentIndex - 1]);
             }
         },
-        delta: 80, // Reduced from 150 for more responsive trigger
+        delta: 150, // Reduced from 250 for easier swiping, edge check still prevents accidental back gestures
         swipeDuration: 500,
-        preventScrollOnSwipe: false,
+        preventScrollOnSwipe: true,
         trackMouse: false,
     });
 

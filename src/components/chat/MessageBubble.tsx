@@ -24,14 +24,17 @@ interface MessageBubbleProps {
     isSelectionMode?: boolean;
     isSelected?: boolean;
     onSelect?: (id: string) => void;
+    onLongPress?: (id: string) => void;
 }
 
-export function MessageBubble({ 
+export const MessageBubble = React.memo(function MessageBubble({ 
     message, isOwnMessage, onEdit, onUnsend, onReply, onForward, onReact, 
     sharedSecret, showSenderName = false, onVote, currentUserId,
-    isSelectionMode = false, isSelected = false, onSelect
+    isSelectionMode = false, isSelected = false, onSelect, onLongPress
 }: MessageBubbleProps) {
     const [showMenu, setShowMenu] = useState(false);
+    const longPressTimer = React.useRef<NodeJS.Timeout | null>(null);
+    const isLongPressActive = React.useRef(false);
 
     const decryptedText = useMemo(() => decryptMessage(message.text, sharedSecret), [message.text, sharedSecret]);
     const decryptedReplyText = useMemo(() => 
@@ -107,7 +110,25 @@ export function MessageBubble({
         }
         setShowMenu(false);
     };
+    const handleTouchStart = () => {
+        isLongPressActive.current = false;
+        longPressTimer.current = setTimeout(() => {
+            isLongPressActive.current = true;
+            onLongPress?.(message.id);
+            if (navigator.vibrate) navigator.vibrate(50);
+        }, 600);
+    };
 
+    const handleTouchEnd = (e: React.TouchEvent) => {
+        if (longPressTimer.current) {
+            clearTimeout(longPressTimer.current);
+            longPressTimer.current = null;
+        }
+        if (isLongPressActive.current) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+    };
     // Close menu when clicking outside
     useEffect(() => {
         const handleClickOutside = (e: MouseEvent) => {
@@ -177,8 +198,17 @@ export function MessageBubble({
         <div 
             className={`flex w-full min-w-0 mb-4 group ${isOwnMessage ? 'justify-end' : 'justify-start'} transition-all`}
             onClick={() => {
+                if (isLongPressActive.current) return;
                 if (isSelectionMode) onSelect?.(message.id);
                 else if (isOwnMessage) setStatusKey(prev => prev + 1);
+            }}
+            onTouchStart={handleTouchStart}
+            onTouchEnd={handleTouchEnd}
+            onTouchMove={() => {
+                if (longPressTimer.current) {
+                    clearTimeout(longPressTimer.current);
+                    longPressTimer.current = null;
+                }
             }}
         >
             <div className={`flex flex-1 min-w-0 max-w-[96%] sm:max-w-[85%] md:max-w-[75%] items-end gap-3 ${isSelectionMode ? (isSelected ? 'opacity-100' : 'opacity-40') : ''} ${isOwnMessage ? 'justify-end' : 'justify-start'}`}>
@@ -193,13 +223,13 @@ export function MessageBubble({
                 )}
                 
                 {!isOwnMessage && message.senderProfilePic && (
-                    <Link href={`/profile/${message.senderId}`} className="relative flex-shrink-0 mb-1 block group/avatar">
+                    <div className="relative flex-shrink-0 mb-1 block">
                          <img
                             src={message.senderProfilePic}
                             alt={message.senderName || 'Sender'}
-                            className="w-7 h-7 rounded-lg object-cover border border-white dark:border-brand-parchment shadow-sm group-hover/avatar:scale-125 group-hover/avatar:-rotate-6 group-active/avatar:scale-95 transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] ring-0 group-hover/avatar:ring-4 group-hover/avatar:ring-brand-burgundy/20"
+                            className="w-7 h-7 rounded-lg object-cover border border-white dark:border-brand-parchment shadow-sm"
                         />
-                    </Link>
+                    </div>
                 )}
                 
                 <div className={`flex flex-col min-w-0 ${isOwnMessage ? 'items-end' : 'items-start'}`}>
@@ -211,7 +241,7 @@ export function MessageBubble({
                     
                     <div className="flex items-end gap-2 max-w-full">
                         {/* Sender's 3-dot overlay logic (placed before the message bubble if own message) */}
-                        {isOwnMessage && (
+                        {isOwnMessage && !isSelectionMode && (
                             <div className="relative mb-2">
                                 <button 
                                     onClick={(e) => { e.stopPropagation(); setShowMenu(!showMenu); }} 
@@ -329,12 +359,15 @@ export function MessageBubble({
                                             uids && uids.length > 0 && (
                                                 <button
                                                     key={emoji}
-                                                    onClick={(e) => { e.stopPropagation(); onReact?.(message.id, emoji); }}
+                                                    onClick={(e) => { 
+                                                        e.stopPropagation(); 
+                                                        if (!isSelectionMode) onReact?.(message.id, emoji); 
+                                                    }}
                                                     className={`flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-extrabold border transition-all ${
                                                         uids.includes(currentUserId) 
                                                             ? 'bg-brand-burgundy/10 border-brand-burgundy text-brand-burgundy shadow-sm' 
                                                             : 'bg-white/50 dark:bg-black/20 border-black/5 dark:border-white/5 text-brand-ebony dark:text-white/60 hover:border-brand-burgundy/30'
-                                                    }`}
+                                                    } ${isSelectionMode ? 'cursor-default pointer-events-none' : ''}`}
                                                 >
                                                     <span>{emoji}</span>
                                                     <span>{uids.length}</span>
@@ -353,7 +386,7 @@ export function MessageBubble({
                         </div>
 
                         {/* Receiver's 3-dot overlay logic (placed after the message bubble if not own message) */}
-                        {!isOwnMessage && (
+                        {!isOwnMessage && !isSelectionMode && (
                             <div className="relative mb-2">
                                 <button 
                                     onClick={(e) => { e.stopPropagation(); setShowMenu(!showMenu); }} 
@@ -379,4 +412,4 @@ export function MessageBubble({
             </div>
         </div>
     );
-}
+});

@@ -3,7 +3,7 @@ import { Timestamp, FieldValue } from 'firebase/firestore';
 export interface Notification {
   id: string;
   userId: string;
-  type: 'like' | 'comment' | 'connection_request' | 'connection_accepted';
+  type: 'like' | 'comment' | 'connection_request' | 'connection_accepted' | 'message';
   sourceUserUid: string;
   sourceUserName: string;
   sourceUserProfilePic?: string;

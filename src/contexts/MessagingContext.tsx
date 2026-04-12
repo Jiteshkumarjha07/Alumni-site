@@ -11,7 +11,7 @@ interface MessagingContextType {
     unreadUsersCount: number;
 }
 
-const MessagingContext = createContext<MessagingContextType | undefined>(undefined);
+export const MessagingContext = createContext<MessagingContextType | undefined>(undefined);
 
 export const useMessaging = () => {
     const context = useContext(MessagingContext);

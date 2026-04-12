@@ -196,7 +196,7 @@ function MessagesClient() {
     if (!userData) return null;
 
     return (
-        <div className="h-[calc(100dvh-7rem)] w-full max-w-[1700px] mx-auto md:px-4 md:pb-4 animate-fade-in overflow-hidden">
+        <div className="h-dvh md:h-[calc(100dvh-7rem)] w-full max-w-[1700px] mx-auto md:px-4 md:pb-4 animate-fade-in overflow-hidden">
             <div ref={containerRef} className="flex bg-white/60 dark:bg-brand-parchment/10 backdrop-blur-2xl md:rounded-[2rem] shadow-premium ring-1 ring-white/50 dark:ring-white/10 border border-brand-ebony/5 h-full w-full overflow-hidden transition-all duration-500">
                 {/* Left Pane: Chat List */}
                 <div 

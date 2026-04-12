@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import Link from 'next/link';
 import { User, Message, Group, Poll } from '@/types';
-import { collection, query, orderBy, onSnapshot, addDoc, serverTimestamp, setDoc, doc, updateDoc, arrayUnion } from 'firebase/firestore';
+import { collection, query, orderBy, onSnapshot, addDoc, serverTimestamp, setDoc, doc, updateDoc, arrayUnion, increment } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { MessageBubble } from './MessageBubble';
 import { ForwardMessageModal } from './ForwardMessageModal';
@@ -343,13 +343,37 @@ export function ChatWindow({ chatId, currentUser, otherUser, isGroup = false, gr
                     messageData.replyToSenderName = currentReply.senderName || 'Unknown';
                 }
                 if (!isGroup && otherUser) {
+                    // First, ensure the chat document exists with participant details.
+                    // Also reset deletedBy to [] so the conversation is visible to both
+                    // parties even if one previously deleted it.
                     await setDoc(doc(db, 'chats', chatId), {
                         participants: [currentUser.uid, otherUser.uid],
                         lastMessage: messageText || (imageUrl ? (currentMedia?.type === 'file' ? '📄 File' : '📷 Photo') : '🎥 Video'),
                         lastMessageAt: serverTimestamp(),
-                        [`unreadCount.${otherUser.uid}`]: 1,
-                        participantDetails: { [currentUser.uid]: {name:currentUser.name, profilePic:currentUser.profilePic}, [otherUser.uid]: {name:otherUser.name, profilePic:otherUser.profilePic} }
+                        deletedBy: [],   // ← clear any previous deletions so chat reappears
+                        participantDetails: { 
+                            [currentUser.uid]: {name: currentUser.name, profilePic: currentUser.profilePic || ''}, 
+                            [otherUser.uid]: {name: otherUser.name, profilePic: otherUser.profilePic || ''} 
+                        }
                     }, { merge: true });
+
+                    // Increment the unread count properly so multiple messages stack up
+                    await updateDoc(doc(db, 'chats', chatId), {
+                        [`unreadCount.${otherUser.uid}`]: increment(1)
+                    });
+
+                    // Send a notification to the receiver so their notification bell lights up
+                    await addDoc(collection(db, 'notifications'), {
+                        userId: otherUser.uid,
+                        type: 'message',
+                        sourceUserUid: currentUser.uid,
+                        sourceUserName: currentUser.name,
+                        sourceUserProfilePic: currentUser.profilePic || '',
+                        message: `sent you a message: "${(messageText || '📷 Media').substring(0, 40)}${messageText?.length > 40 ? '...' : ''}"`,
+                        link: `/messages`,
+                        createdAt: serverTimestamp(),
+                        isRead: false,
+                    }).catch(() => {}); // Non-blocking — don't fail the message send if notification fails
                 } else if (isGroup) {
                     await updateDoc(doc(db, 'groups', chatId), {
                         lastMessage: messageText || (imageUrl ? '📷 Photo' : '🎥 Video'),
@@ -555,16 +579,22 @@ export function ChatWindow({ chatId, currentUser, otherUser, isGroup = false, gr
                                 <Users className="w-5 h-5" />
                             </div>
                         ) : (
-                            <Link href={`/profile/${otherUser?.uid}`} className="relative block group/avatar shrink-0">
+                            <div className="relative block group/avatar shrink-0">
                                 <img src={profilePic!} alt={title!} className="w-9 h-9 rounded-xl object-cover border-2 border-white dark:border-brand-parchment shadow-md group-hover/avatar:scale-110 group-active/avatar:scale-95 transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] ring-0 group-hover/avatar:ring-4 group-hover/avatar:ring-brand-burgundy/20" />
                                 <div className={`absolute -bottom-1 -right-1 flex h-[10px] w-[10px] items-center justify-center rounded-full border border-white dark:border-brand-ebony transition-transform duration-300 group-hover/avatar:scale-125 ${isUserOnline ? 'bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.8)]' : 'bg-brand-ebony/30'}`}>
                                     {isUserOnline && <div className="absolute inset-0 rounded-full animate-ping bg-emerald-400 opacity-60" />}
                                 </div>
-                            </Link>
+                            </div>
                         )}
                     </div>
                     <div className="min-w-0 flex flex-col justify-center pl-1">
-                        <h3 className="text-lg md:text-xl font-serif font-black text-black dark:text-white truncate leading-tight tracking-tight">{title}</h3>
+                        {isGroup ? (
+                            <h3 className="text-lg md:text-xl font-serif font-black text-black dark:text-white truncate leading-tight tracking-tight">{title}</h3>
+                        ) : (
+                            <Link href={`/profile/${otherUser?.uid}`}>
+                                <h3 className="text-lg md:text-xl font-serif font-black text-black dark:text-white truncate leading-tight tracking-tight hover:text-brand-burgundy transition-colors">{title}</h3>
+                            </Link>
+                        )}
                         <div className="flex items-center mt-0.5">
                             {isGroup ? (
                                 <p className="text-[13px] font-bold text-brand-ebony/60 dark:text-white/60 tracking-widest truncate uppercase">{groupData?.members.length} Contributor Circle</p>
@@ -637,9 +667,11 @@ export function ChatWindow({ chatId, currentUser, otherUser, isGroup = false, gr
 
             {/* Messages Area */}
             <div
-                className="flex-1 overflow-y-auto px-2 md:px-6 pt-4 pb-24 space-y-2.5 scrollbar-hide bg-white/30 dark:bg-brand-parchment/5"
+                className="flex-1 overflow-y-auto px-2 md:px-6 pt-4 pb-[180px] md:pb-24 space-y-2.5 scrollbar-hide bg-white/30 dark:bg-brand-parchment/5"
                 style={{ containerType: 'inline-size' }}
                 onContextMenu={(e) => {
+                    // Disable custom context menu on touch devices to prioritize long-press selection
+                    if ('ontouchstart' in window || navigator.maxTouchPoints > 0) return;
                     e.preventDefault();
                     setContextMenu({ x: e.clientX, y: e.clientY });
                 }}
@@ -672,7 +704,7 @@ export function ChatWindow({ chatId, currentUser, otherUser, isGroup = false, gr
                             key={message.id}
                             message={message}
                             isOwnMessage={message.senderId === currentUser.uid}
-                            onEdit={(m) => { setEditingMessage(m); setNewMessage(m.text); }}
+                            onEdit={(m) => { setEditingMessage(m); setNewMessage(decryptMessage(m.text, encryptionSecret)); }}
                             onUnsend={setUnsendingMessage}
                             onReply={setReplyingToMessage}
                             onForward={setForwardingMessage}
@@ -683,6 +715,12 @@ export function ChatWindow({ chatId, currentUser, otherUser, isGroup = false, gr
                             currentUserId={currentUser.uid}
                             isSelectionMode={isSelectionMode}
                             isSelected={selectedMessageIds.includes(message.id)}
+                            onLongPress={(id) => {
+                                if (!isSelectionMode) {
+                                    setIsSelectionMode(true);
+                                    setSelectedMessageIds([id]);
+                                }
+                            }}
                             onSelect={(id) => setSelectedMessageIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id])}
                         />
                     ))
@@ -702,8 +740,8 @@ export function ChatWindow({ chatId, currentUser, otherUser, isGroup = false, gr
                         ref={contextMenuRef}
                         className="fixed z-[100] w-56 bg-white/95 dark:bg-brand-parchment/10 backdrop-blur-2xl rounded-2xl border border-brand-ebony/10 dark:border-white/5 shadow-premium overflow-hidden animate-in fade-in zoom-in-95 duration-150 ring-1 ring-brand-ebony/5"
                         style={{ 
-                            top: Math.min(contextMenu.y, typeof window !== 'undefined' ? window.innerHeight - 120 : contextMenu.y), 
-                            left: Math.min(contextMenu.x, typeof window !== 'undefined' ? window.innerWidth - 240 : contextMenu.x) 
+                            top: typeof window !== 'undefined' ? Math.min(contextMenu.y, window.innerHeight - 150) : contextMenu.y, 
+                            left: typeof window !== 'undefined' ? Math.min(contextMenu.x, window.innerWidth - 240) : contextMenu.x 
                         }}
                     >
                         <div className="p-1.5 space-y-1">
@@ -728,7 +766,7 @@ export function ChatWindow({ chatId, currentUser, otherUser, isGroup = false, gr
             )}
 
             {/* Input Footer Area */}
-            <div className="absolute bottom-3 left-2 right-2 md:bottom-6 md:left-6 md:right-6 z-40 px-2 py-2.5 md:px-3 md:py-3 bg-white/70 dark:bg-brand-parchment/20 backdrop-blur-3xl rounded-[2rem] shadow-premium border border-white dark:border-brand-ebony/10 pointer-events-auto">
+            <div className="absolute bottom-[calc(88px+0.75rem)] md:bottom-6 left-2 right-2 md:left-6 md:right-6 z-40 px-2 py-2.5 md:px-3 md:py-3 bg-white/95 dark:bg-brand-parchment/40 backdrop-blur-3xl rounded-[2rem] shadow-[0_8px_32px_rgba(0,0,0,0.12)] border border-white/50 dark:border-brand-ebony/20 pointer-events-auto">
                 {editingMessage && (
                     <div className="flex items-center justify-between mb-4 px-5 py-3 bg-brand-burgundy/10 rounded-2xl border border-brand-burgundy/20 animate-in slide-in-from-bottom-2 mx-2">
                         <div className="flex items-center gap-3 text-brand-burgundy">
@@ -746,7 +784,7 @@ export function ChatWindow({ chatId, currentUser, otherUser, isGroup = false, gr
                             <p className="text-[10px] text-brand-burgundy font-extrabold uppercase tracking-[0.15em] mb-1.5 flex items-center gap-2">
                                 <Paperclip className="w-3 h-3" /> Responding to {replyingToMessage.senderName}
                             </p>
-                            <p className="text-xs text-brand-ebony/40 font-medium italic truncate">"{replyingToMessage.text}"</p>
+                            <p className="text-xs text-brand-ebony/40 font-medium italic truncate">"{decryptMessage(replyingToMessage.text, encryptionSecret)}"</p>
                         </div>
                         <button onClick={() => setReplyingToMessage(null)} className="p-2 text-brand-ebony/20 hover:text-red-500 transition-all">
                             <X className="w-4 h-4" />

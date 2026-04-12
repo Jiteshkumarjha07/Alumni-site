@@ -50,7 +50,7 @@ export function LayoutClient({ children }: { children: React.ReactNode }) {
         return () => window.removeEventListener('resize', checkMobile);
     }, []);
 
-    const tabs = ['/', '/messages', '/events', '/jobs', '/network', '/profile'];
+    const tabs = ['/', '/messages', '/jobs', '/events', '/network', '/profile'];
     const [prevPath, setPrevPath] = React.useState(pathname);
     const direction = tabs.indexOf(pathname) > tabs.indexOf(prevPath) ? 1 : -1;
 

@@ -11,8 +11,11 @@ const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
 // Initialize Firebase services
 export const auth = getAuth(app);
 
-// Initialize Firestore (Standard)
-export const db = getFirestore(app);
+// Initialize Firestore with stability settings
+export const db = initializeFirestore(app, {
+    experimentalForceLongPolling: true,
+    ignoreUndefinedProperties: true
+});
 
 console.log("Firebase initialized successfully with project:", firebaseConfig.projectId);
 

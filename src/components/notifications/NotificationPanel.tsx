@@ -64,6 +64,7 @@ export function NotificationBell() {
     const unsub = onSnapshot(q, (snap) => {
       const list = snap.docs
         .map(d => ({ id: d.id, ...d.data() } as Notification))
+        .filter(n => n.type !== 'message')   // ← DMs handled by chat badge, not bell
         .sort((a, b) => {
           const ta = a.createdAt?.toDate?.()?.getTime?.() ?? 0;
           const tb = b.createdAt?.toDate?.()?.getTime?.() ?? 0;

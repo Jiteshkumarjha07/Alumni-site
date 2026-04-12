@@ -3,12 +3,20 @@
 import React from 'react';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useAuth } from '@/contexts/AuthContext';
-import { Moon, Sun, Monitor, Bell, User, Info, ArrowLeft, Settings2 } from 'lucide-react';
+import { Moon, Sun, Monitor, Bell, User, Info, ArrowLeft, Settings2, Lock, Shield, Trash2, LogOut } from 'lucide-react';
 import Link from 'next/link';
+import { AccountSettingsModal } from '@/components/modals/AccountSettingsModal';
+import { auth } from '@/lib/firebase';
 
 export default function SettingsPage() {
     const { theme, setTheme } = useTheme();
     const { userData } = useAuth();
+    const [showAccountModal, setShowAccountModal] = React.useState(false);
+    const [mounted, setMounted] = React.useState(false);
+
+    React.useEffect(() => {
+        setMounted(true);
+    }, []);
 
     const sections = [
         {
@@ -67,30 +75,71 @@ export default function SettingsPage() {
             ],
         },
         {
-            title: 'Privacy & Notifications',
-            icon: Bell,
+            title: 'Security & Account',
+            icon: Shield,
             items: [
                 {
-                    label: 'Email Notifications',
-                    description: 'Receive updates about new jobs and events.',
+                    label: 'Password & Security',
+                    description: 'Change your password or manage your session.',
                     content: (
-                        <div className="w-12 h-6 bg-brand-burgundy/40 rounded-full relative cursor-pointer border border-brand-ebony/10 transition-colors hover:bg-brand-burgundy">
-                            <div className="absolute right-1 top-[3px] w-4 h-4 bg-white rounded-full shadow-sm" />
-                        </div>
+                        <button
+                            onClick={() => setShowAccountModal(true)}
+                            className="flex items-center gap-2 px-4 py-2 bg-indigo-500/10 text-indigo-600 rounded-lg text-sm font-bold hover:bg-indigo-500/20 transition-all border border-indigo-500/20"
+                        >
+                            <Lock className="w-4 h-4" />
+                            Manage Security
+                        </button>
                     ),
                 },
                 {
-                    label: 'Profile Visibility',
-                    description: 'Allow other alumni to find you.',
+                    label: 'Sign Out',
+                    description: 'Log out of your current session.',
                     content: (
-                        <div className="w-12 h-6 bg-brand-burgundy rounded-full relative cursor-pointer shadow-inner shadow-brand-ebony/20">
-                            <div className="absolute right-1 top-[3px] w-4 h-4 bg-white rounded-full shadow-sm" />
-                        </div>
+                        <button
+                            onClick={() => auth.signOut()}
+                            className="flex items-center gap-2 px-4 py-2 bg-red-500/10 text-red-600 rounded-lg text-sm font-bold hover:bg-red-500/20 transition-all border border-red-500/20"
+                        >
+                            <LogOut className="w-4 h-4" />
+                            Sign Out
+                        </button>
+                    ),
+                },
+            ],
+        },
+        {
+            title: 'Danger Zone',
+            icon: Trash2,
+            items: [
+                {
+                    label: 'Permanent Account Deletion',
+                    description: 'This action cannot be undone.',
+                    content: (
+                        <button
+                            onClick={() => setShowAccountModal(true)}
+                            className="text-xs font-black uppercase tracking-widest text-red-500 hover:text-red-600 transition-colors"
+                        >
+                            Delete Account
+                        </button>
                     ),
                 },
             ],
         },
     ];
+
+    if (!mounted) {
+        return (
+            <div className="max-w-4xl mx-auto py-8 px-4 sm:px-6 md:px-8 animate-fade-up">
+                <div className="flex items-center gap-4 mb-8">
+                    <div className="w-10 h-10 bg-brand-ebony/5 rounded-xl animate-pulse" />
+                    <div className="w-32 h-8 bg-brand-ebony/5 rounded-lg animate-pulse" />
+                </div>
+                <div className="space-y-6">
+                    <div className="h-48 bg-brand-ebony/5 rounded-[2.5rem] animate-pulse" />
+                    <div className="h-64 bg-brand-ebony/5 rounded-[2.5rem] animate-pulse" />
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="max-w-4xl mx-auto py-8 px-4 sm:px-6 md:px-8 animate-fade-up">
@@ -151,6 +200,17 @@ export default function SettingsPage() {
                     Version 1.2.0 • For the Tribe
                 </p>
             </div>
+
+
+            {userData && (
+                <AccountSettingsModal 
+                    isOpen={showAccountModal} 
+                    onClose={() => setShowAccountModal(false)} 
+                    userEmail={userData.email || ''} 
+                    userId={userData.uid} 
+                    onAccountDeleted={() => window.location.href = '/signup'} 
+                />
+            )}
         </div>
     );
 }

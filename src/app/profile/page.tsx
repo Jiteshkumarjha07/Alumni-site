@@ -366,13 +366,13 @@ export default function ProfilePage() {
                 {/* ── Controls bar (top) ── */}
                 <div className="absolute top-4 left-4 right-4 flex items-center justify-between z-20">
                     {/* Settings */}
-                    <button
-                        onClick={() => setShowAccountSettings(true)}
+                    <Link
+                        href="/settings"
                         className="flex items-center gap-2 px-4 py-2 bg-black/20 hover:bg-black/40 backdrop-blur-md text-white rounded-xl border border-white/10 hover:border-white/20 text-[11px] font-black uppercase tracking-wider shadow-lg transition-all"
                     >
                         <Settings className="w-3.5 h-3.5" />
                         <span className="hidden sm:inline">Settings</span>
-                    </button>
+                    </Link>
 
                     {/* Cover picker toggle */}
                     <div className="relative" ref={coverPickerRef}>
