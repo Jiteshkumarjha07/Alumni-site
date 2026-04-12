@@ -10,7 +10,7 @@ import { Users, Search, Sparkles } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 export default function NetworkPage() {
-    const { userData, loading: authLoading } = useAuth();
+    const { userData, loading: authLoading, suspendedUids } = useAuth();
     const router = useRouter();
 
     useEffect(() => {
@@ -56,7 +56,7 @@ export default function NetworkPage() {
 
     // Filter users
     useEffect(() => {
-        let filtered = allUsers;
+        let filtered = allUsers.filter(user => !suspendedUids.has(user.uid));
 
         if (searchTerm) {
             filtered = filtered.filter(user =>
@@ -70,7 +70,7 @@ export default function NetworkPage() {
         }
 
         setTimeout(() => setFilteredUsers(filtered), 0);
-    }, [searchTerm, filterBatch, allUsers]);
+    }, [searchTerm, filterBatch, allUsers, suspendedUids]);
 
     const handleConnect = async (recipientId: string) => {
         if (!userData) return;

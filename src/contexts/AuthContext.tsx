@@ -8,7 +8,7 @@ import {
     createUserWithEmailAndPassword,
     signOut as firebaseSignOut
 } from 'firebase/auth';
-import { doc, setDoc, onSnapshot, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, setDoc, onSnapshot, updateDoc, serverTimestamp, collection, query, where } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 import { User } from '@/types';
 
@@ -22,6 +22,7 @@ interface AuthContextType {
     signOut: () => Promise<void>;
     switchInstitute: (instituteId: string, instituteName: string) => Promise<void>;
     clearError: () => void;
+    suspendedUids: Set<string>;
 }
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -41,11 +42,13 @@ interface AuthProviderProps {
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const [user, setUser] = useState<FirebaseUser | null>(null);
     const [userData, setUserData] = useState<User | null>(null);
+    const [suspendedUids, setSuspendedUids] = useState<Set<string>>(new Set());
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
         let unsubscribeUser: (() => void) | null = null;
+        let unsubscribeSuspensions: (() => void) | null = null;
         let presenceInterval: NodeJS.Timeout | undefined;
 
         const unsubscribeAuth = onAuthStateChanged(auth, async (firebaseUser) => {
@@ -80,6 +83,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                     });
                 };
                 window.addEventListener('beforeunload', handleUnload);
+
+                // Listen to global suspensions
+                const suspQuery = query(collection(db, 'users'), where('isSuspended', '==', true));
+                unsubscribeSuspensions = onSnapshot(suspQuery, (snapshot) => {
+                    setSuspendedUids(new Set(snapshot.docs.map(doc => doc.id)));
+                }, (err) => {
+                    console.error('Error fetching suspensions:', err);
+                });
 
                 // Listen to user document changes
                 unsubscribeUser = onSnapshot(doc(db, 'users', firebaseUser.uid), (docSnapshot) => {
@@ -131,6 +142,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         return () => {
             unsubscribeAuth();
             if (unsubscribeUser) unsubscribeUser();
+            if (unsubscribeSuspensions) unsubscribeSuspensions();
             if (presenceInterval) clearInterval(presenceInterval);
         };
     }, []);
@@ -240,6 +252,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         signOut,
         switchInstitute,
         clearError,
+        suspendedUids,
     };
 
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

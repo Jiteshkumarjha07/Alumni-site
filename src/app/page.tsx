@@ -99,7 +99,7 @@ function ScrollRevealCard({ children, index = 0 }: { children: React.ReactNode; 
 // ───────────────────────────────────────────────────────────────────────
 
 export default function HomePage() {
-  const { user, userData, signOut, loading: authLoading } = useAuth();
+  const { user, userData, signOut, loading: authLoading, suspendedUids } = useAuth();
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreatePost, setShowCreatePost] = useState(false);
@@ -478,9 +478,17 @@ export default function HomePage() {
 
         {/* ── Posts Feed ── */}
         <div className="space-y-5">
-          {posts.length > 0 ? (
-            posts.map((post, idx) => (
-              <ScrollRevealCard key={post.id} index={idx}>
+          {(() => {
+            const visiblePosts = posts
+              .filter(post => !suspendedUids.has(post.authorUid))
+              .map(post => ({
+                ...post,
+                comments: (post.comments || []).filter(c => !suspendedUids.has(c.authorUid))
+              }));
+
+            return visiblePosts.length > 0 ? (
+              visiblePosts.map((post, idx) => (
+                <ScrollRevealCard key={post.id} index={idx}>
                 <PostCard
                   post={post}
                   currentUser={userData}
@@ -509,7 +517,8 @@ export default function HomePage() {
                 </button>
               </div>
             </div>
-          )}
+          );
+          })()}
         </div>
       </div>
 

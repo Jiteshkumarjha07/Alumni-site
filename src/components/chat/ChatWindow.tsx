@@ -11,6 +11,7 @@ import { PollModal } from '../modals/PollModal';
 import { Send, Loader2, ArrowLeft, X, CheckCheck, ShieldCheck, Lock, Image as ImageIcon, Video as VideoIcon, Plus, Users, Phone, Video, Mic, MicOff, Paperclip, FileText, BarChart2, Download, Smile, LogOut, ListChecks, CheckCircle2, Trash2, Sparkles, MoreHorizontal, Info, Pencil } from 'lucide-react';
 import { encryptMessage, decryptMessage, getSharedSecret } from '@/lib/encryption';
 import { uploadMedia, uploadVideo, uploadFile, uploadAudio } from '@/lib/media';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface ChatWindowProps {
     chatId: string;
@@ -42,6 +43,8 @@ export function ChatWindow({ chatId, currentUser, otherUser, isGroup = false, gr
     const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
     const [isSelectionMode, setIsSelectionMode] = useState(false);
     const [selectedMessageIds, setSelectedMessageIds] = useState<string[]>([]);
+    
+    const { suspendedUids } = useAuth();
     
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -681,7 +684,7 @@ export function ChatWindow({ chatId, currentUser, otherUser, isGroup = false, gr
                     <div className="flex justify-center items-center h-full">
                         <Loader2 className="w-10 h-10 animate-spin text-indigo-500/20" />
                     </div>
-                ) : messages.length === 0 ? (
+                ) : messages.filter(m => !suspendedUids.has(m.senderId)).length === 0 ? (
                     <div className="flex flex-col items-center justify-center h-full space-y-8 animate-fade-in max-w-sm mx-auto">
                          {isGroup ? (
                             <div className="w-24 h-24 bg-indigo-500/10 rounded-[2rem] flex items-center justify-center text-indigo-500 shadow-xl border border-indigo-500/20">
@@ -699,7 +702,7 @@ export function ChatWindow({ chatId, currentUser, otherUser, isGroup = false, gr
                         </div>
                     </div>
                 ) : (
-                    messages.map((message) => (
+                    messages.filter(m => !suspendedUids.has(m.senderId)).map((message) => (
                         <MessageBubble
                             key={message.id}
                             message={message}

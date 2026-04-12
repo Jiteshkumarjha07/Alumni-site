@@ -8,6 +8,7 @@ import { Search, Loader2, Trash2, MessageSquare, Plus, Users, MessageCircle, Spa
 import { formatDistanceToNow } from 'date-fns';
 import { CreateGroupModal } from '../modals/CreateGroupModal';
 import { useMessaging } from '@/contexts/MessagingContext';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface ChatListProps {
     currentUser: User;
@@ -31,6 +32,7 @@ export function ChatList({ currentUser, chats, onSelectChat, onStartChat, onSele
     const [userGroups, setUserGroups] = useState<Group[]>([]);
     const [loadingGroups, setLoadingGroups] = useState(false);
     const { unreadUsersCount } = useMessaging();
+    const { suspendedUids } = useAuth();
 
     useEffect(() => {
         const searchUsers = async () => {
@@ -54,6 +56,7 @@ export function ChatList({ currentUser, chats, onSelectChat, onStartChat, onSele
                     const user = { ...docSnap.data(), uid: docSnap.id } as User;
                     if (
                         user.uid !== currentUser.uid &&
+                        !suspendedUids.has(user.uid) &&
                         (user.name?.toLowerCase().includes(term) ||
                          user.profession?.toLowerCase().includes(term))
                     ) {
@@ -111,7 +114,12 @@ export function ChatList({ currentUser, chats, onSelectChat, onStartChat, onSele
         }
     };
 
-    const activeChats = chats.filter(chat => !chat.deletedBy?.includes(currentUser.uid));
+    const activeChats = chats.filter(chat => {
+        const isDeleted = chat.deletedBy?.includes(currentUser.uid);
+        const otherUserId = chat.participants.find(id => id !== currentUser.uid);
+        const isOtherSuspended = otherUserId ? suspendedUids.has(otherUserId) : false;
+        return !isDeleted && !isOtherSuspended;
+    });
 
     return (
         <div className="w-full h-full flex flex-col bg-white/20 dark:bg-brand-parchment/5">
