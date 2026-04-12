@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { collection, doc, serverTimestamp, setDoc, deleteDoc, onSnapshot } from 'firebase/firestore';
+import { collection, doc, serverTimestamp, setDoc, updateDoc, deleteDoc, onSnapshot } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { Shield, Plus, Loader2, Trash2, Building2, Sparkles, ChevronRight } from 'lucide-react';
 import Link from 'next/link';
@@ -15,6 +15,8 @@ export default function AdminInstitutesPage() {
     const router = useRouter();
 
     const [name, setName] = useState('');
+    const [editingId, setEditingId] = useState<string | null>(null);
+    const [editName, setEditName] = useState('');
     const [institutes, setInstitutes] = useState<Institute[]>([]);
     const [loading, setLoading] = useState(false);
     const [fetchLoading, setFetchLoading] = useState(true);
@@ -74,6 +76,27 @@ export default function AdminInstitutesPage() {
         }
     };
 
+    const handleUpdate = async (id: string) => {
+        const trimmedName = editName.trim();
+        if (!trimmedName) return;
+
+        setLoading(true);
+        setError(null);
+        setSuccess(null);
+
+        try {
+            await updateDoc(doc(db, 'institutes', id), {
+                name: trimmedName
+            });
+            setSuccess(`Successfully updated to ${trimmedName}.`);
+            setEditingId(null);
+        } catch (err: any) {
+            setError(`Error: ${err.message || 'Failed to update institute.'}`);
+        } finally {
+            setLoading(false);
+        }
+    };
+
     const handleDelete = async (id: string, instName: string) => {
         if (!confirm(`Are you sure you want to delete "${instName}"?`)) return;
         try {
@@ -102,10 +125,10 @@ export default function AdminInstitutesPage() {
                     </div>
                 </div>
                 <div className="flex items-center gap-3">
-                    <Link href="/admin/approvals" className="flex items-center gap-2 px-6 py-3 bg-white hover:bg-brand-parchment border border-brand-ebony/10 rounded-xl transition-all font-bold text-xs tracking-widest uppercase text-brand-ebony/70 hover:text-brand-burgundy">
+                    <Link href="/admin/approvals" className="flex items-center gap-2 px-6 py-3 bg-white dark:bg-white/10 hover:bg-brand-parchment dark:hover:bg-white/15 border border-brand-ebony/10 dark:border-white/10 rounded-xl transition-all font-bold text-xs tracking-widest uppercase text-brand-ebony/70 dark:text-white/70 hover:text-brand-burgundy">
                         Approvals <ChevronRight className="w-4 h-4" />
                     </Link>
-                    <Link href="/" className="px-6 py-3 bg-brand-ebony/5 hover:bg-brand-ebony/10 rounded-xl transition-all font-bold text-xs tracking-widest uppercase text-brand-ebony/40">
+                    <Link href="/" className="px-6 py-3 bg-brand-ebony/5 dark:bg-white/5 hover:bg-brand-ebony/10 dark:hover:bg-white/10 rounded-xl transition-all font-bold text-xs tracking-widest uppercase text-brand-ebony/40 dark:text-white/40">
                         Exit
                     </Link>
                 </div>
@@ -134,13 +157,13 @@ export default function AdminInstitutesPage() {
 
                         <form onSubmit={handleSubmit} className="space-y-6 relative z-10">
                             <div>
-                                <label className="block text-[10px] font-bold text-brand-ebony/40 mb-2 uppercase tracking-[0.2em]">Full Institute Name</label>
+                                <label className="block text-[10px] font-bold text-brand-ebony/40 dark:text-white/40 mb-2 uppercase tracking-[0.2em]">Full Institute Name</label>
                                 <input
                                     type="text"
                                     placeholder="e.g. Stanford University"
                                     value={name}
                                     onChange={(e) => setName(e.target.value)}
-                                    className="w-full px-5 py-4 bg-brand-ebony/5 border border-brand-ebony/10 rounded-2xl focus:ring-4 focus:ring-brand-burgundy/10 hover:border-brand-burgundy/30 transition-all outline-none text-brand-ebony font-medium"
+                                    className="w-full px-5 py-4 bg-brand-ebony/5 dark:bg-white/5 border border-brand-ebony/10 dark:border-white/10 rounded-2xl focus:ring-4 focus:ring-brand-burgundy/10 hover:border-brand-burgundy/30 transition-all outline-none text-brand-ebony dark:text-white font-medium"
                                     required
                                 />
                             </div>
@@ -181,22 +204,63 @@ export default function AdminInstitutesPage() {
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-px bg-brand-ebony/5">
                                     {institutes.map((inst) => (
                                         <div key={inst.id} className="bg-white dark:bg-brand-parchment/5 p-6 hover:bg-brand-burgundy/5 transition-all group relative">
-                                            <div className="flex items-center gap-5">
-                                                <div className="w-12 h-12 rounded-2xl bg-brand-burgundy/5 flex items-center justify-center text-brand-burgundy border border-brand-burgundy/10 group-hover:bg-gradient-indigo group-hover:text-white transition-all shadow-sm">
-                                                    <Building2 className="w-6 h-6" />
+                                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                                                <div className="flex items-center gap-5 min-w-0 flex-1">
+                                                    <div className="w-12 h-12 rounded-2xl bg-brand-burgundy/5 flex items-center justify-center text-brand-burgundy border border-brand-burgundy/10 group-hover:bg-gradient-indigo group-hover:text-white transition-all shadow-sm shrink-0">
+                                                        <Building2 className="w-6 h-6" />
+                                                    </div>
+                                                    <div className="min-w-0 flex-1">
+                                                        {editingId === inst.id ? (
+                                                            <div className="flex items-center gap-3">
+                                                                <input 
+                                                                    type="text" 
+                                                                    value={editName}
+                                                                    onChange={(e) => setEditName(e.target.value)}
+                                                                    className="flex-1 px-3 py-2 bg-brand-ebony/5 dark:bg-white/5 border border-brand-ebony/10 dark:border-white/10 rounded-xl outline-none text-brand-ebony dark:text-white text-sm font-bold"
+                                                                    autoFocus
+                                                                />
+                                                                <div className="flex gap-2">
+                                                                    <button 
+                                                                        onClick={() => handleUpdate(inst.id)}
+                                                                        disabled={loading}
+                                                                        className="px-3 py-2 bg-brand-burgundy text-white rounded-xl text-xs font-bold hover:brightness-110 transition-all flex-shrink-0"
+                                                                    >
+                                                                        Save
+                                                                    </button>
+                                                                    <button 
+                                                                        onClick={() => setEditingId(null)}
+                                                                        className="px-3 py-2 bg-brand-ebony/10 dark:bg-white/10 text-brand-ebony dark:text-white rounded-xl text-xs font-bold hover:bg-brand-ebony/20 dark:hover:bg-white/20 transition-all flex-shrink-0"
+                                                                    >
+                                                                        Cancel
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                        ) : (
+                                                            <>
+                                                                <p className="font-extrabold text-brand-ebony dark:text-white truncate leading-tight group-hover:text-brand-burgundy transition-colors">{inst.name}</p>
+                                                                <p className="text-[9px] text-brand-ebony/30 dark:text-white/30 uppercase tracking-[0.2em] font-bold mt-1">
+                                                                    Ref: {inst.id.substring(0, 12)}...
+                                                                </p>
+                                                            </>
+                                                        )}
+                                                    </div>
                                                 </div>
-                                                <div className="min-w-0 flex-1">
-                                                    <p className="font-extrabold text-brand-ebony truncate leading-tight group-hover:text-brand-burgundy transition-colors">{inst.name}</p>
-                                                    <p className="text-[9px] text-brand-ebony/30 uppercase tracking-[0.2em] font-bold mt-1">
-                                                        Ref: {inst.id.substring(0, 12)}...
-                                                    </p>
-                                                </div>
-                                                <button 
-                                                    onClick={() => handleDelete(inst.id, inst.name)}
-                                                    className="p-3 text-brand-ebony/20 hover:text-red-500 hover:bg-red-500/10 rounded-2xl transition-all opacity-0 group-hover:opacity-100"
-                                                >
-                                                    <Trash2 className="w-5 h-5" />
-                                                </button>
+                                                {editingId !== inst.id && (
+                                                    <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-all self-end sm:self-center shrink-0">
+                                                        <button 
+                                                            onClick={() => { setEditingId(inst.id); setEditName(inst.name); }}
+                                                            className="p-3 text-brand-ebony/40 dark:text-white/40 hover:text-indigo-500 hover:bg-indigo-500/10 rounded-2xl transition-all"
+                                                        >
+                                                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+                                                        </button>
+                                                        <button 
+                                                            onClick={() => handleDelete(inst.id, inst.name)}
+                                                            className="p-3 text-brand-ebony/40 dark:text-white/40 hover:text-red-500 hover:bg-red-500/10 rounded-2xl transition-all"
+                                                        >
+                                                            <Trash2 className="w-5 h-5" />
+                                                        </button>
+                                                    </div>
+                                                )}
                                             </div>
                                         </div>
                                     ))}

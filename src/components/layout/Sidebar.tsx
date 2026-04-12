@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { Home, Users, Briefcase, Calendar, Settings, MessageSquare, LogOut, Store } from 'lucide-react';
+import { Home, Users, Briefcase, Calendar, Settings, MessageSquare, LogOut, Store, Shield } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useMessaging } from '@/contexts/MessagingContext';
 import { usePathname } from 'next/navigation';
@@ -53,7 +53,18 @@ export function Sidebar() {
                         {/* Institute Switcher */}
                         <div>
                             <p className="px-1 text-[10px] font-black text-brand-ebony/30 uppercase tracking-[0.2em] mb-4">Governance</p>
-                            <InstituteSwitcher />
+                            <div className="space-y-3">
+                                <InstituteSwitcher />
+                                {userData.isAdmin && (
+                                    <Link 
+                                        href="/admin/approvals"
+                                        className="w-full flex items-center justify-center gap-2 py-3 bg-brand-burgundy/10 hover:bg-brand-burgundy/20 rounded-xl transition-all text-brand-burgundy dark:text-brand-burgundy active:scale-95 text-[10px] font-black uppercase tracking-[0.2em] animate-fade-in"
+                                    >
+                                        <Shield className="w-3.5 h-3.5" />
+                                        System Control
+                                    </Link>
+                                )}
+                            </div>
                         </div>
 
                         {/* Profile Info */}

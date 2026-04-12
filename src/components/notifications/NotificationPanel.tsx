@@ -171,21 +171,18 @@ export function NotificationBell() {
       {/* Drawer panel */}
       <div
         ref={drawerRef}
-        className={`fixed right-0 top-0 h-full w-[22rem] z-[201] flex flex-col transition-transform duration-300 ease-out ${
+        className={`fixed right-0 top-0 h-full w-[22rem] z-[201] flex flex-col transition-transform duration-300 ease-out bg-white dark:bg-gray-900 ${
           open ? 'translate-x-0' : 'translate-x-full'
         }`}
         style={{
-          background: 'rgba(255, 255, 255, 0.98)',
           backdropFilter: 'blur(32px)',
           WebkitBackdropFilter: 'blur(32px)',
           borderLeft: '1px solid rgba(139,21,56,0.12)',
-          boxShadow: open ? '-8px 0 40px rgba(0,0,0,0.15)' : 'none',
+          boxShadow: open ? '-8px 0 40px rgba(0,0,0,0.25)' : 'none',
         }}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-5 pt-6 pb-4 border-b border-brand-ebony/6 flex-shrink-0"
-          style={{ background: 'linear-gradient(to right, rgba(139,21,56,0.04), transparent)' }}
-        >
+        <div className="flex items-center justify-between px-5 pt-6 pb-4 border-b border-brand-ebony/10 dark:border-white/10 flex-shrink-0 bg-gradient-to-r from-brand-burgundy/5 to-transparent dark:from-brand-burgundy/10 dark:to-transparent">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 bg-brand-burgundy/10 rounded-2xl flex items-center justify-center">
               <Bell className="w-4 h-4 text-brand-burgundy" />
@@ -222,23 +219,21 @@ export function NotificationBell() {
         <div className="overflow-y-auto flex-1 scrollbar-hide">
           {notifications.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-20 text-center px-6">
-              <div className="w-20 h-20 rounded-[1.5rem] flex items-center justify-center mb-5"
-                style={{ background: 'linear-gradient(135deg, rgba(139,21,56,0.06), rgba(99,102,241,0.06))' }}
-              >
-                <Bell className="w-9 h-9 text-brand-ebony/15" />
+              <div className="w-20 h-20 rounded-[1.5rem] flex items-center justify-center mb-5 bg-gradient-to-br from-brand-burgundy/8 to-indigo-500/8 dark:from-brand-burgundy/15 dark:to-indigo-500/15">
+                <Bell className="w-9 h-9 text-brand-ebony/20 dark:text-brand-ebony/40" />
               </div>
-              <p className="text-lg font-serif font-bold text-brand-ebony/50 italic mb-1">All caught up!</p>
-              <p className="text-xs text-brand-ebony/35 font-medium">No new activity from your circle.</p>
+              <p className="text-lg font-serif font-bold text-brand-ebony/60 dark:text-brand-ebony/80 italic mb-1">All caught up!</p>
+              <p className="text-xs text-brand-ebony/40 dark:text-brand-ebony/60 font-medium">No new activity from your circle.</p>
             </div>
           ) : (
             notifications.map((notif) => (
               <div
                 key={notif.id}
                 onClick={() => handleNotificationClick(notif)}
-                className={`flex items-start gap-4 px-5 py-4 border-b border-brand-ebony/5 cursor-pointer group/item relative transition-colors ${
+                className={`flex items-start gap-4 px-5 py-4 border-b border-brand-ebony/5 dark:border-white/5 cursor-pointer group/item relative transition-colors ${
                   !notif.isRead
-                    ? 'bg-brand-burgundy/[0.03] hover:bg-brand-burgundy/[0.06]'
-                    : 'hover:bg-brand-parchment/40'
+                    ? 'bg-brand-burgundy/[0.03] hover:bg-brand-burgundy/[0.07] dark:bg-brand-burgundy/10 dark:hover:bg-brand-burgundy/15'
+                    : 'hover:bg-gray-50 dark:hover:bg-white/5'
                 }`}
               >
                 {!notif.isRead && (
@@ -257,9 +252,9 @@ export function NotificationBell() {
                 <div className="flex-1 min-w-0">
                   <p className="text-[13px] text-brand-ebony leading-snug">
                     <span className="font-extrabold">{notif.sourceUserName}</span>{' '}
-                    <span className="text-brand-ebony/60 font-medium">{notif.message}</span>
+                    <span className="text-brand-ebony/70 dark:text-brand-ebony/80 font-medium">{notif.message}</span>
                   </p>
-                  <p className="text-[10px] font-bold text-brand-ebony/30 uppercase tracking-widest mt-1.5 flex items-center gap-2">
+                  <p className="text-[10px] font-bold text-brand-ebony/40 dark:text-brand-ebony/50 uppercase tracking-widest mt-1.5 flex items-center gap-2">
                     {timeAgo(notif.createdAt)}
                     {!notif.isRead && <span className="w-1.5 h-1.5 rounded-full bg-brand-burgundy inline-block" />}
                   </p>
@@ -273,7 +268,7 @@ export function NotificationBell() {
                       </button>
                       <button
                         onClick={(e) => { e.stopPropagation(); handleIgnore(notif); }}
-                        className="text-[10px] font-bold text-brand-ebony/40 bg-brand-ebony/5 hover:bg-brand-ebony/10 px-4 py-1.5 rounded-xl transition-all uppercase tracking-widest"
+                        className="text-[10px] font-bold text-brand-ebony/60 dark:text-brand-ebony/80 bg-brand-ebony/8 dark:bg-white/10 hover:bg-brand-ebony/15 dark:hover:bg-white/20 border border-brand-ebony/10 dark:border-white/10 px-4 py-1.5 rounded-xl transition-all uppercase tracking-widest"
                       >
                         Decline
                       </button>
@@ -286,11 +281,11 @@ export function NotificationBell() {
         </div>
 
         {/* Footer */}
-        <div className="px-5 py-3 border-t border-brand-ebony/5 text-center flex-shrink-0 bg-brand-ebony/[0.015]">
+        <div className="px-5 py-3 border-t border-brand-ebony/10 dark:border-white/10 text-center flex-shrink-0 bg-brand-ebony/[0.015] dark:bg-white/[0.03]">
           <Link
             href="/settings"
             onClick={closeDrawer}
-            className="text-[10px] font-bold text-brand-ebony/35 hover:text-brand-burgundy uppercase tracking-[0.2em] transition-colors"
+            className="text-[10px] font-bold text-brand-ebony/50 dark:text-brand-ebony/70 hover:text-brand-burgundy uppercase tracking-[0.2em] transition-colors"
           >
             Notification Settings
           </Link>

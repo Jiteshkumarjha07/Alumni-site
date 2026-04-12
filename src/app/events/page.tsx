@@ -2,11 +2,12 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { collection, query, orderBy, onSnapshot, addDoc, serverTimestamp, where } from 'firebase/firestore';
+import { collection, query, orderBy, onSnapshot, addDoc, serverTimestamp, where, deleteDoc, doc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { Event } from '@/types';
 import { EventCard } from '@/components/events/EventCard';
 import { CreateEventModal, EventFormData } from '@/components/modals/CreateEventModal';
+import { ConfirmDialog } from '@/components/modals/ConfirmDialog';
 import { Calendar as CalendarIcon, Plus, Loader2, Sparkles } from 'lucide-react';
 import { uploadMedia } from '@/lib/media';
 import { useRouter } from 'next/navigation';
@@ -23,6 +24,7 @@ export default function EventsPage() {
     const [events, setEvents] = useState<Event[]>([]);
     const [loading, setLoading] = useState(true);
     const [showCreateModal, setShowCreateModal] = useState(false);
+    const [deletingEventId, setDeletingEventId] = useState<string | null>(null);
 
     useEffect(() => {
         if (!userData || !userData.instituteId) {
@@ -76,6 +78,12 @@ export default function EventsPage() {
         });
     };
 
+    const handleDeleteEvent = async () => {
+        if (!deletingEventId) return;
+        await deleteDoc(doc(db, 'events', deletingEventId));
+        setDeletingEventId(null);
+    };
+
     if (authLoading || loading) {
         return (
             <div className="flex items-center justify-center min-h-screen">
@@ -123,7 +131,12 @@ export default function EventsPage() {
             {events.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {events.map((event) => (
-                        <EventCard key={event.id} event={event} />
+                        <EventCard
+                            key={event.id}
+                            event={event}
+                            currentUser={userData}
+                            onDelete={(id) => setDeletingEventId(id)}
+                        />
                     ))}
                 </div>
             ) : (
@@ -148,6 +161,16 @@ export default function EventsPage() {
                 isOpen={showCreateModal}
                 onClose={() => setShowCreateModal(false)}
                 onSubmit={handleCreateEvent}
+            />
+
+            <ConfirmDialog
+                isOpen={!!deletingEventId}
+                onClose={() => setDeletingEventId(null)}
+                onConfirm={handleDeleteEvent}
+                title="Delete Event"
+                message="Are you sure you want to delete this event? This action cannot be undone."
+                confirmText="Delete"
+                variant="danger"
             />
         </div>
     );

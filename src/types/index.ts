@@ -45,6 +45,7 @@ export interface User {
   isAdmin?: boolean;
   isOnline?: boolean;
   lastSeen?: Timestamp | FieldValue;
+  savedPosts?: string[];
 }
 
 export interface Post {

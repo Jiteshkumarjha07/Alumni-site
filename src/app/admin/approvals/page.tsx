@@ -140,10 +140,10 @@ export default function AdminApprovalsPage() {
                     </div>
                 </div>
                 <div className="flex items-center gap-3">
-                    <Link href="/admin/institutes" className="flex items-center gap-2 px-6 py-3 bg-white hover:bg-brand-parchment border border-brand-ebony/10 rounded-xl transition-all font-bold text-xs tracking-widest uppercase text-brand-ebony/70 hover:text-brand-burgundy">
+                    <Link href="/admin/institutes" className="flex items-center gap-2 px-6 py-3 bg-white dark:bg-white/10 hover:bg-brand-parchment dark:hover:bg-white/15 border border-brand-ebony/10 dark:border-white/10 rounded-xl transition-all font-bold text-xs tracking-widest uppercase text-brand-ebony/70 dark:text-white/70 hover:text-brand-burgundy dark:hover:text-brand-burgundy">
                         <ChevronLeft className="w-4 h-4" /> Institutes
                     </Link>
-                    <Link href="/" className="px-6 py-3 bg-brand-ebony/5 hover:bg-brand-ebony/10 rounded-xl transition-all font-bold text-xs tracking-widest uppercase text-brand-ebony/40">
+                    <Link href="/" className="px-6 py-3 bg-brand-ebony/5 dark:bg-white/5 hover:bg-brand-ebony/10 dark:hover:bg-white/10 rounded-xl transition-all font-bold text-xs tracking-widest uppercase text-brand-ebony/40 dark:text-white/40">
                         Exit
                     </Link>
                 </div>
@@ -172,25 +172,25 @@ export default function AdminApprovalsPage() {
 
                         <form onSubmit={handleSubmit} className="space-y-6 relative z-10">
                             <div>
-                                <label className="block text-[10px] font-bold text-brand-ebony/40 mb-2 uppercase tracking-[0.2em]">Email Address</label>
+                                <label className="block text-[10px] font-bold text-brand-ebony/40 dark:text-white/40 mb-2 uppercase tracking-[0.2em]">Email Address</label>
                                 <div className="relative">
-                                    <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-brand-ebony/30" />
+                                    <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-brand-ebony/30 dark:text-white/30" />
                                     <input
                                         type="email"
                                         placeholder="alumni@uni.edu"
                                         value={email}
                                         onChange={(e) => setEmail(e.target.value)}
-                                        className="w-full pl-12 pr-5 py-4 bg-brand-ebony/5 border border-brand-ebony/10 rounded-2xl focus:ring-4 focus:ring-brand-burgundy/10 hover:border-brand-burgundy/30 transition-all outline-none text-brand-ebony font-medium"
+                                        className="w-full pl-12 pr-5 py-4 bg-brand-ebony/5 dark:bg-white/5 border border-brand-ebony/10 dark:border-white/10 rounded-2xl focus:ring-4 focus:ring-brand-burgundy/10 hover:border-brand-burgundy/30 transition-all outline-none text-brand-ebony dark:text-white font-medium"
                                         required
                                     />
                                 </div>
                             </div>
 
                             <div>
-                                <label className="block text-[10px] font-bold text-brand-ebony/40 mb-2 uppercase tracking-[0.2em]">Select Authorized Institutes</label>
-                                <div className="space-y-2 max-h-[220px] overflow-y-auto p-3 border border-brand-ebony/5 rounded-2xl bg-brand-ebony/5 scrollbar-hide">
+                                <label className="block text-[10px] font-bold text-brand-ebony/40 dark:text-white/40 mb-2 uppercase tracking-[0.2em]">Select Authorized Institutes</label>
+                                <div className="space-y-2 max-h-[220px] overflow-y-auto p-3 border border-brand-ebony/5 dark:border-white/5 rounded-2xl bg-brand-ebony/5 dark:bg-white/5 scrollbar-hide">
                                     {institutes.length === 0 ? (
-                                        <p className="text-[10px] text-brand-ebony/30 text-center py-4 font-bold uppercase italic tracking-widest">No institutes found</p>
+                                        <p className="text-[10px] text-brand-ebony/30 dark:text-white/30 text-center py-4 font-bold uppercase italic tracking-widest">No institutes found</p>
                                     ) : (
                                         institutes.map(inst => (
                                             <div 
@@ -199,10 +199,10 @@ export default function AdminApprovalsPage() {
                                                 className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all border ${
                                                     selectedInstitutes.includes(inst.id) 
                                                         ? 'bg-gradient-indigo text-white border-transparent shadow-sm' 
-                                                        : 'bg-white hover:bg-brand-parchment border-brand-ebony/10 text-brand-ebony'
+                                                        : 'bg-white dark:bg-brand-parchment/10 hover:bg-brand-parchment dark:hover:bg-white/10 border-brand-ebony/10 dark:border-white/10 text-brand-ebony dark:text-white'
                                                 }`}
                                             >
-                                                <div className={`w-5 h-5 rounded flex items-center justify-center border transition-colors ${selectedInstitutes.includes(inst.id) ? 'bg-white/20 border-white/40' : 'bg-brand-ebony/5 border-brand-ebony/10'}`}>
+                                                <div className={`w-5 h-5 rounded flex items-center justify-center border transition-colors ${selectedInstitutes.includes(inst.id) ? 'bg-white/20 border-white/40' : 'bg-brand-ebony/5 dark:bg-white/5 border-brand-ebony/10 dark:border-white/10'}`}>
                                                     {selectedInstitutes.includes(inst.id) && <Plus className="w-3 h-3 text-white" />}
                                                 </div>
                                                 <span className="text-xs font-bold truncate leading-none">{inst.name}</span>
@@ -256,7 +256,7 @@ export default function AdminApprovalsPage() {
                                                         <Mail className="w-6 h-6" />
                                                     </div>
                                                     <div className="min-w-0 shrink-1">
-                                                        <p className="font-extrabold text-brand-ebony truncate leading-tight mb-2 group-hover:text-brand-burgundy transition-colors">{app.email}</p>
+                                                        <p className="font-extrabold text-brand-ebony dark:text-white truncate leading-tight mb-2 group-hover:text-brand-burgundy transition-colors">{app.email}</p>
                                                         <div className="flex flex-wrap gap-2">
                                                             {app.instituteIds.map(id => {
                                                                 const inst = institutes.find(i => i.id === id);

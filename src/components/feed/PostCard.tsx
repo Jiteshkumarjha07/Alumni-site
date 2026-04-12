@@ -4,6 +4,8 @@ import { Post, User } from '@/types';
 import { Heart, MessageCircle, Share2, MoreHorizontal, Pencil, Trash2, Sparkles, Bookmark } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
+import { db } from '@/lib/firebase';
+import { doc, updateDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
 
 interface PostCardProps {
     post: Post;
@@ -28,7 +30,7 @@ export const PostCard: React.FC<PostCardProps> = ({
 }) => {
     const [showMenu, setShowMenu] = useState(false);
     const [likeAnimation, setLikeAnimation] = useState(false);
-    const [bookmarked, setBookmarked] = useState(false);
+    const [bookmarked, setBookmarked] = useState(() => currentUser.savedPosts?.includes(post.id) ?? false);
     const menuRef = useRef<HTMLDivElement>(null);
     const isLiked = post.likes?.includes(currentUser.uid) || false;
     const isOwnPost = post.authorUid === currentUser.uid;
@@ -50,6 +52,19 @@ export const PostCard: React.FC<PostCardProps> = ({
         setLikeAnimation(true);
         setTimeout(() => setLikeAnimation(false), 600);
         onLike(isLiked);
+    };
+
+    const handleBookmark = async () => {
+        const newState = !bookmarked;
+        setBookmarked(newState);
+        try {
+            await updateDoc(doc(db, 'users', currentUser.uid), {
+                savedPosts: newState ? arrayUnion(post.id) : arrayRemove(post.id)
+            });
+        } catch (err) {
+            console.error('Error toggling bookmark:', err);
+            setBookmarked(!newState); // revert on error
+        }
     };
 
     const formatTimestamp = (timestamp: unknown) => {
@@ -119,7 +134,8 @@ export const PostCard: React.FC<PostCardProps> = ({
                     <div className="flex items-center gap-1.5">
                         {/* Bookmark */}
                         <button
-                            onClick={() => setBookmarked(b => !b)}
+                            onClick={handleBookmark}
+                            title={bookmarked ? 'Remove from saved' : 'Save post'}
                             className={`p-2 rounded-xl transition-all duration-300 ${bookmarked ? 'text-brand-burgundy bg-brand-burgundy/10' : 'text-brand-ebony/25 hover:text-brand-burgundy hover:bg-brand-burgundy/5'}`}
                         >
                             <Bookmark className={`w-4 h-4 transition-all ${bookmarked ? 'fill-current scale-110' : ''}`} />

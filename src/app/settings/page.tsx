@@ -3,7 +3,7 @@
 import React from 'react';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useAuth } from '@/contexts/AuthContext';
-import { Moon, Sun, Monitor, Bell, User, Info, ArrowLeft, Settings2, Lock, Shield, Trash2, LogOut } from 'lucide-react';
+import { Moon, Sun, Monitor, Bell, User, Info, ArrowLeft, Settings2, Lock, Shield, Trash2, LogOut, Bookmark } from 'lucide-react';
 import Link from 'next/link';
 import { AccountSettingsModal } from '@/components/modals/AccountSettingsModal';
 import { auth } from '@/lib/firebase';
@@ -102,6 +102,25 @@ export default function SettingsPage() {
                             <LogOut className="w-4 h-4" />
                             Sign Out
                         </button>
+                    ),
+                },
+            ],
+        },
+        {
+            title: 'Content',
+            icon: Bookmark,
+            items: [
+                {
+                    label: 'Saved Posts',
+                    description: 'View all posts you have bookmarked.',
+                    content: (
+                        <Link
+                            href="/posts/saved"
+                            className="flex items-center gap-2 px-4 py-2 bg-brand-burgundy/10 text-brand-burgundy rounded-lg text-sm font-bold hover:bg-brand-burgundy/20 transition-all border border-brand-burgundy/20"
+                        >
+                            <Bookmark className="w-4 h-4" />
+                            View Saved
+                        </Link>
                     ),
                 },
             ],

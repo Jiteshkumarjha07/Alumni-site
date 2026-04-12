@@ -150,7 +150,7 @@ export default function JobsPage() {
                         onClick={() => setFilterType(type)}
                         className={`px-5 py-2.5 rounded-xl font-bold whitespace-nowrap transition-all text-xs tracking-wider uppercase ${filterType === type
                             ? 'bg-brand-burgundy text-white shadow-md shadow-brand-burgundy/20'
-                            : 'bg-brand-cream/50 dark:bg-white/5 text-brand-ebony/60 hover:text-brand-ebony border border-brand-ebony/10 hover:border-brand-burgundy/30 hover:bg-brand-burgundy/5'
+                            : 'bg-brand-cream/50 dark:bg-white/10 text-brand-ebony/70 dark:text-brand-ebony/80 hover:text-brand-ebony dark:hover:text-brand-ebony border border-brand-ebony/10 dark:border-white/10 hover:border-brand-burgundy/30 hover:bg-brand-burgundy/5'
                             }`}
                     >
                         {type === 'all' ? 'All Jobs' : type}
