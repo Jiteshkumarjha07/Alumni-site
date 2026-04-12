@@ -85,6 +85,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                 unsubscribeUser = onSnapshot(doc(db, 'users', firebaseUser.uid), (docSnapshot) => {
                     if (docSnapshot.exists()) {
                         const data = docSnapshot.data() as User;
+
+                        // ── Suspension check ─────────────────────────────
+                        // If an admin suspends this account by setting isSuspended:true,
+                        // this listener fires immediately and we force-sign them out.
+                        if (data.isSuspended) {
+                            firebaseSignOut(auth);
+                            setUserData(null);
+                            setLoading(false);
+                            return;
+                        }
+
                         setUserData({ ...data });
 
                         // Passive sync for case-insensitive search

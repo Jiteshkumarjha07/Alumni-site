@@ -43,6 +43,7 @@ export interface User {
   sentRequests?: string[];
   groups?: string[];
   isAdmin?: boolean;
+  isSuspended?: boolean;
   isOnline?: boolean;
   lastSeen?: Timestamp | FieldValue;
   savedPosts?: string[];

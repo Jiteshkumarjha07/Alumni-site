@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { collection, onSnapshot, deleteDoc, doc, serverTimestamp, setDoc } from 'firebase/firestore';
+import { collection, onSnapshot, deleteDoc, doc, serverTimestamp, setDoc, query, where, getDocs, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { ShieldCheck, Plus, Loader2, Trash2, Mail, Building2, Sparkles, ChevronLeft } from 'lucide-react';
 import Link from 'next/link';
@@ -96,13 +96,24 @@ export default function AdminApprovalsPage() {
         setSuccess(null);
 
         try {
+            // 1. Write the approval entry
             await setDoc(doc(db, 'approvals', emailClean), {
                 email: emailClean,
                 instituteIds: selectedInstitutes,
                 updatedAt: serverTimestamp(),
             });
 
-            setSuccess(`Access granted to ${emailClean}`);
+            // 2. If this email was previously suspended, restore their account
+            const usersQuery = query(collection(db, 'users'), where('email', '==', emailClean));
+            const userSnap = await getDocs(usersQuery);
+            const restorePromises = userSnap.docs
+                .filter(userDoc => userDoc.data().isSuspended)
+                .map(userDoc =>
+                    updateDoc(doc(db, 'users', userDoc.id), { isSuspended: false })
+                );
+            await Promise.all(restorePromises);
+
+            setSuccess(`Access granted to ${emailClean}${restorePromises.length > 0 ? ' — account restored.' : '.'}`);
             setEmail('');
             setSelectedInstitutes([]);
         } catch (err: any) {
@@ -113,9 +124,18 @@ export default function AdminApprovalsPage() {
     };
 
     const handleDelete = async (emailToDelete: string) => {
-        if (!confirm(`Remove approval for ${emailToDelete}?`)) return;
+        if (!confirm(`Remove approval for ${emailToDelete}? This will immediately suspend their account.`)) return;
         try {
+            // 1. Remove from approvals list
             await deleteDoc(doc(db, 'approvals', emailToDelete));
+
+            // 2. Find the matching user and suspend them
+            const usersQuery = query(collection(db, 'users'), where('email', '==', emailToDelete));
+            const userSnap = await getDocs(usersQuery);
+            const updatePromises = userSnap.docs.map(userDoc =>
+                updateDoc(doc(db, 'users', userDoc.id), { isSuspended: true })
+            );
+            await Promise.all(updatePromises);
         } catch (err: any) {
             setError(err.message || "An unexpected error occurred.");
         }

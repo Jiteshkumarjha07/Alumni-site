@@ -3,6 +3,9 @@
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
+import { getDoc, doc } from 'firebase/firestore';
+import { signOut } from 'firebase/auth';
+import { db, auth } from '@/lib/firebase';
 import { Eye, EyeOff, Loader2, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import { BrandLogo } from '@/components/brand/BrandLogo';
@@ -28,6 +31,22 @@ export default function LoginPage() {
         setLoading(true);
         try {
             await signIn(email, password);
+
+            // ── Suspension gate ──────────────────────────────────────────
+            // After auth succeeds, verify the account is not suspended before
+            // allowing entry. We read the user doc directly (auth.currentUser is
+            // set synchronously by Firebase after signIn resolves).
+            const currentUser = auth.currentUser;
+            if (currentUser) {
+                const userSnap = await getDoc(doc(db, 'users', currentUser.uid));
+                if (userSnap.exists() && userSnap.data().isSuspended) {
+                    await signOut(auth);
+                    setError('Your account has been suspended. Please contact your administrator.');
+                    setLoading(false);
+                    return;
+                }
+            }
+
             router.push('/');
         } catch (err: unknown) {
             console.error('Login error:', err);
