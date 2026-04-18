@@ -110,7 +110,7 @@ export function LayoutClient({ children }: { children: React.ReactNode }) {
                         </>
                     )}
                     {showSidebar && <Sidebar />}
-                    <main className={`min-h-screen ${showSidebar ? 'md:pl-80' : ''} ${showRibbon ? 'md:pt-28' : ''} md:pr-12 ${isMobile && !isAdminPage && showMobileNav ? 'pb-24' : 'pb-8'} relative z-0 transition-all duration-500`}>
+                    <main className={`min-h-screen ${showSidebar ? 'md:pl-80' : ''} ${showRibbon ? 'md:pt-28' : ''} md:pr-12 ${isMobile && !(isGlobalAdminPage || isInstituteAdminPage) && showMobileNav ? 'pb-24' : 'pb-8'} relative z-0 transition-all duration-500`}>
                 <div className="mx-auto w-full overflow-x-hidden">
                     {isMobile ? (
                         <AnimatePresence initial={false} custom={direction}>

@@ -460,7 +460,7 @@ export function ChatWindow({ chatId, currentUser, otherUser, isGroup = false, gr
             );
 
             // Clear current user from all reactions
-            let newReactions: Record<string, string[]> = {};
+            const newReactions: Record<string, string[]> = {};
             Object.keys(currentReactions).forEach(key => {
                 const filtered = currentReactions[key].filter(uid => uid !== currentUser.uid);
                 if (filtered.length > 0) {
