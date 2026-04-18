@@ -17,6 +17,9 @@ interface Approval {
 }
 
 export default function AdminApprovalsPage() {
+    // Bug #11 fix: page-level guard — useAuth is already imported, re-use it
+    const { userData } = useAuth();
+    const router = useRouter();
     const [email, setEmail] = useState('');
     const [selectedInstitutes, setSelectedInstitutes] = useState<string[]>([]);
     const [institutes, setInstitutes] = useState<Institute[]>([]);
@@ -140,6 +143,12 @@ export default function AdminApprovalsPage() {
             setError(err.message || "An unexpected error occurred.");
         }
     };
+
+    // Guard: only global admins may use this page
+    if (userData && !userData.isAdmin) {
+        router.replace('/');
+        return null;
+    }
 
     return (
         <div className="max-w-6xl mx-auto px-4 md:px-8 pt-8 pb-12 w-full animate-fade-up">

@@ -77,7 +77,9 @@ export default function PublicProfilePage() {
         const postsQuery = query(
             collection(db, 'posts'),
             where('authorUid', '==', profileUser.uid),
-            where('instituteId', '==', userData.instituteId),
+            // Bug #5 fix: use profileUser.instituteId (not viewer's) so cross-institute
+            // profile views correctly display that user's own posts.
+            where('instituteId', '==', profileUser.instituteId),
             orderBy('createdAt', 'desc')
         );
 

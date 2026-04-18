@@ -100,10 +100,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                         // ── Suspension check ─────────────────────────────
                         // If an admin suspends this account by setting isSuspended:true,
                         // this listener fires immediately and we force-sign them out.
+                        // Bug #1 fix: clear user state BEFORE calling signOut to prevent
+                        // a brief window where user is set but userData is null.
                         if (data.isSuspended) {
-                            firebaseSignOut(auth);
+                            setUser(null);
                             setUserData(null);
                             setLoading(false);
+                            firebaseSignOut(auth); // async — called last so state is cleared first
                             return;
                         }
 
@@ -169,6 +172,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             const credential = await createUserWithEmailAndPassword(auth, email, password);
 
             // Create user document in Firestore
+            // Bug #6 fix: explicitly set isinsadmin and isSuspended defaults so Firestore
+            // rules that check these fields work correctly from the first read.
             const userDoc: Partial<User> = {
                 uid: credential.user.uid,
                 email,
@@ -179,6 +184,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                 sentRequests: [],
                 groups: [],
                 isAdmin: false,
+                isinsadmin: false,
+                isSuspended: false,
                 joinedAt: serverTimestamp(),
             };
 
@@ -192,7 +199,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                 message: (err as { message?: string }).message
             });
 
-            // Atomicity: If Auth succeeded but Firestore failed, delete the Auth user 
+            // Atomicity: If Auth succeeded but Firestore failed, delete the Auth user
             // so they can retry without "email-already-in-use" errors.
             if (auth.currentUser) {
                 try {
@@ -228,7 +235,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     };
 
     const clearError = () => setError(null);
-    
+
     const switchInstitute = async (instituteId: string, instituteName: string) => {
         if (!user) return;
         try {

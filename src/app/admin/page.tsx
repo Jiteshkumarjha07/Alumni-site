@@ -56,7 +56,10 @@ export default function AdminDashboard() {
 
     // Subscribe to posts only when on posts or overview tab
     useEffect(() => {
-        if ((activeTab !== 'posts' && activeTab !== 'overview') || !userData?.isAdmin) return;
+        if ((activeTab !== 'posts' && activeTab !== 'overview') || !userData?.isAdmin) {
+            // Bug #2 fix: always return a no-op so previous subscriptions are properly cleaned up
+            return () => {};
+        }
         setLoadingPosts(true);
         const q = query(collection(db, 'posts'), orderBy('createdAt', 'desc'));
         const unsub = onSnapshot(q, snap => {
@@ -88,8 +91,12 @@ export default function AdminDashboard() {
         );
     }, [allPosts, postSearch]);
 
-    const getInstituteName = (id: string) =>
-        institutes.find(i => i.id === id)?.name || 'Unknown Institute';
+    const getInstituteName = (id: string) => {
+        // Bug #8 fix: return empty string while institutes haven't loaded yet
+        // to avoid misleading "Unknown Institute" flash on first render
+        if (institutes.length === 0) return '';
+        return institutes.find(i => i.id === id)?.name || 'Unknown Institute';
+    };
 
     const handleSuspendUser = async (uid: string, currentStatus: boolean) => {
         const msg = currentStatus ? 'Restore this user\'s account?' : 'Suspend this user? They will be signed out immediately.';
@@ -288,7 +295,7 @@ export default function AdminDashboard() {
                                 >
                                     <div className="flex items-center gap-3 min-w-0 flex-1">
                                         <img
-                                            src={u.profilePic || `https://placehold.co/80x80/EFEFEFF/5a2427?text=${u.name?.charAt(0) || '?'}`}
+                                            src={u.profilePic || `https://placehold.co/80x80/EFEFEF/5a2427?text=${u.name?.charAt(0) || '?'}`}
                                             alt={u.name}
                                             className="w-10 h-10 rounded-full border-2 border-white dark:border-white/10 shadow-sm flex-shrink-0 object-cover"
                                         />
@@ -417,7 +424,7 @@ export default function AdminDashboard() {
                                 <div key={u.uid} className="p-4 sm:p-5 bg-red-50/30 dark:bg-red-900/10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                                     <div className="flex items-center gap-3 min-w-0 flex-1">
                                         <img
-                                            src={u.profilePic || `https://placehold.co/80x80/EFEFEFF/5a2427?text=${u.name?.charAt(0) || '?'}`}
+                                            src={u.profilePic || `https://placehold.co/80x80/EFEFEF/5a2427?text=${u.name?.charAt(0) || '?'}`}
                                             alt={u.name}
                                             className="w-10 h-10 rounded-full border-2 border-red-200 dark:border-red-800 shadow-sm flex-shrink-0 object-cover opacity-60"
                                         />

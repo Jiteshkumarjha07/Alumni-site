@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { db } from '@/lib/firebase';
 import {
-    collection, query, where, getDocs, doc, getDoc,
+    collection, query, where, doc, getDoc,
     updateDoc, deleteDoc, onSnapshot, orderBy
 } from 'firebase/firestore';
 import { uploadMedia } from '@/lib/media';
@@ -41,36 +41,34 @@ export default function InstituteAdminPage() {
 
     const [error, setError] = useState<string | null>(null);
 
-    // Fetch overview stats + cover photo on mount
+    // Subscribe to live overview counts + cover photo on mount
     useEffect(() => {
         if (authLoading || !userData?.instituteId) return;
+        const instId = userData.instituteId;
 
-        const fetchOverview = async () => {
-            setStatsLoading(true);
-            try {
-                const instId = userData.instituteId;
-                const [usersSnap, postsSnap, jobsSnap, instDoc] = await Promise.all([
-                    getDocs(query(collection(db, 'users'), where('instituteId', '==', instId))),
-                    getDocs(query(collection(db, 'posts'), where('instituteId', '==', instId))),
-                    getDocs(query(collection(db, 'opportunities'), where('instituteId', '==', instId))),
-                    getDoc(doc(db, 'institutes', instId)),
-                ]);
-                setOverviewStats({
-                    users: usersSnap.size,
-                    posts: postsSnap.size,
-                    jobs: jobsSnap.size,
-                });
-                if (instDoc.exists()) {
-                    setCoverPhoto(instDoc.data().coverPhotoUrl || null);
-                }
-            } catch (err) {
-                console.error('Error fetching overview:', err);
-            } finally {
-                setStatsLoading(false);
-            }
-        };
+        // Bug #9 fix: use onSnapshot for live-updating counts instead of one-shot getDocs
+        const unsubUsers = onSnapshot(
+            query(collection(db, 'users'), where('instituteId', '==', instId)),
+            snap => setOverviewStats(s => ({ ...s, users: snap.size })),
+            err => console.error('Stats users error:', err)
+        );
+        const unsubPosts = onSnapshot(
+            query(collection(db, 'posts'), where('instituteId', '==', instId)),
+            snap => setOverviewStats(s => ({ ...s, posts: snap.size })),
+            err => console.error('Stats posts error:', err)
+        );
+        const unsubJobs = onSnapshot(
+            query(collection(db, 'opportunities'), where('instituteId', '==', instId)),
+            snap => { setOverviewStats(s => ({ ...s, jobs: snap.size })); setStatsLoading(false); },
+            err => { console.error('Stats jobs error:', err); setStatsLoading(false); }
+        );
 
-        fetchOverview();
+        // Fetch cover photo once (it changes rarely)
+        getDoc(doc(db, 'institutes', instId))
+            .then(d => { if (d.exists()) setCoverPhoto(d.data().coverPhotoUrl || null); })
+            .catch(err => console.error('Cover photo error:', err));
+
+        return () => { unsubUsers(); unsubPosts(); unsubJobs(); };
     }, [authLoading, userData?.instituteId]);
 
     // Subscribe to members when tab is active
@@ -185,6 +183,11 @@ export default function InstituteAdminPage() {
                 <Loader2 className="w-10 h-10 animate-spin text-brand-burgundy/40" />
             </div>
         );
+    }
+
+    // Bug #3 fix: page-level guard in addition to layout — prevents access via shallow routing
+    if (!userData?.isinsadmin) {
+        return null;
     }
 
     const tabs: { id: Tab; label: string; icon: React.ReactNode; badge?: number }[] = [
