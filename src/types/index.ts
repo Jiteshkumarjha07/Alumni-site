@@ -19,6 +19,7 @@ export interface Institute {
   domain?: string; // e.g., 'mit.edu'
   adminIds?: string[];
   logoUrl?: string;
+  coverPhotoUrl?: string;
   createdAt?: Timestamp;
 }
 
@@ -43,6 +44,7 @@ export interface User {
   sentRequests?: string[];
   groups?: string[];
   isAdmin?: boolean;
+  isinsadmin?: boolean;
   isSuspended?: boolean;
   isOnline?: boolean;
   lastSeen?: Timestamp | FieldValue;

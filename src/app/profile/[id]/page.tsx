@@ -2,13 +2,13 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { collection, query, where, orderBy, onSnapshot, doc, getDocs, getDoc, updateDoc, arrayRemove, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, query, where, orderBy, onSnapshot, doc, getDocs, getDoc, updateDoc, deleteDoc, arrayRemove, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { Post, User, Group } from '@/types';
 import { PostCard } from '@/components/feed/PostCard';
 import { CommentModal } from '@/components/modals/CommentModal';
 import { SharePostModal } from '@/components/modals/SharePostModal';
-import { MapPin, Briefcase, MessageCircle, Users } from 'lucide-react';
+import { MapPin, Briefcase, MessageCircle, Users, Trash2, UserX, UserCheck } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useParams, useRouter } from 'next/navigation';
@@ -27,6 +27,7 @@ export default function PublicProfilePage() {
     const [loadingConnections, setLoadingConnections] = useState(false);
     const [userGroups, setUserGroups] = useState<Group[]>([]);
     const [loadingGroups, setLoadingGroups] = useState(false);
+    const [instituteCoverPhoto, setInstituteCoverPhoto] = useState<string | null>(null);
 
     const profileId = params.id as string;
 
@@ -42,7 +43,19 @@ export default function PublicProfilePage() {
                 const docRef = doc(db, 'users', profileId);
                 const docSnap = await getDoc(docRef);
                 if (docSnap.exists()) {
-                    setProfileUser({ uid: docSnap.id, ...docSnap.data() } as User);
+                    const data = { uid: docSnap.id, ...docSnap.data() } as User;
+                    setProfileUser(data);
+                    
+                    if (data.instituteId) {
+                        try {
+                            const instDoc = await getDoc(doc(db, 'institutes', data.instituteId));
+                            if (instDoc.exists()) {
+                                setInstituteCoverPhoto(instDoc.data().coverPhotoUrl || null);
+                            }
+                        } catch (err) {
+                            console.error('Error fetching institute cover:', err);
+                        }
+                    }
                 } else {
                     setProfileUser(null);
                 }
@@ -217,6 +230,30 @@ export default function PublicProfilePage() {
         });
     };
 
+    const handleAdminDeleteUser = async () => {
+        if (!profileUser) return;
+        if (!confirm(`PERMANENTLY DELETE "${profileUser.name}"'s account?\n\nThis cannot be undone.`)) return;
+        try {
+            await deleteDoc(doc(db, 'users', profileUser.uid));
+            router.replace('/');
+        } catch (err) {
+            console.error('Error deleting user:', err);
+        }
+    };
+
+    const handleAdminSuspendUser = async () => {
+        if (!profileUser) return;
+        const isSuspended = profileUser.isSuspended;
+        const msg = isSuspended ? 'Restore this user\'s account?' : 'Suspend this user? They will be signed out immediately.';
+        if (!confirm(msg)) return;
+        try {
+            await updateDoc(doc(db, 'users', profileUser.uid), { isSuspended: !isSuspended });
+            setProfileUser(prev => prev ? { ...prev, isSuspended: !isSuspended } : prev);
+        } catch (err) {
+            console.error('Error updating suspension:', err);
+        }
+    };
+
     if (authLoading || loading || (userData?.uid === profileId)) {
         return (
             <div className="flex items-center justify-center min-h-screen">
@@ -256,7 +293,11 @@ export default function PublicProfilePage() {
     return (
         <div className="max-w-4xl mx-auto px-4 pt-8 pb-0">
             {/* Cover Photo Area */}
-            <div className="bg-gradient-to-r from-brand-burgundy to-[#4a1c20] h-48 rounded-t-xl opacity-90 border-b-4 border-brand-gold/60"></div>
+            {instituteCoverPhoto ? (
+                <div className="h-48 rounded-t-xl opacity-90 border-b-4 border-brand-gold/60 bg-cover bg-center" style={{ backgroundImage: `url(${instituteCoverPhoto})` }}></div>
+            ) : (
+                <div className="bg-gradient-to-r from-brand-burgundy to-[#4a1c20] h-48 rounded-t-xl opacity-90 border-b-4 border-brand-gold/60"></div>
+            )}
 
             {/* Profile Header */}
             <div className="bg-brand-parchment/90 rounded-b-xl shadow-md p-6 -mt-20 relative border border-brand-ebony/10">
@@ -294,16 +335,59 @@ export default function PublicProfilePage() {
                         </div>
                     </div>
 
-                    {/* Message Button if Connected */}
-                    {userData?.connections?.includes(profileUser.uid) && (
-                        <Link
-                            href={`/messages?userId=${profileUser.uid}&name=${encodeURIComponent(profileUser.name)}&pic=${encodeURIComponent(profileUser.profilePic || '')}`}
-                            className="flex items-center gap-2 px-6 py-2.5 bg-brand-burgundy text-white rounded-lg hover:bg-[#5a2427] transition font-semibold tracking-wide shadow-sm text-sm"
-                        >
-                            <MessageCircle className="w-4 h-4" />
-                            Message
-                        </Link>
-                    )}
+                    {/* Action Buttons */}
+                    <div className="flex flex-wrap gap-2">
+                        {/* Message Button if Connected */}
+                        {userData?.connections?.includes(profileUser.uid) && (
+                            <Link
+                                href={`/messages?userId=${profileUser.uid}&name=${encodeURIComponent(profileUser.name)}&pic=${encodeURIComponent(profileUser.profilePic || '')}`}
+                                className="flex items-center gap-2 px-5 py-2.5 bg-brand-burgundy text-white rounded-lg hover:bg-[#5a2427] transition font-semibold tracking-wide shadow-sm text-sm"
+                            >
+                                <MessageCircle className="w-4 h-4" />
+                                Message
+                            </Link>
+                        )}
+
+                        {/* Institute Admin: Suspend/Restore button (same institute users only) */}
+                        {userData?.isinsadmin && !userData?.isAdmin && userData.instituteId === profileUser.instituteId && (
+                            <button
+                                onClick={handleAdminSuspendUser}
+                                className={`flex items-center gap-2 px-4 py-2.5 rounded-lg font-semibold text-sm transition ${
+                                    profileUser.isSuspended
+                                        ? 'bg-emerald-500/10 text-emerald-700 hover:bg-emerald-500/20 border border-emerald-500/30'
+                                        : 'bg-orange-500/10 text-orange-700 hover:bg-orange-500/20 border border-orange-500/30'
+                                }`}
+                            >
+                                {profileUser.isSuspended
+                                    ? <><UserCheck className="w-4 h-4" /> Restore</>  
+                                    : <><UserX className="w-4 h-4" /> Suspend</>}
+                            </button>
+                        )}
+
+                        {/* Global Admin: Suspend/Restore + Delete */}
+                        {userData?.isAdmin && (
+                            <>
+                                <button
+                                    onClick={handleAdminSuspendUser}
+                                    className={`flex items-center gap-2 px-4 py-2.5 rounded-lg font-semibold text-sm transition ${
+                                        profileUser.isSuspended
+                                            ? 'bg-emerald-500/10 text-emerald-700 hover:bg-emerald-500/20 border border-emerald-500/30'
+                                            : 'bg-orange-500/10 text-orange-700 hover:bg-orange-500/20 border border-orange-500/30'
+                                    }`}
+                                >
+                                    {profileUser.isSuspended
+                                        ? <><UserCheck className="w-4 h-4" /> Restore</>  
+                                        : <><UserX className="w-4 h-4" /> Suspend</>}
+                                </button>
+                                <button
+                                    onClick={handleAdminDeleteUser}
+                                    className="flex items-center gap-2 px-4 py-2.5 bg-red-500/10 text-red-700 hover:bg-red-500/20 border border-red-500/30 rounded-lg font-semibold text-sm transition"
+                                >
+                                    <Trash2 className="w-4 h-4" /> Delete Profile
+                                </button>
+                            </>
+                        )}
+                    </div>
                 </div>
 
                 {/* Stats */}

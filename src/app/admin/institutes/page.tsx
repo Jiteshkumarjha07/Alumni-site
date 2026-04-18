@@ -1,9 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { collection, doc, serverTimestamp, setDoc, updateDoc, deleteDoc, onSnapshot } from 'firebase/firestore';
+import { collection, doc, serverTimestamp, setDoc, updateDoc, deleteDoc, onSnapshot, query, where, getDocs } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import { Shield, Plus, Loader2, Trash2, Building2, Sparkles, ChevronRight } from 'lucide-react';
+import { Shield, Plus, Loader2, Trash2, Building2, Sparkles, ChevronRight, Edit } from 'lucide-react';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
@@ -22,6 +22,12 @@ export default function AdminInstitutesPage() {
     const [fetchLoading, setFetchLoading] = useState(true);
     const [success, setSuccess] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
+
+    // For assigning admin
+    const [assignEmail, setAssignEmail] = useState('');
+    const [assignLoading, setAssignLoading] = useState(false);
+    const [assignSuccess, setAssignSuccess] = useState<string | null>(null);
+    const [assignError, setAssignError] = useState<string | null>(null);
 
     useEffect(() => {
         setFetchLoading(true);
@@ -106,6 +112,38 @@ export default function AdminInstitutesPage() {
         }
     };
 
+    const handleAssignAdmin = async (e: React.FormEvent | React.KeyboardEvent, makeAdmin: boolean) => {
+        if (e.preventDefault) e.preventDefault();
+        const trimmedEmail = assignEmail.trim().toLowerCase();
+        if (!trimmedEmail) return;
+
+        setAssignLoading(true);
+        setAssignError(null);
+        setAssignSuccess(null);
+
+        try {
+            const usersQuery = query(collection(db, 'users'), where('email', '==', trimmedEmail));
+            const userSnap = await getDocs(usersQuery);
+            if (userSnap.empty) {
+                setAssignError("User not found with this email.");
+                setAssignLoading(false);
+                return;
+            }
+
+            const userDoc = userSnap.docs[0];
+            await updateDoc(doc(db, 'users', userDoc.id), {
+                isinsadmin: makeAdmin
+            });
+
+            setAssignSuccess(`Successfully ${makeAdmin ? 'assigned' : 'removed'} Institute Admin role for ${trimmedEmail}.`);
+            setAssignEmail('');
+        } catch (err: any) {
+            setAssignError(err.message || 'Failed to update user role.');
+        } finally {
+            setAssignLoading(false);
+        }
+    };
+
     return (
         <div className="max-w-6xl mx-auto px-4 md:px-8 pt-8 pb-12 w-full animate-fade-up">
             {/* Header Section */}
@@ -177,6 +215,59 @@ export default function AdminInstitutesPage() {
                             </button>
                         </form>
                     </div>
+                    
+                    {/* Assign Institute Admin Card */}
+                    <div className="card-premium p-8 relative overflow-hidden group mt-8">
+                        <h2 className="text-xl font-serif font-extrabold text-brand-ebony mb-6 flex items-center gap-2">
+                             Manage Roles
+                        </h2>
+                        
+                        {assignError && (
+                            <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-red-600 text-[11px] font-bold uppercase tracking-wider animate-in fade-in">
+                                {assignError}
+                            </div>
+                        )}
+                        {assignSuccess && (
+                            <div className="mb-6 p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-emerald-600 text-[11px] font-bold uppercase tracking-wider animate-in fade-in">
+                                {assignSuccess}
+                            </div>
+                        )}
+
+                        <div className="space-y-6 relative z-10">
+                            <div>
+                                <label className="block text-[10px] font-bold text-brand-ebony/40 dark:text-white/40 mb-2 uppercase tracking-[0.2em]">User Email</label>
+                                <input
+                                    type="email"
+                                    placeholder="user@example.com"
+                                    value={assignEmail}
+                                    onChange={(e) => setAssignEmail(e.target.value)}
+                                    className="w-full px-5 py-4 bg-brand-ebony/5 dark:bg-white/5 border border-brand-ebony/10 dark:border-white/10 rounded-2xl focus:ring-4 focus:ring-brand-burgundy/10 hover:border-brand-burgundy/30 transition-all outline-none text-brand-ebony dark:text-white font-medium"
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter') handleAssignAdmin(e, true);
+                                    }}
+                                />
+                            </div>
+
+                            <div className="flex gap-2">
+                                <button
+                                    type="button"
+                                    onClick={(e) => handleAssignAdmin(e, true)}
+                                    disabled={assignLoading || !assignEmail.trim()}
+                                    className="flex-1 py-4 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 rounded-2xl font-bold hover:bg-emerald-500/20 transition-all flex items-center justify-center text-[10px] uppercase tracking-widest"
+                                >
+                                    Make Admin
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={(e) => handleAssignAdmin(e, false)}
+                                    disabled={assignLoading || !assignEmail.trim()}
+                                    className="flex-1 py-4 bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20 rounded-2xl font-bold hover:bg-red-500/20 transition-all flex items-center justify-center text-[10px] uppercase tracking-widest"
+                                >
+                                    Remove Admin
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 {/* List Card */}
@@ -246,12 +337,12 @@ export default function AdminInstitutesPage() {
                                                     </div>
                                                 </div>
                                                 {editingId !== inst.id && (
-                                                    <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-all self-end sm:self-center shrink-0">
+                                                    <div className="flex items-center gap-2 transition-all self-end sm:self-center shrink-0">
                                                         <button 
                                                             onClick={() => { setEditingId(inst.id); setEditName(inst.name); }}
                                                             className="p-3 text-brand-ebony/40 dark:text-white/40 hover:text-indigo-500 hover:bg-indigo-500/10 rounded-2xl transition-all"
                                                         >
-                                                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+                                                            <Edit className="w-5 h-5" />
                                                         </button>
                                                         <button 
                                                             onClick={() => handleDelete(inst.id, inst.name)}

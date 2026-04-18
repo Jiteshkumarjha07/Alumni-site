@@ -29,7 +29,7 @@ export function BrandHeader() {
                         Alumnest
                     </span>
                     <span className="text-[9px] text-brand-ebony/60 font-black tracking-[0.2em] uppercase mt-1 ml-0.5">
-                        Premiere Excellence
+                        For the Tribe
                     </span>
                 </div>
             </Link>

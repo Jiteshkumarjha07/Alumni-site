@@ -88,10 +88,15 @@ export function LayoutClient({ children }: { children: React.ReactNode }) {
     const direction = tabs.indexOf(pathname) > tabs.indexOf(prevPath) ? 1 : -1;
 
     const isAuthPage = pathname === '/login' || pathname === '/signup';
-    const isAdminPage = pathname.startsWith('/admin');
-    const showSidebar = userData && !isAuthPage && !isAdminPage && !isFocusMode;
-    const showRibbon = userData && !isAuthPage && !isAdminPage && (focusType === 'partial' || !isFocusMode);
-    const showMobileNav = userData && !isAuthPage && !isAdminPage && (focusType === 'partial' || !isFocusMode);
+    const isGlobalAdminPage = pathname.startsWith('/admin');
+    const isInstituteAdminPage = pathname.startsWith('/institute-admin');
+    
+    // Sidebar shows everywhere except Login/Signup and Global Admin
+    const showSidebar = userData && !isAuthPage && !isGlobalAdminPage && !isFocusMode;
+    
+    // Ribbon and MobileNav hide on BOTH Global and Institute Admin pages
+    const showRibbon = userData && !isAuthPage && !isGlobalAdminPage && !isInstituteAdminPage && (focusType === 'partial' || !isFocusMode);
+    const showMobileNav = userData && !isAuthPage && !isGlobalAdminPage && !isInstituteAdminPage && (focusType === 'partial' || !isFocusMode);
 
     return (
         <SwipeProvider>

@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { Loader2 } from 'lucide-react';
 
-export default function AdminLayout({ children }: { children: React.ReactNode }) {
+export default function InstituteAdminLayout({ children }: { children: React.ReactNode }) {
     const { user, userData, loading } = useAuth();
     const router = useRouter();
 
@@ -13,7 +13,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         if (!loading) {
             if (!user) {
                 router.replace('/login');
-            } else if (userData && !userData.isAdmin && !userData.isinsadmin) {
+            } else if (userData && !userData.isinsadmin) {
                 router.replace('/');
             }
         }
@@ -34,10 +34,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     }
 
     // Do not render children if unauthorized (prevents flash of content before redirect)
-    if (!user || (!userData?.isAdmin && !userData?.isinsadmin)) {
+    if (!user || !userData?.isinsadmin) {
         return null;
     }
 
-    // Render children if the user is an admin or institute admin
+    // Render children if the user is an institute admin
     return <>{children}</>;
 }

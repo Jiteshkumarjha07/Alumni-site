@@ -12,7 +12,7 @@ import { doc, updateDoc, deleteDoc } from 'firebase/firestore';
 import {
     X, Lock, Trash2, PauseCircle, Eye, EyeOff, ChevronLeft,
     AlertTriangle, CheckCircle2, LogOut, ShieldCheck, Sparkles,
-    User as UserIcon, ChevronRight,
+    User as UserIcon, ChevronRight, ChevronDown
 } from 'lucide-react';
 import { Portal } from '../ui/Portal';
 
@@ -339,16 +339,19 @@ export function AccountSettingsModal({ isOpen, onClose, userEmail, userId, onAcc
                                 </div>
 
                                 <Field label="Pause Duration">
-                                    <select
-                                        value={deactDuration}
-                                        onChange={e => setDeactDuration(e.target.value)}
-                                        className={`${inputCls} appearance-none cursor-pointer`}
-                                    >
-                                        <option value="7">7 days</option>
-                                        <option value="14">14 days</option>
-                                        <option value="30">30 days</option>
-                                        <option value="90">90 days</option>
-                                    </select>
+                                    <div className="relative">
+                                        <select
+                                            value={deactDuration}
+                                            onChange={e => setDeactDuration(e.target.value)}
+                                            className={`${inputCls} appearance-none cursor-pointer pr-12`}
+                                        >
+                                            <option value="7">7 days</option>
+                                            <option value="14">14 days</option>
+                                            <option value="30">30 days</option>
+                                            <option value="90">90 days</option>
+                                        </select>
+                                        <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-brand-ebony/25 pointer-events-none" />
+                                    </div>
                                 </Field>
 
                                 <Field label="Confirm with Password">

@@ -6,58 +6,69 @@ service cloud.firestore {
     function isSignedIn() {
       return request.auth != null;
     }
+    
+    function getUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+    
+    function isAdmin() {
+      return isSignedIn() && getUserData().get('isAdmin', false) == true;
+    }
+    
+    function isInsAdmin() {
+      return isSignedIn() && getUserData().get('isinsadmin', false) == true;
+    }
+    
+    function isInsAdminFor(instituteId) {
+      return isInsAdmin() && getUserData().get('instituteId', '') == instituteId;
+    }
+
     function isOwner(uid) {
       return request.auth.uid == uid;
     }
-    function isParticipant(chatId) {
-      return isSignedIn() &&
-        request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.participants;
-    }
-    function isGroupMember(groupId) {
-      return isSignedIn() &&
-        request.auth.uid in get(/databases/$(database)/documents/groups/$(groupId)).data.members;
-    }
 
     // ── Users ─────────────────────────────────────────────────────────────────
-    // Any signed-in user can read all users (needed for search / profile pages).
-    // Any signed-in user can update any user document (needed for connection
-    //   requests that push to another user's connections array).
-    // Only the owner can create/delete their document.
     match /users/{userId} {
       allow read: if isSignedIn();
-      allow create, delete: if isSignedIn() && isOwner(userId);
-      allow update: if isSignedIn();
+      allow create: if isAdmin() || (isSignedIn() && isOwner(userId)) || isInsAdminFor(request.resource.data.get('instituteId', ''));
+      allow delete: if isAdmin() || isInsAdminFor(resource.data.get('instituteId', '')) || (isSignedIn() && isOwner(userId));
+      allow update: if isAdmin() || 
+                    isInsAdminFor(resource.data.get('instituteId', '')) || 
+                    isInsAdminFor(request.resource.data.get('instituteId', '')) ||
+                    (isSignedIn() && isOwner(userId)) ||
+                    isSignedIn(); // Broad update for connection requests
     }
 
     // ── Posts ─────────────────────────────────────────────────────────────────
-    // Any member can read and create posts.
-    // Any member can UPDATE a post (likes, comments use arrayUnion on other users' posts).
-    // Only the author can DELETE their post.
     match /posts/{postId} {
-      allow read, create: if isSignedIn();
-      allow update: if isSignedIn();
-      allow delete: if isSignedIn() && resource.data.authorUid == request.auth.uid;
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() || isAdmin() || isInsAdminFor(request.resource.data.get('instituteId', ''));
+      allow update: if isSignedIn() || isAdmin() || isInsAdminFor(resource.data.get('instituteId', ''));
+      allow delete: if isAdmin() || 
+                    isInsAdminFor(resource.data.get('instituteId', '')) ||
+                    (isSignedIn() && resource.data.authorUid == request.auth.uid);
     }
 
     // ── Opportunities (Jobs board) ────────────────────────────────────────────
     match /opportunities/{oppId} {
-      allow read, create: if isSignedIn();
-      allow update, delete: if isSignedIn() && resource.data.postedByUid == request.auth.uid;
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() || isAdmin() || isInsAdminFor(request.resource.data.get('instituteId', ''));
+      allow update: if isAdmin() ||
+                    isInsAdminFor(resource.data.get('instituteId', '')) ||
+                    isInsAdminFor(request.resource.data.get('instituteId', '')) ||
+                    (isSignedIn() && resource.data.postedByUid == request.auth.uid);
+      allow delete: if isAdmin() ||
+                    isInsAdminFor(resource.data.get('instituteId', '')) ||
+                    (isSignedIn() && resource.data.postedByUid == request.auth.uid);
     }
 
     // ── Notifications ─────────────────────────────────────────────────────────
-    // Users can only read their own notifications; anyone can create one
-    // (needed when user A likes/connects and writes a notification for user B).
     match /notifications/{notifId} {
       allow read, update, delete: if isSignedIn() && resource.data.userId == request.auth.uid;
       allow create: if isSignedIn();
     }
 
     // ── Chats ─────────────────────────────────────────────────────────────────
-    // IMPORTANT: On a COLLECTION QUERY (list), resource is null — you cannot
-    // check resource.data.participants in a list rule. Instead allow list for
-    // any authenticated user and rely on the where('participants','array-contains',uid)
-    // query filter. Individual document reads/writes verify participation.
     match /chats/{chatId} {
       allow list: if isSignedIn();
       allow get: if isSignedIn() &&
@@ -65,12 +76,6 @@ service cloud.firestore {
       allow create: if isSignedIn();
       allow update: if isSignedIn() &&
         request.auth.uid in resource.data.participants;
-    }
-
-    // ── Chat Messages Subcollection ───────────────────────────────────────────
-    match /chats/{chatId}/messages/{messageId} {
-      allow read, write: if isParticipant(chatId);
-      allow create: if isSignedIn();
     }
 
     // ── Groups ────────────────────────────────────────────────────────────────
@@ -83,36 +88,36 @@ service cloud.firestore {
         request.auth.uid in resource.data.members;
     }
 
-    // ── Group Messages Subcollection ──────────────────────────────────────────
-    // Was MISSING in previous rules — caused all group chat writes to fail.
-    match /groups/{groupId}/messages/{messageId} {
-      allow read, write: if isGroupMember(groupId);
-      allow create: if isSignedIn();
+    // ── Subcollections (Messages) ─────────────────────────────────────────────
+    match /chats/{chatId}/messages/{messageId} {
+      allow read, write: if isSignedIn();
     }
-
-    // ── Community Chat ────────────────────────────────────────────────────────
+    match /groups/{groupId}/messages/{messageId} {
+      allow read, write: if isSignedIn();
+    }
     match /communityChat/{messageId} {
       allow read, create: if isSignedIn();
     }
 
     // ── Events ───────────────────────────────────────────────────────────────
     match /events/{eventId} {
-      allow read, create: if isSignedIn();
-      allow update, delete: if isSignedIn() && resource.data.createdByUid == request.auth.uid;
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() || isAdmin() || isInsAdminFor(request.resource.data.get('instituteId', ''));
+      allow update, delete: if isAdmin() ||
+                            isInsAdminFor(resource.data.get('instituteId', '')) ||
+                            (isSignedIn() && resource.data.createdByUid == request.auth.uid);
     }
 
     // ── Institutes ────────────────────────────────────────────────────────────
-    // Public read (signup needs institute list before auth).
     match /institutes/{instId} {
       allow read: if true;
-      allow write: if isSignedIn();
+      allow write: if isAdmin() || isInsAdminFor(instId);
     }
 
     // ── Email Approvals ───────────────────────────────────────────────────────
-    // Public read for signup domain validation.
     match /approvals/{email} {
       allow read: if true;
-      allow write: if isSignedIn();
+      allow write: if isAdmin();
     }
   }
 }

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { X, Briefcase, MapPin, Calendar, Clock, Sparkles, Send, Loader2, Check } from 'lucide-react';
+import { X, Briefcase, MapPin, Calendar, Clock, Sparkles, Send, Loader2, Check, ChevronDown } from 'lucide-react';
 import { Portal } from '../ui/Portal';
 
 interface CreateOpportunityModalProps {
@@ -122,16 +122,19 @@ export const CreateOpportunityModal: React.FC<CreateOpportunityModalProps> = ({
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                             <div className="space-y-3">
                                 <label className={labelClass}>Engagement Type</label>
-                                <select
-                                    value={formData.type}
-                                    onChange={(e) => setFormData({ ...formData, type: e.target.value as any })}
-                                    className={`${inputClass} appearance-none cursor-pointer`}
-                                >
-                                    <option value="Full-time">Full-time Deployment</option>
-                                    <option value="Part-time">Part-time Engagement</option>
-                                    <option value="Freelance/Contract">Contract Collaboration</option>
-                                    <option value="Internship">Developmental Residency</option>
-                                </select>
+                                <div className="relative">
+                                    <select
+                                        value={formData.type}
+                                        onChange={(e) => setFormData({ ...formData, type: e.target.value as any })}
+                                        className={`${inputClass} appearance-none cursor-pointer pr-12`}
+                                    >
+                                        <option value="Full-time">Full-time Deployment</option>
+                                        <option value="Part-time">Part-time Engagement</option>
+                                        <option value="Freelance/Contract">Contract Collaboration</option>
+                                        <option value="Internship">Developmental Residency</option>
+                                    </select>
+                                    <ChevronDown className="absolute right-5 top-1/2 -translate-y-1/2 w-4 h-4 text-brand-ebony/20 pointer-events-none" />
+                                </div>
                             </div>
 
                             <div className="space-y-3">
