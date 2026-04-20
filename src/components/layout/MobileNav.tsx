@@ -26,6 +26,8 @@ export function MobileNav() {
         { name: 'Profile',  href: '/profile',  icon: User },
     ];
 
+    const isMessagesPage = pathname.startsWith('/messages');
+    
     return (
         <>
             <ComingSoonModal 
@@ -34,12 +36,12 @@ export function MobileNav() {
                 featureName="Marketplace" 
             />
             
-            <div className="fixed bottom-4 left-3 right-3 md:hidden z-50">
+            <div className={`fixed inset-x-0 ${isMessagesPage ? 'bottom-0' : 'bottom-4'} md:hidden z-50 transition-all duration-300 flex justify-center`}>
                 <div
-                    className="flex justify-around items-center px-1 py-1 rounded-2xl shadow-2xl bg-[var(--brand-surface)] backdrop-blur-3xl border border-[var(--brand-border)]"
-                    style={{
+                    className={`${isMessagesPage ? 'w-full' : 'w-[calc(100%-1.5rem)]'} flex justify-around items-center px-1 py-1 bg-[var(--brand-surface)] backdrop-blur-3xl border-t border-[var(--brand-border)] ${isMessagesPage ? 'rounded-none' : 'rounded-2xl shadow-2xl border'} max-w-none`}
+                    style={!isMessagesPage ? {
                         boxShadow: '0 8px 32px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.05)',
-                    }}
+                    } : {}}
                 >
                     {navItems.map((item) => {
                         const isActive = pathname === item.href.split('?')[0];

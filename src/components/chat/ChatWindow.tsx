@@ -642,7 +642,7 @@ export function ChatWindow({ chatId, currentUser, otherUser, isGroup = false, gr
                     <div className="relative" ref={headerMoreMenuRef}>
                         <button 
                             onClick={() => setShowMoreMenu(!showMoreMenu)}
-                            className={`p-3 rounded-xl transition-all border ${showMoreMenu ? 'bg-white shadow-sm border-brand-ebony/10 text-brand-ebony' : 'bg-transparent text-brand-ebony/30 hover:bg-white border-transparent hover:border-brand-ebony/10 hover:shadow-sm'}`}
+                            className={`p-3 rounded-xl transition-all shadow-sm border ${showMoreMenu ? 'bg-brand-burgundy text-white border-brand-burgundy' : 'bg-white dark:bg-white/5 text-brand-burgundy border-white hover:bg-brand-burgundy/5 hover:border-brand-burgundy/20'}`}
                         >
                             <MoreHorizontal className="w-4 h-4" />
                         </button>
@@ -670,7 +670,7 @@ export function ChatWindow({ chatId, currentUser, otherUser, isGroup = false, gr
 
             {/* Messages Area */}
             <div
-                className="flex-1 overflow-y-auto px-2 md:px-6 pt-4 pb-[180px] md:pb-24 space-y-2.5 scrollbar-hide bg-white/30 dark:bg-brand-parchment/5"
+                className="flex-1 overflow-y-auto px-2 md:px-6 pt-4 pb-[120px] md:pb-24 space-y-2.5 scrollbar-hide bg-white/30 dark:bg-brand-parchment/5"
                 style={{ containerType: 'inline-size' }}
                 onContextMenu={(e) => {
                     // Disable custom context menu on touch devices to prioritize long-press selection
@@ -769,7 +769,7 @@ export function ChatWindow({ chatId, currentUser, otherUser, isGroup = false, gr
             )}
 
             {/* Input Footer Area */}
-            <div className="absolute bottom-[calc(88px+0.75rem)] md:bottom-6 left-2 right-2 md:left-6 md:right-6 z-40 px-2 py-2.5 md:px-3 md:py-3 bg-white/95 dark:bg-brand-parchment/40 backdrop-blur-3xl rounded-[2rem] shadow-[0_8px_32px_rgba(0,0,0,0.12)] border border-white/50 dark:border-brand-ebony/20 pointer-events-auto">
+            <div className="absolute bottom-0 md:bottom-6 left-0 right-0 md:left-6 md:right-6 z-40 px-2 py-2.5 md:px-3 md:py-3 bg-white/95 dark:bg-brand-parchment/40 backdrop-blur-3xl rounded-none md:rounded-[2rem] shadow-none md:shadow-[0_8px_32px_rgba(0,0,0,0.12)] border-t md:border border-brand-ebony/10 dark:border-brand-ebony/20 pointer-events-auto transition-all duration-300">
                 {editingMessage && (
                     <div className="flex items-center justify-between mb-4 px-5 py-3 bg-brand-burgundy/10 rounded-2xl border border-brand-burgundy/20 animate-in slide-in-from-bottom-2 mx-2">
                         <div className="flex items-center gap-3 text-brand-burgundy">
@@ -871,6 +871,11 @@ export function ChatWindow({ chatId, currentUser, otherUser, isGroup = false, gr
                                 value={newMessage}
                                 onChange={(e) => setNewMessage(e.target.value)}
                                 placeholder={editingMessage ? 'Revising message...' : (replyingToMessage ? 'Drafting response...' : 'Share a thought with the circle...')}
+                                onFocus={() => {
+                                    setTimeout(() => {
+                                        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+                                    }, 100);
+                                }}
                                 className="w-full px-5 py-2.5 pr-14 bg-white/60 dark:bg-white/5 border border-white dark:border-white/10 rounded-full focus:outline-none focus:ring-2 focus:ring-brand-burgundy/20 focus:border-brand-burgundy/50 transition-all font-bold text-[13.5px] shadow-inner placeholder:text-brand-ebony/30"
                                 disabled={sending}
                             />

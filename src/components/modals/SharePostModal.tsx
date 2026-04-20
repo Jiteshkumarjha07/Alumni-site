@@ -6,6 +6,7 @@ import { X, Search, Send, Loader2, CheckCircle2, Share2, Sparkles, Lock } from '
 import { collection, query, where, getDocs, addDoc, serverTimestamp, doc, setDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import Image from 'next/image';
+import { Portal } from '@/components/ui/Portal';
 
 interface SharePostModalProps {
     isOpen: boolean;
@@ -22,11 +23,14 @@ export function SharePostModal({ isOpen, onClose, post, currentUser }: SharePost
     const [sharedStatus, setSharedStatus] = useState<{[key: string]: boolean}>({});
 
     const fetchConnections = React.useCallback(async () => {
+        if (!currentUser.connections || currentUser.connections.length === 0) {
+            setConnections([]);
+            return;
+        }
         setLoading(true);
         try {
             const usersRef = collection(db, 'users');
-            // Simplified fetch for connections
-            const q = query(usersRef, where('uid', 'in', currentUser.connections!.slice(0, 10)));
+            const q = query(usersRef, where('uid', 'in', currentUser.connections.slice(0, 10)));
             const snapshot = await getDocs(q);
             const fetchedConnections = snapshot.docs.map(doc => doc.data() as User);
             setConnections(fetchedConnections);
@@ -38,10 +42,10 @@ export function SharePostModal({ isOpen, onClose, post, currentUser }: SharePost
     }, [currentUser.connections]);
 
     useEffect(() => {
-        if (isOpen && currentUser.connections && currentUser.connections.length > 0) {
+        if (isOpen) {
             fetchConnections();
         }
-    }, [isOpen, currentUser.connections, fetchConnections]);
+    }, [isOpen, fetchConnections]);
 
     const handleShare = async (targetUser: User) => {
         if (sharingWith) return;
@@ -91,8 +95,10 @@ export function SharePostModal({ isOpen, onClose, post, currentUser }: SharePost
     );
 
     return (
+        <Portal>
         <div className="fixed inset-0 z-[200] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-brand-ebony/60 dark:bg-black/80 backdrop-blur-md">
-            <div className="card-premium w-full max-w-lg shadow-[0_20px_50px_rgba(0,0,0,0.3)] border-brand-burgundy/10 overflow-hidden animate-in fade-in slide-in-from-bottom-4 sm:zoom-in-95 duration-300 flex flex-col max-h-[92vh] sm:max-h-[85vh] rounded-t-[2rem] sm:rounded-[1.5rem]">
+            <div className="card-premium w-full max-w-lg shadow-[0_20px_50px_rgba(0,0,0,0.3)] border-brand-burgundy/10 animate-in fade-in slide-in-from-bottom-4 sm:zoom-in-95 duration-300 flex flex-col max-h-[92vh] sm:max-h-[85vh] rounded-t-[2rem] sm:rounded-[1.5rem] overflow-hidden">
+                <div className="flex flex-col h-full">
                 {/* Header */}
                 <div className="p-5 sm:p-8 border-b border-brand-ebony/5 dark:border-white/5 flex items-center justify-between bg-white/50 dark:bg-gray-900/80 backdrop-blur-xl flex-shrink-0">
                     <div className="flex items-center gap-3 sm:gap-4">
@@ -176,9 +182,14 @@ export function SharePostModal({ isOpen, onClose, post, currentUser }: SharePost
                                     </button>
                                 </div>
                             ))
+                        ) : connections.length === 0 ? (
+                            <div className="text-center py-12 space-y-3">
+                                <p className="text-sm font-serif italic text-brand-ebony/30 dark:text-brand-ebony/50">No connections yet.</p>
+                                <p className="text-[10px] font-black text-brand-ebony/20 uppercase tracking-widest">Connect with alumni to share posts with them.</p>
+                            </div>
                         ) : (
                             <div className="text-center py-12">
-                                <p className="text-sm font-serif italic text-brand-ebony/30 dark:text-brand-ebony/50">Your legacy spans further in your connections.</p>
+                                <p className="text-sm font-serif italic text-brand-ebony/30 dark:text-brand-ebony/50">No match found in your network.</p>
                             </div>
                         )}
                     </div>
@@ -218,7 +229,9 @@ export function SharePostModal({ isOpen, onClose, post, currentUser }: SharePost
                         <span className="text-[9px] font-extrabold text-indigo-500/50 dark:text-indigo-400/70 uppercase tracking-widest">Secured Relay Transmission</span>
                    </div>
                 </div>
+                </div>
             </div>
         </div>
+        </Portal>
     );
 }
