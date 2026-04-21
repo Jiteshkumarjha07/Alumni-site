@@ -662,7 +662,7 @@ export default function ProfilePage() {
 
             {/* ── Advanced Actions (Mobile Replacement for Sidebar) ── */}
             <div className="mt-12 space-y-3 mx-1 sm:mx-0">
-                {userData?.role === 'global_admin' && (
+                {userData?.isAdmin && (
                     <Link
                         href="/admin/approvals"
                         className="w-full flex items-center justify-center gap-2 py-4 bg-brand-burgundy/10 hover:bg-brand-burgundy/20 rounded-2xl transition-all text-brand-burgundy active:scale-95 text-[11px] font-black uppercase tracking-[0.2em]"
