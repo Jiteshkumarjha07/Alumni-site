@@ -42,6 +42,14 @@ function MessagesClient() {
         return uid1 < uid2 ? `${uid1}_${uid2}` : `${uid2}_${uid1}`;
     };
 
+    const [isMobile, setIsMobile] = useState(false);
+    useEffect(() => {
+        const checkMobile = () => setIsMobile(window.innerWidth < 768);
+        checkMobile();
+        window.addEventListener('resize', checkMobile);
+        return () => window.removeEventListener('resize', checkMobile);
+    }, []);
+
     useEffect(() => {
         const view = searchParams.get('view');
         if (view === 'groups') {
@@ -200,8 +208,8 @@ function MessagesClient() {
             <div ref={containerRef} className="flex bg-white/60 dark:bg-brand-parchment/10 backdrop-blur-2xl md:rounded-[2rem] shadow-premium ring-1 ring-white/50 dark:ring-white/10 border border-brand-ebony/5 h-full w-full overflow-hidden transition-all duration-500">
                 {/* Left Pane: Chat List */}
                 <div 
-                    style={{ width: sidebarWidth ? `${sidebarWidth}px` : undefined }}
-                    className={`flex-shrink-0 border-r border-brand-ebony/[0.04] flex flex-col bg-white/40 dark:bg-black/5 ${(selectedChatId || selectedGroupId) ? 'hidden md:flex' : 'flex'}`}
+                    style={{ width: isMobile ? '100%' : (sidebarWidth ? `${sidebarWidth}px` : undefined) }}
+                    className={`flex-shrink-0 border-r border-brand-ebony/[0.04] flex flex-col bg-white/40 dark:bg-black/5 ${(selectedChatId || selectedGroupId) ? 'hidden md:flex' : 'flex w-full'}`}
                 >
                     {loadingChats ? (
                         <div className="flex h-full items-center justify-center">

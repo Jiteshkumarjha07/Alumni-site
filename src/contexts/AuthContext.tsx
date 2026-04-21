@@ -155,14 +155,27 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             setError(null);
             await signInWithEmailAndPassword(auth, email, password);
         } catch (err: unknown) {
-            console.error('Sign in error details:', {
-                error: err,
-                code: (err as { code?: string }).code,
-                message: (err as { message?: string }).message
-            });
-            const error = err as { message?: string };
-            setError(error.message || 'Failed to sign in');
-            throw err;
+            const firebaseErr = err as { code?: string; message?: string };
+            // FirebaseError props are non-enumerable — log them directly
+            console.error('Sign in error:', firebaseErr.code, firebaseErr.message);
+
+            // Map Firebase codes to user-friendly messages
+            const friendlyMessages: Record<string, string> = {
+                'auth/user-not-found':      'No account found with this email.',
+                'auth/wrong-password':      'Incorrect password. Please try again.',
+                'auth/invalid-email':       'Please enter a valid email address.',
+                'auth/user-disabled':       'This account has been disabled.',
+                'auth/too-many-requests':   'Too many failed attempts. Please try again later.',
+                'auth/network-request-failed': 'Network error. Check your connection and retry.',
+                'auth/invalid-credential':  'Invalid email or password.',
+            };
+
+            const message = (firebaseErr.code && friendlyMessages[firebaseErr.code])
+                || firebaseErr.message
+                || 'Failed to sign in. Please try again.';
+
+            setError(message);
+            throw err; // keep for login page's catch → setError display
         }
     };
 

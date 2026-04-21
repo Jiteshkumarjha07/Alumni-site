@@ -2,9 +2,9 @@
 
 import React, { useState, useEffect } from 'react';
 import { Chat, User, Group } from '@/types';
-import { collection, query, getDocs, where, doc, updateDoc, arrayUnion, onSnapshot } from 'firebase/firestore';
+import { collection, query, getDocs, where, doc, updateDoc, arrayUnion, onSnapshot, arrayRemove, writeBatch } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import { Search, Loader2, Trash2, MessageSquare, Plus, Users, MessageCircle, Sparkles } from 'lucide-react';
+import { Search, Loader2, Trash2, MessageSquare, Plus, Users, MessageCircle, Sparkles, LogOut } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { CreateGroupModal } from '../modals/CreateGroupModal';
 import { useMessaging } from '@/contexts/MessagingContext';
@@ -31,6 +31,7 @@ export function ChatList({ currentUser, chats, onSelectChat, onStartChat, onSele
     const [isCreateGroupModalOpen, setIsCreateGroupModalOpen] = useState(false);
     const [userGroups, setUserGroups] = useState<Group[]>([]);
     const [loadingGroups, setLoadingGroups] = useState(false);
+    const [isDeletingGroup, setIsDeletingGroup] = useState<string | null>(null);
     const { unreadUsersCount } = useMessaging();
     const { suspendedUids } = useAuth();
 
@@ -111,6 +112,42 @@ export function ChatList({ currentUser, chats, onSelectChat, onStartChat, onSele
             console.error('Error deleting chat:', error);
         } finally {
             setIsDeleting(null);
+        }
+    };
+
+    // Creator/admin → deletes the group entirely; member → leaves gracefully
+    const handleGroupAction = async (e: React.MouseEvent, group: Group) => {
+        e.stopPropagation();
+        const isCreatorOrAdmin = group.createdBy === currentUser.uid || group.admins?.includes(currentUser.uid);
+
+        const confirmMsg = isCreatorOrAdmin
+            ? `Delete "${group.groupName}"? This will permanently remove the circle and all its messages for everyone.`
+            : `Leave "${group.groupName}"? You can rejoin later using the group secret.`;
+
+        if (!window.confirm(confirmMsg)) return;
+
+        setIsDeletingGroup(group.id);
+        try {
+            if (isCreatorOrAdmin) {
+                // Delete all messages in the group subcollection first
+                const messagesRef = collection(db, 'groups', group.id, 'messages');
+                const messagesSnap = await getDocs(messagesRef);
+                const batch = writeBatch(db);
+                messagesSnap.docs.forEach(msgDoc => batch.delete(msgDoc.ref));
+                // Delete the group document itself
+                batch.delete(doc(db, 'groups', group.id));
+                await batch.commit();
+            } else {
+                // Leave: remove self from members array
+                await updateDoc(doc(db, 'groups', group.id), {
+                    members: arrayRemove(currentUser.uid)
+                });
+            }
+        } catch (error) {
+            console.error('Error with group action:', error);
+            alert('Something went wrong. Please try again.');
+        } finally {
+            setIsDeletingGroup(null);
         }
     };
 
@@ -361,7 +398,7 @@ export function ChatList({ currentUser, chats, onSelectChat, onStartChat, onSele
                                         <button
                                             key={group.id}
                                             onClick={() => onSelectGroup(group.id)}
-                                            className={`w-full flex items-center p-2.5 rounded-xl transition-all mb-1 relative border ${
+                                            className={`w-full flex items-center p-2.5 rounded-xl transition-all mb-1 relative border group ${
                                                 isActive 
                                                     ? 'bg-white dark:bg-brand-parchment border-brand-burgundy/10 shadow-lg' 
                                                     : 'hover:bg-white dark:hover:bg-brand-ebony/10 border-transparent hover:border-brand-ebony/5'
@@ -370,7 +407,7 @@ export function ChatList({ currentUser, chats, onSelectChat, onStartChat, onSele
                                             <div className={`w-9 h-9 rounded-xl flex items-center justify-center mr-4 flex-shrink-0 border transition-all ${isActive ? 'bg-gradient-indigo text-white border-transparent' : 'bg-brand-burgundy/5 text-brand-burgundy border-brand-burgundy/10 group-hover:scale-105'}`}>
                                                 <Users className="w-5 h-5" />
                                             </div>
-                                            <div className="text-left flex-1 min-w-0">
+                                            <div className="text-left flex-1 min-w-0 pr-10">
                                                 <div className="flex justify-between items-baseline mb-1">
                                                     <p className={`text-[13.5px] font-bold truncate pr-2 ${isActive ? 'text-brand-ebony' : 'text-brand-ebony/80'}`}>
                                                         {group.groupName}
@@ -399,6 +436,22 @@ export function ChatList({ currentUser, chats, onSelectChat, onStartChat, onSele
                                                     </span>
                                                 </div>
                                             </div>
+
+                                            {/* Delete/Leave button — always visible on mobile, hover-reveal on desktop */}
+                                            <button
+                                                onClick={(e) => handleGroupAction(e, group)}
+                                                disabled={isDeletingGroup === group.id}
+                                                title={group.createdBy === currentUser.uid || group.admins?.includes(currentUser.uid) ? 'Delete circle' : 'Leave circle'}
+                                                className="absolute right-3 top-1/2 -translate-y-1/2 p-2 rounded-xl transition-all opacity-100 sm:opacity-0 sm:group-hover:opacity-100 text-brand-ebony/30 hover:text-red-500 hover:bg-red-500/10"
+                                            >
+                                                {isDeletingGroup === group.id ? (
+                                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                                ) : group.createdBy === currentUser.uid || group.admins?.includes(currentUser.uid) ? (
+                                                    <Trash2 className="w-4 h-4" />
+                                                ) : (
+                                                    <LogOut className="w-4 h-4" />
+                                                )}
+                                            </button>
                                         </button>
                                     );
                                 })

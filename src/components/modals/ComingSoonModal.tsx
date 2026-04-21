@@ -37,7 +37,7 @@ export const ComingSoonModal: React.FC<ComingSoonModalProps> = ({ isOpen, onClos
 
                     <button 
                         onClick={onClose}
-                        className="mt-10 w-full py-4 bg-brand-ebony text-white rounded-2xl font-extrabold uppercase tracking-[0.2em] text-[10px] hover:bg-brand-ebony/90 transition-all active:scale-[0.98]"
+                        className="mt-10 w-full py-4 bg-brand-burgundy text-white rounded-2xl font-extrabold uppercase tracking-[0.2em] text-[10px] hover:shadow-lg hover:shadow-brand-burgundy/20 hover:brightness-110 transition-all active:scale-[0.98] outline-none focus:ring-4 focus:ring-brand-burgundy/20"
                     >
                         Acknowledge
                     </button>
