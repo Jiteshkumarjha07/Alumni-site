@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { User } from '@/types';
-import { collection, query, getDocs, addDoc, serverTimestamp, doc, updateDoc, arrayUnion } from 'firebase/firestore';
+import { collection, query, getDocs, addDoc, serverTimestamp, doc, updateDoc, arrayUnion, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { X, Search, Loader2, Users, Check, Sparkles } from 'lucide-react';
 

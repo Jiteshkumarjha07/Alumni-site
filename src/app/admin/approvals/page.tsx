@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { collection, onSnapshot, deleteDoc, doc, serverTimestamp, setDoc, query, where, getDocs, updateDoc } from 'firebase/firestore';
+import { collection, onSnapshot, deleteDoc, doc, serverTimestamp, setDoc, query, where, getDocs, updateDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { ShieldCheck, Plus, Loader2, Trash2, Mail, Building2, Sparkles, ChevronLeft } from 'lucide-react';
 import Link from 'next/link';
