@@ -153,6 +153,7 @@ export function ChatWindow({ chatId, currentUser, otherUser, isGroup = false, gr
                             [currentUser.uid]: { name: currentUser.name, profilePic: currentUser.profilePic || null },
                             [otherUser.uid]: { name: otherUser.name, profilePic: otherUser.profilePic || null },
                         },
+                        instituteId: currentUser.instituteId,
                     }, { merge: true });
                 } else if (isGroup) {
                     await updateDoc(doc(db, 'groups', chatId), {
@@ -331,7 +332,8 @@ export function ChatWindow({ chatId, currentUser, otherUser, isGroup = false, gr
                     isRead: false,
                     isDelivered: false,
                     readBy: [currentUser.uid],
-                    receiverId: isGroup ? null : otherUser?.uid || null
+                    receiverId: isGroup ? null : otherUser?.uid || null,
+                    instituteId: currentUser.instituteId
                 };
                 if (encryptedImageUrl) {
                     if (currentMedia?.type === 'file') {
@@ -357,7 +359,8 @@ export function ChatWindow({ chatId, currentUser, otherUser, isGroup = false, gr
                         participantDetails: { 
                             [currentUser.uid]: {name: currentUser.name, profilePic: currentUser.profilePic || ''}, 
                             [otherUser.uid]: {name: otherUser.name, profilePic: otherUser.profilePic || ''} 
-                        }
+                        },
+                        instituteId: currentUser.instituteId
                     }, { merge: true });
 
                     // Increment the unread count properly so multiple messages stack up
@@ -376,6 +379,7 @@ export function ChatWindow({ chatId, currentUser, otherUser, isGroup = false, gr
                         link: `/messages`,
                         createdAt: serverTimestamp(),
                         isRead: false,
+                        instituteId: currentUser.instituteId
                     }).catch(() => {}); // Non-blocking — don't fail the message send if notification fails
                 } else if (isGroup) {
                     await updateDoc(doc(db, 'groups', chatId), {
@@ -414,7 +418,8 @@ export function ChatWindow({ chatId, currentUser, otherUser, isGroup = false, gr
                 isDelivered: false,
                 readBy: [currentUser.uid],
                 poll: poll,
-                receiverId: isGroup ? null : otherUser?.uid || null
+                receiverId: isGroup ? null : otherUser?.uid || null,
+                instituteId: currentUser.instituteId
             };
             await addDoc(collection(db, isGroup ? 'groups' : 'chats', chatId, 'messages'), messageData);
         } catch (error) {

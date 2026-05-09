@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
 
-type Theme = 'light' | 'dark' | 'system';
+type Theme = 'light' | 'dark' | 'system' | 'autumnmud' | 'springgreen' | 'summerpink' | 'winterblue';
 
 interface ThemeContextType {
     theme: Theme;
@@ -25,7 +25,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
         const root = window.document.documentElement;
         
         const applyTheme = (t: Theme) => {
-            root.classList.remove('light', 'dark');
+            root.classList.remove('light', 'dark', 'autumnmud', 'springgreen', 'summerpink', 'winterblue');
             
             if (t === 'system') {
                 const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';

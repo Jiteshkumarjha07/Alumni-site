@@ -39,6 +39,51 @@
   --brand-surface:  rgba(15,23,42,0.75);    /* Dark slate glass */
 }
 
+/* ── Seasonal Themes (UI Modes) ──────────────────────────── */
+.autumnmud {
+  --brand-burgundy: #a37c5d;
+  --brand-gold:     #d97706;
+  --brand-cream:    #faf4f0;
+  --brand-parchment:#f5ece6;
+  --brand-ebony:    #4a3525;
+  --brand-glow:     rgba(163,124,93,0.18);
+  --brand-border:   rgba(74,53,37,0.08);
+  --brand-surface:  rgba(255,255,255,0.72);
+}
+
+.springgreen {
+  --brand-burgundy: #5da37c;
+  --brand-gold:     #fbbf24;
+  --brand-cream:    #f0faf4;
+  --brand-parchment:#e6f5eb;
+  --brand-ebony:    #1b3b2b;
+  --brand-glow:     rgba(93,163,124,0.18);
+  --brand-border:   rgba(27,59,43,0.08);
+  --brand-surface:  rgba(255,255,255,0.72);
+}
+
+.summerpink {
+  --brand-burgundy: #a35d81;
+  --brand-gold:     #fbbf24;
+  --brand-cream:    #faf0f4;
+  --brand-parchment:#f5e6eb;
+  --brand-ebony:    #4a2334;
+  --brand-glow:     rgba(163,93,129,0.18);
+  --brand-border:   rgba(74,35,52,0.08);
+  --brand-surface:  rgba(255,255,255,0.72);
+}
+
+.winterblue {
+  --brand-burgundy: #5d81a3;
+  --brand-gold:     #fbbf24;
+  --brand-cream:    #f0f4fa;
+  --brand-parchment:#e6ebf5;
+  --brand-ebony:    #1b2b3b;
+  --brand-glow:     rgba(93,129,163,0.18);
+  --brand-border:   rgba(27,43,59,0.08);
+  --brand-surface:  rgba(255,255,255,0.72);
+}
+
 /* ── Base Styles ─────────────────────────────────────────── */
 @layer base {
   *, *::before, *::after {
@@ -50,18 +95,36 @@
     color: var(--color-brand-ebony);
     min-height: 100vh;
     font-family: var(--font-sans);
+    position: relative;
+    z-index: 0;
     background-image:
       radial-gradient(ellipse 80% 50% at 0% 0%,   rgba(99,102,241,0.09) 0, transparent 60%),
       radial-gradient(ellipse 60% 40% at 100% 0%,  rgba(251,191,36,0.06) 0, transparent 50%),
       radial-gradient(ellipse 70% 60% at 50% 100%, rgba(99,102,241,0.06) 0, transparent 60%);
   }
 
-  .dark body {
-    background-image:
-      radial-gradient(ellipse 80% 50% at 0% 0%,   rgba(99,102,241,0.14) 0, transparent 60%),
-      radial-gradient(ellipse 60% 40% at 100% 0%,  rgba(251,191,36,0.04) 0, transparent 50%),
-      radial-gradient(ellipse 70% 60% at 50% 100%, rgba(99,102,241,0.10) 0, transparent 60%);
+  /* ── WhatsApp-style Doodle Overlay ── */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: -10;
+    opacity: 0.2;
+    background-image: url("data:image/svg+xml,%3Csvg width='400' height='400' viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%234f46e5' fill-opacity='0.6' fill-rule='evenodd'%3E%3Cpath d='M20 20h10v10H20V20zm20 40c5.5 0 10-4.5 10-10s-4.5-10-10-10-10 4.5-10 10 4.5 10 10 10zm100 0c5.5 0 10-4.5 10-10s-4.5-10-10-10-10 4.5-10 10 4.5 10 10 10zM60 140c5.5 0 10-4.5 10-10s-4.5-10-10-10-10 4.5-10 10 4.5 10 10 10zm120 40c5.5 0 10-4.5 10-10s-4.5-10-10-10-10 4.5-10 10 4.5 10 10 10zm100-80c5.5 0 10-4.5 10-10s-4.5-10-10-10-10 4.5-10 10 4.5 10 10 10zM50 250c5.5 0 10-4.5 10-10s-4.5-10-10-10-10 4.5-10 10 4.5 10 10 10zm150 50c5.5 0 10-4.5 10-10s-4.5-10-10-10-10 4.5-10 10 4.5 10 10 10zm110-30c5.5 0 10-4.5 10-10s-4.5-10-10-10-10 4.5-10 10 4.5 10 10 10zM20 180h4v4h-4v-4zm100 120h4v4h-4v-4zm180-200h4v4h-4v-4zm-140 80h4v4h-4v-4zM60 60h4v4h-4v-4zm150 0h4v4h-4v-4zm100 200h4v4h-4v-4zM40 100h20v2H40v-2zm120 100h20v2h-20v-2zm100-140h20v2h-20v-2zm-60 180h20v2h-20v-2zM80 40v20h-2V40h2zm100 160v20h-2v-20h2zm120-100v20h-2v-100h2zm-80 180v20h-2v-20h2zM30 300l10 10-1.4 1.4L28.6 301.4 30 300zm150-200l10 10-1.4 1.4L178.6 101.4 180 100zm100 150l10 10-1.4 1.4L278.6 251.4 280 250z'/%3E%3Cpath d='M300 50c-5 0-10 5-10 10s5 10 10 10 10-5 10-10-5-10-10-10zm0 4l2 2-2 2-2-2 2-2zM150 250c-10 0-15 10-15 10s5 10 15 10 15-10 15-10-5-10-15-10zm0 5l3 3-3 3-3-3 3-3zM50 50c5 0 5 10 0 10s-5-10 0-10zm250 250c5 0 5 10 0 10s-5-10 0-10z'/%3E%3Ccircle cx='100' cy='100' r='15' fill='none' stroke='%234f46e5' stroke-width='2' opacity='0.3'/%3E%3Cpath d='M95 95l10 10M105 95l-10 10' stroke='%234f46e5' stroke-width='2' opacity='0.3'/%3E%3Cpath d='M350 350c-10-10-30-10-40 0l20 20 20-20z' fill='%234f46e5' opacity='0.2'/%3E%3Cpath d='M50 350c0-10 10-20 20-20s20 10 20 20H50z' fill='%234f46e5' opacity='0.2'/%3E%3C/g%3E%3C/svg%3E");
+    background-size: 400px 400px;
+    pointer-events: none;
   }
+
+  .dark body::before {
+    opacity: 0.1;
+    background-image: url("data:image/svg+xml,%3Csvg width='400' height='400' viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23ffffff' fill-opacity='0.4' fill-rule='evenodd'%3E%3Cpath d='M20 20h10v10H20V20zm20 40c5.5 0 10-4.5 10-10s-4.5-10-10-10-10 4.5-10 10 4.5 10 10 10zm100 0c5.5 0 10-4.5 10-10s-4.5-10-10-10-10 4.5-10 10 4.5 10 10 10zM60 140c5.5 0 10-4.5 10-10s-4.5-10-10-10-10 4.5-10 10 4.5 10 10 10zm120 40c5.5 0 10-4.5 10-10s-4.5-10-10-10-10 4.5-10 10 4.5 10 10 10zm100-80c5.5 0 10-4.5 10-10s-4.5-10-10-10-10 4.5-10 10 4.5 10 10 10zM50 250c5.5 0 10-4.5 10-10s-4.5-10-10-10-10 4.5-10 10 4.5 10 10 10zm150 50c5.5 0 10-4.5 10-10s-4.5-10-10-10-10 4.5-10 10 4.5 10 10 10zm110-30c5.5 0 10-4.5 10-10s-4.5-10-10-10-10 4.5-10 10 4.5 10 10 10zM20 180h4v4h-4v-4zm100 120h4v4h-4v-4zm180-200h4v4h-4v-4zm-140 80h4v4h-4v-4zM60 60h4v4h-4v-4zm150 0h4v4h-4v-4zm100 200h4v4h-4v-4zM40 100h20v2H40v-2zm120 100h20v2h-20v-2zm100-140h20v2h-20v-2zm-60 180h20v2h-20v-2zM80 40v20h-2V40h2zm100 160v20h-2v-20h2zm120-100v20h-2v-100h2zm-80 180v20h-2v-20h2zM30 300l10 10-1.4 1.4L28.6 301.4 30 300zm150-200l10 10-1.4 1.4L178.6 101.4 180 100zm100 150l10 10-1.4 1.4L278.6 251.4 280 250z'/%3E%3Cpath d='M300 50c-5 0-10 5-10 10s5 10 10 10 10-5 10-10-5-10-10-10zm0 4l2 2-2 2-2-2 2-2zM150 250c-10 0-15 10-15 10s5 10 15 10 15-10 15-10-5-10-15-10zm0 5l3 3-3 3-3-3 3-3zM50 50c5 0 5 10 0 10s-5-10 0-10zm250 250c5 0 5 10 0 10s-5-10 0-10z'/%3E%3Ccircle cx='100' cy='100' r='15' fill='none' stroke='%23ffffff' stroke-width='2' opacity='0.2'/%3E%3Cpath d='M95 95l10 10M105 95l-10 10' stroke='%23ffffff' stroke-width='2' opacity='0.2'/%3E%3Cpath d='M350 350c-10-10-30-10-40 0l20 20 20-20z' fill='%23ffffff' opacity='0.1'/%3E%3Cpath d='M50 350c0-10 10-20 20-20s20 10 20 20H50z' fill='%23ffffff' opacity='0.1'/%3E%3C/g%3E%3C/svg%3E");
+  }
+
+  /* ── Seasonal Background Themes ── */
+  html.autumnmud body::before { background-image: url("/bg/autumnmud.png"); background-size: cover; opacity: 0.2; }
+  html.springgreen body::before { background-image: url("/bg/springgreen.png"); background-size: cover; opacity: 0.2; }
+  html.summerpink body::before { background-image: url("/bg/summerpink.png"); background-size: cover; opacity: 0.2; }
+  html.winterblue body::before { background-image: url("/bg/winterblue.png"); background-size: cover; opacity: 0.2; }
 
   h1, h2, h3, h4, h5, h6 {
     font-family: "Cormorant Garamond", serif;
@@ -234,15 +297,13 @@
 
   /* ── Premium Card ── */
   .card-premium {
-    background: rgba(255, 255, 255, 0.65);
+    background: #ffffff;
     border: 1px solid rgba(79, 70, 229, 0.1);
     box-shadow: 
       0 10px 30px -5px rgba(79, 70, 229, 0.04), 
       0 4px 12px -2px rgba(79, 70, 229, 0.03),
       inset 0 0 0 1px rgba(255, 255, 255, 0.4);
     border-radius: 1.5rem;
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
     transition: all 0.4s cubic-bezier(0.2, 0, 0, 1);
   }
   .card-premium:hover {
@@ -252,7 +313,7 @@
       inset 0 0 0 1px rgba(255, 255, 255, 0.6);
   }
   .dark .card-premium {
-    background: rgba(15, 23, 42, 0.75);
+    background: #111827;
     border: 1px solid rgba(129, 140, 248, 0.08);
     box-shadow: 
       0 20px 40px -10px rgba(0, 0, 0, 0.4), 
@@ -269,15 +330,11 @@
 
   /* ── Sidebar glass ── */
   .sidebar-glass {
-    background: rgba(244,246,255,0.88);
-    backdrop-filter: blur(24px);
-    -webkit-backdrop-filter: blur(24px);
+    background: #f4f6ff;
     border-right: 1px solid rgba(99,102,241,0.12);
   }
   .dark .sidebar-glass {
-    background: rgba(2,8,23,0.90);
-    backdrop-filter: blur(24px);
-    -webkit-backdrop-filter: blur(24px);
+    background: #020817;
     border-right: 1px solid rgba(129,140,248,0.08);
   }
 

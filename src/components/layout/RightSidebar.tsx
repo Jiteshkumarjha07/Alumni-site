@@ -65,7 +65,8 @@ export function RightSidebar({ isOpen = false, onClose = () => {} }: RightSideba
                 message: 'sent you a connection request',
                 link: `/profile/${userData.uid}`,
                 createdAt: new Date(),
-                isRead: false
+                isRead: false,
+                instituteId: userData.instituteId
             });
         } catch (error) {
             console.error('Error sending connection request:', error);

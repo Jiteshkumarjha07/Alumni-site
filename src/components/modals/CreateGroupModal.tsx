@@ -29,7 +29,11 @@ export function CreateGroupModal({ isOpen, onClose, currentUser, onGroupCreated 
             setIsSearching(true);
             try {
                 const usersRef = collection(db, 'users');
-                const querySnapshot = await getDocs(usersRef);
+                const q = query(
+                    usersRef, 
+                    where('instituteId', '==', currentUser.instituteId)
+                );
+                const querySnapshot = await getDocs(q);
                 const term = searchQuery.toLowerCase();
 
                 const results: User[] = [];
@@ -75,6 +79,7 @@ export function CreateGroupModal({ isOpen, onClose, currentUser, onGroupCreated 
                 createdBy: currentUser.uid,
                 members: memberIds,
                 admins: [currentUser.uid],
+                instituteId: currentUser.instituteId,
                 createdAt: serverTimestamp(),
                 groupSecret: Math.random().toString(36).substring(2, 15) // Simple secret for E2EE demo
             };

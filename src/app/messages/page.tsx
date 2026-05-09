@@ -102,6 +102,13 @@ function MessagesClient() {
     };
 
     useEffect(() => {
+        setSelectedChatId(null);
+        setSelectedGroupId(null);
+        setSelectedUser(null);
+        setSelectedGroupData(null);
+    }, [userData?.instituteId]);
+
+    useEffect(() => {
         if (!userData?.uid) {
             setLoadingChats(false);
             return;
@@ -110,7 +117,11 @@ function MessagesClient() {
         let isMounted = true;
 
         const chatsRef = collection(db, 'chats');
-        const q = query(chatsRef, where('participants', 'array-contains', userData.uid));
+        const q = query(
+            chatsRef, 
+            where('participants', 'array-contains', userData.uid),
+            where('instituteId', '==', userData.instituteId)
+        );
 
         const unsubscribe = onSnapshot(q, (snapshot) => {
             if (!isMounted) return;
@@ -136,7 +147,7 @@ function MessagesClient() {
             isMounted = false;
             unsubscribe();
         };
-    }, [userData?.uid]);
+    }, [userData?.uid, userData?.instituteId]);
 
     useEffect(() => {
         const userId = searchParams.get('userId');

@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { auth, db } from '@/lib/firebase';
+import { useAuth } from '@/contexts/AuthContext';
 import {
     updatePassword,
     reauthenticateWithCredential,
@@ -12,7 +13,7 @@ import { doc, updateDoc, deleteDoc } from 'firebase/firestore';
 import {
     X, Lock, Trash2, PauseCircle, Eye, EyeOff, ChevronLeft,
     AlertTriangle, CheckCircle2, LogOut, ShieldCheck, Sparkles,
-    User as UserIcon, ChevronRight, ChevronDown
+    User as UserIcon, ChevronRight, ChevronDown, Palette
 } from 'lucide-react';
 import { Portal } from '../ui/Portal';
 
@@ -24,7 +25,7 @@ interface AccountSettingsModalProps {
     onAccountDeleted: () => void;
 }
 
-type Section = 'menu' | 'change-password' | 'deactivate' | 'delete';
+type Section = 'menu' | 'change-password' | 'appearance' | 'deactivate' | 'delete';
 
 // ── Shared input style ───────────────────────────────────────────────────────
 const inputCls = [
@@ -86,6 +87,7 @@ function PasswordInput({ value, onChange, placeholder = '•••••••�
 
 // ─────────────────────────────────────────────────────────────────────────────
 export function AccountSettingsModal({ isOpen, onClose, userEmail, userId, onAccountDeleted }: AccountSettingsModalProps) {
+    const { userData } = useAuth();
     const [section,           setSection]           = useState<Section>('menu');
     const [loading,           setLoading]           = useState(false);
     const [error,             setError]             = useState('');
@@ -167,6 +169,7 @@ export function AccountSettingsModal({ isOpen, onClose, userEmail, userId, onAcc
     const sectionTitle: Record<Section, string> = {
         'menu': 'Account Settings',
         'change-password': 'Change Password',
+        'appearance': 'Theme & Background',
         'deactivate': 'Pause Account',
         'delete': 'Delete Account',
     };
@@ -232,6 +235,7 @@ export function AccountSettingsModal({ isOpen, onClose, userEmail, userId, onAcc
                                         iconColor: 'text-indigo-500',
                                         iconBg: 'bg-indigo-500/10',
                                     },
+
                                     {
                                         id: 'deactivate' as Section,
                                         Icon: PauseCircle,
@@ -324,7 +328,6 @@ export function AccountSettingsModal({ isOpen, onClose, userEmail, userId, onAcc
                             </form>
                         )}
 
-                        {/* ── DEACTIVATE ── */}
                         {section === 'deactivate' && (
                             <form onSubmit={handleDeactivate} className="space-y-4">
                                 <div className="p-4 bg-amber-500/5 border border-amber-500/15 rounded-2xl space-y-2.5">

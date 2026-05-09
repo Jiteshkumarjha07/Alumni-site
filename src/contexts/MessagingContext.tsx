@@ -38,7 +38,8 @@ export const MessagingProvider: React.FC<{ children: ReactNode }> = ({ children 
         const chatsRef = collection(db, 'chats');
         const q = query(
             chatsRef,
-            where('participants', 'array-contains', userData.uid)
+            where('participants', 'array-contains', userData.uid),
+            where('instituteId', '==', userData.instituteId)
         );
 
         const unsubscribe = onSnapshot(q, (snapshot) => {
@@ -65,7 +66,7 @@ export const MessagingProvider: React.FC<{ children: ReactNode }> = ({ children 
             isMounted = false;
             unsubscribe();
         };
-    }, [userData?.uid]);
+    }, [userData?.uid, userData?.instituteId]);
 
     return (
         <MessagingContext.Provider value={{ totalUnreadCount, unreadUsersCount }}>

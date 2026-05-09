@@ -30,6 +30,12 @@ export default function AdminApprovalsPage() {
     const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
+        if (userData?.isinsadmin && !userData.isAdmin && userData.instituteId) {
+            setSelectedInstitutes([userData.instituteId]);
+        }
+    }, [userData]);
+
+    useEffect(() => {
         setFetchLoading(true);
         let instLoaded = false;
         let appLoaded = false;
@@ -39,7 +45,12 @@ export default function AdminApprovalsPage() {
         };
 
         const unsubscribeInsts = onSnapshot(collection(db, 'institutes'), (snapshot) => {
-            setInstitutes(snapshot.docs.map(d => ({ id: d.id, ...d.data() } as Institute)));
+            const allInsts = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as Institute));
+            if (userData?.isAdmin) {
+                setInstitutes(allInsts);
+            } else if (userData?.isinsadmin && userData?.instituteId) {
+                setInstitutes(allInsts.filter(i => i.id === userData.instituteId));
+            }
             instLoaded = true;
             checkLoading();
         }, (err) => {
@@ -49,7 +60,12 @@ export default function AdminApprovalsPage() {
             checkLoading();
         });
 
-        const unsubscribeApps = onSnapshot(collection(db, 'approvals'), (snapshot) => {
+        const approvalsRef = collection(db, 'approvals');
+        const appQuery = userData?.isAdmin 
+            ? approvalsRef 
+            : query(approvalsRef, where('instituteIds', 'array-contains', userData?.instituteId));
+
+        const unsubscribeApps = onSnapshot(appQuery, (snapshot) => {
             setApprovals(snapshot.docs.map(d => ({ email: d.id, ...d.data() } as Approval)));
             appLoaded = true;
             checkLoading();
@@ -99,12 +115,12 @@ export default function AdminApprovalsPage() {
         setSuccess(null);
 
         try {
-            // 1. Write the approval entry
+            // 1. Write the approval entry using merge to preserve other institutes
             await setDoc(doc(db, 'approvals', emailClean), {
                 email: emailClean,
-                instituteIds: selectedInstitutes,
+                instituteIds: arrayUnion(...selectedInstitutes),
                 updatedAt: serverTimestamp(),
-            });
+            }, { merge: true });
 
             // 2. If this email was previously suspended, restore their account
             const usersQuery = query(collection(db, 'users'), where('email', '==', emailClean));
@@ -129,12 +145,22 @@ export default function AdminApprovalsPage() {
     const handleDelete = async (emailToDelete: string) => {
         if (!confirm(`Remove approval for ${emailToDelete}? This will immediately suspend their account.`)) return;
         try {
-            // 1. Remove from approvals list
-            await deleteDoc(doc(db, 'approvals', emailToDelete));
+            // 1. Remove from approvals list (scoped if institute admin)
+            if (userData?.isAdmin) {
+                await deleteDoc(doc(db, 'approvals', emailToDelete));
+            } else if (userData?.instituteId) {
+                await updateDoc(doc(db, 'approvals', emailToDelete), {
+                    instituteIds: arrayRemove(userData.instituteId)
+                });
+            }
 
-            // 2. Find the matching user and suspend them
-            const usersQuery = query(collection(db, 'users'), where('email', '==', emailToDelete));
-            const userSnap = await getDocs(usersQuery);
+            // 2. Find the matching user and suspend them (scoped if institute admin)
+            const usersRef = collection(db, 'users');
+            const q = userData?.isAdmin 
+                ? query(usersRef, where('email', '==', emailToDelete))
+                : query(usersRef, where('email', '==', emailToDelete), where('instituteId', '==', userData?.instituteId));
+            
+            const userSnap = await getDocs(q);
             const updatePromises = userSnap.docs.map(userDoc =>
                 updateDoc(doc(db, 'users', userDoc.id), { isSuspended: true })
             );
@@ -144,8 +170,8 @@ export default function AdminApprovalsPage() {
         }
     };
 
-    // Guard: only global admins may use this page
-    if (userData && !userData.isAdmin) {
+    // Guard: only global admins or institute admins may use this page
+    if (userData && !userData.isAdmin && !userData.isinsadmin) {
         router.replace('/');
         return null;
     }

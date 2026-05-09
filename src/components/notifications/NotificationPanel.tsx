@@ -59,7 +59,8 @@ export function NotificationBell() {
     if (!userData?.uid) return;
     const q = query(
       collection(db, 'notifications'),
-      where('userId', '==', userData.uid)
+      where('userId', '==', userData.uid),
+      where('instituteId', '==', userData.instituteId)
     );
     const unsub = onSnapshot(q, (snap) => {
       const list = snap.docs
@@ -76,7 +77,7 @@ export function NotificationBell() {
       console.error('Notifications query error:', err);
     });
     return () => unsub();
-  }, [userData?.uid]);
+  }, [userData?.uid, userData?.instituteId]);
 
   // ── Close on outside click — delayed so the opening click doesn't immediately close ──
   useEffect(() => {
@@ -137,6 +138,7 @@ export function NotificationBell() {
         link: `/profile/${userData.uid}`,
         createdAt: serverTimestamp(),
         isRead: false,
+        instituteId: userData.instituteId
       });
     } catch (err) { console.error('Accept error:', err); }
   };

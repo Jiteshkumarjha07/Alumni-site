@@ -184,6 +184,7 @@ export default function PublicProfilePage() {
                 link: `/posts/${postId}?action=view`,
                 createdAt: serverTimestamp(),
                 isRead: false,
+                instituteId: userData.instituteId
             });
         }
     };
@@ -219,6 +220,7 @@ export default function PublicProfilePage() {
                 link: `/posts/${post.id}?action=comment`,
                 createdAt: serverTimestamp(),
                 isRead: false,
+                instituteId: userData.instituteId
             });
         }
     };

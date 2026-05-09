@@ -6,7 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Moon, Sun, Monitor, Bell, User, Info, ArrowLeft, Settings2, Lock, Shield, Trash2, LogOut, Bookmark } from 'lucide-react';
 import Link from 'next/link';
 import { AccountSettingsModal } from '@/components/modals/AccountSettingsModal';
-import { auth } from '@/lib/firebase';
+import { auth, db } from '@/lib/firebase';
 
 export default function SettingsPage() {
     const { theme, setTheme } = useTheme();
@@ -24,26 +24,34 @@ export default function SettingsPage() {
             icon: Moon,
             items: [
                 {
-                    label: 'Theme',
-                    description: 'Choose how Alumnest looks to you.',
+                    label: 'Theme & Appearance',
+                    description: 'Select your preferred interface mode and background.',
                     content: (
-                        <div className="flex p-1.5 bg-brand-ebony/5 rounded-xl gap-1 border border-brand-ebony/10">
+                        <div className="flex flex-wrap gap-2 max-w-[340px] justify-end">
                             {[
-                                { id: 'light', icon: Sun, label: 'Light' },
-                                { id: 'dark', icon: Moon, label: 'Dark' },
-                                { id: 'system', icon: Monitor, label: 'System' },
-                            ].map((opt) => (
+                                { id: 'light', label: 'Light', color: 'bg-white border-brand-ebony/20', icon: Sun },
+                                { id: 'dark', label: 'Dark', color: 'bg-black border-white/20', icon: Moon },
+                                { id: 'system', label: 'System', color: 'bg-brand-ebony/10', icon: Monitor },
+                                { id: 'autumnmud', label: 'Autumn Mud', color: 'bg-[#a37c5d]' },
+                                { id: 'springgreen', label: 'Spring Green', color: 'bg-[#5da37c]' },
+                                { id: 'summerpink', label: 'Summer Pink', color: 'bg-[#a35d81]' },
+                                { id: 'winterblue', label: 'Winter Blue', color: 'bg-[#5d81a3]' },
+                            ].map(t => (
                                 <button
-                                    key={opt.id}
-                                    onClick={() => setTheme(opt.id as 'light' | 'dark' | 'system')}
-                                    className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
-                                        theme === opt.id
-                                            ? 'bg-gradient-indigo text-white shadow-md'
-                                            : 'text-brand-ebony/40 hover:text-brand-ebony hover:bg-brand-ebony/5'
+                                    key={t.id}
+                                    onClick={() => setTheme(t.id as any)}
+                                    className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all border ${
+                                        theme === t.id
+                                            ? 'border-brand-burgundy/40 bg-brand-burgundy/10 text-brand-burgundy shadow-sm'
+                                            : 'border-brand-ebony/10 bg-brand-ebony/5 text-brand-ebony/50 hover:text-brand-ebony hover:border-brand-ebony/20'
                                     }`}
                                 >
-                                    <opt.icon className="w-4 h-4" />
-                                    {opt.label}
+                                    {t.icon ? (
+                                        <t.icon className="w-3.5 h-3.5" />
+                                    ) : (
+                                        <div className={`w-2.5 h-2.5 rounded-full shadow-inner shrink-0 ${t.color}`} />
+                                    )}
+                                    {t.label}
                                 </button>
                             ))}
                         </div>

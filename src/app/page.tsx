@@ -244,6 +244,7 @@ export default function HomePage() {
         link: `/posts/${postId}?action=view`,
         createdAt: serverTimestamp(),
         isRead: false,
+        instituteId: userData.instituteId
       }).catch(err => console.error('[page.tsx] Error adding notification:', err));
     }
   };
@@ -289,6 +290,7 @@ export default function HomePage() {
         link: `/posts/${commentingPost.id}?action=comment`,
         createdAt: serverTimestamp(),
         isRead: false,
+        instituteId: userData.instituteId
       }).catch(console.error);
     }
   };

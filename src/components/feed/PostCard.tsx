@@ -88,7 +88,7 @@ export const PostCard: React.FC<PostCardProps> = ({
 
     return (
         <div
-            className={`group relative bg-white/70 dark:bg-brand-parchment/10 backdrop-blur-sm rounded-[1.75rem] border transition-all duration-500 overflow-hidden ${
+            className={`group relative bg-white dark:bg-brand-parchment rounded-[1.75rem] border transition-all duration-500 overflow-hidden ${
                 highlighted
                     ? 'border-brand-burgundy/40 shadow-[0_0_0_3px_rgba(139,21,56,0.08),0_8px_32px_rgba(139,21,56,0.12)]'
                     : 'border-brand-ebony/6 hover:border-brand-burgundy/20 hover:shadow-[0_8px_40px_rgba(79,70,229,0.12)] hover:-translate-y-0.5'

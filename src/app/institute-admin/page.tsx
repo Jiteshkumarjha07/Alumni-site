@@ -10,11 +10,14 @@ import {
 import { uploadMedia } from '@/lib/media';
 import {
     Loader2, Camera, Users, FileText, Briefcase, Globe,
-    LayoutDashboard, Search, Trash2, UserX, UserCheck
+    LayoutDashboard, Search, Trash2, UserX, UserCheck,
+    Mail, ShieldCheck, Plus, ChevronUp, ChevronDown
 } from 'lucide-react';
 import { User, Post, Job } from '@/types';
+import { isAuthenticEmailDomain } from '@/lib/validation';
+import { serverTimestamp, setDoc, arrayUnion, arrayRemove, getDocs } from 'firebase/firestore';
 
-type Tab = 'overview' | 'members' | 'posts' | 'jobs';
+type Tab = 'overview' | 'members' | 'posts' | 'jobs' | 'approvals';
 
 export default function InstituteAdminPage() {
     const { userData, loading: authLoading } = useAuth();
@@ -39,7 +42,15 @@ export default function InstituteAdminPage() {
     const [jobs, setJobs] = useState<Job[]>([]);
     const [loadingJobs, setLoadingJobs] = useState(false);
 
+    // Approvals tab
+    const [approvals, setApprovals] = useState<{ email: string; instituteIds: string[] }[]>([]);
+    const [loadingApprovals, setLoadingApprovals] = useState(false);
+    const [newApprovalEmail, setNewApprovalEmail] = useState('');
+    const [approving, setApproving] = useState(false);
+
     const [error, setError] = useState<string | null>(null);
+    const [success, setSuccess] = useState<string | null>(null);
+    const [isBannerCollapsed, setIsBannerCollapsed] = useState(false);
 
     // Subscribe to live overview counts + cover photo on mount
     useEffect(() => {
@@ -115,6 +126,21 @@ export default function InstituteAdminPage() {
         return () => unsub();
     }, [activeTab, userData?.instituteId]);
 
+    // Subscribe to approvals when tab is active
+    useEffect(() => {
+        if (activeTab !== 'approvals' || !userData?.instituteId) return;
+        setLoadingApprovals(true);
+        const q = query(
+            collection(db, 'approvals'),
+            where('instituteIds', 'array-contains', userData.instituteId)
+        );
+        const unsub = onSnapshot(q, snap => {
+            setApprovals(snap.docs.map(d => ({ email: d.id, ...d.data() } as any)));
+            setLoadingApprovals(false);
+        }, (err) => { console.error(err); setLoadingApprovals(false); });
+        return () => unsub();
+    }, [activeTab, userData?.instituteId]);
+
     const filteredMembers = useMemo(() => {
         const q = memberSearch.toLowerCase().trim();
         if (!q) return members;
@@ -159,6 +185,71 @@ export default function InstituteAdminPage() {
         }
     };
 
+    const handleAddApproval = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!newApprovalEmail.trim() || !userData?.instituteId) return;
+        
+        const email = newApprovalEmail.trim().toLowerCase();
+        if (!isAuthenticEmailDomain(email)) {
+            setError('Invalid email domain.');
+            return;
+        }
+
+        setApproving(true);
+        setError(null);
+        setSuccess(null);
+
+        try {
+            // 1. Add to approvals
+            await setDoc(doc(db, 'approvals', email), {
+                email,
+                instituteIds: arrayUnion(userData.instituteId),
+                updatedAt: serverTimestamp()
+            }, { merge: true });
+
+            // 2. Restore account if previously suspended
+            const usersQuery = query(collection(db, 'users'), where('email', '==', email));
+            const userSnap = await getDocs(usersQuery);
+            const restorePromises = userSnap.docs
+                .filter(userDoc => userDoc.data().isSuspended)
+                .map(userDoc =>
+                    updateDoc(doc(db, 'users', userDoc.id), { isSuspended: false })
+                );
+            await Promise.all(restorePromises);
+
+            setSuccess(`Granted access to ${email}`);
+            setNewApprovalEmail('');
+        } catch (err: any) {
+            setError(err.message || 'Failed to add approval');
+        } finally {
+            setApproving(false);
+        }
+    };
+
+    const handleDeleteApproval = async (emailToDelete: string) => {
+        if (!confirm(`Remove access for ${emailToDelete}?`)) return;
+        try {
+            // 1. Remove institute from approval
+            await updateDoc(doc(db, 'approvals', emailToDelete), {
+                instituteIds: arrayRemove(userData!.instituteId)
+            });
+
+            // 2. Suspend user if they belong to this institute
+            const usersQuery = query(
+                collection(db, 'users'), 
+                where('email', '==', emailToDelete),
+                where('instituteId', '==', userData!.instituteId)
+            );
+            const userSnap = await getDocs(usersQuery);
+            const updatePromises = userSnap.docs.map(userDoc =>
+                updateDoc(doc(db, 'users', userDoc.id), { isSuspended: true })
+            );
+            await Promise.all(updatePromises);
+        } catch (err: any) {
+            setError(err.message || 'Failed to remove approval');
+        }
+    };
+
     const handleUploadCoverPhoto = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file || !userData?.instituteId) return;
@@ -192,55 +283,120 @@ export default function InstituteAdminPage() {
 
     const tabs: { id: Tab; label: string; icon: React.ReactNode; badge?: number }[] = [
         { id: 'overview', label: 'Overview', icon: <LayoutDashboard className="w-4 h-4" /> },
-        { id: 'members', label: 'Members', icon: <Users className="w-4 h-4" />, badge: overviewStats.users },
-        { id: 'posts', label: 'Posts', icon: <FileText className="w-4 h-4" />, badge: overviewStats.posts },
+        { id: 'members', label: 'Members', icon: <Users className="w-4 h-4" /> },
+        { id: 'posts', label: 'Posts', icon: <FileText className="w-4 h-4" /> },
         { id: 'jobs', label: 'Jobs', icon: <Briefcase className="w-4 h-4" />, badge: overviewStats.jobs },
+        { id: 'approvals', label: 'Whitelisting', icon: <ShieldCheck className="w-4 h-4" /> },
     ];
 
     return (
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-10 animate-fade-up">
             {/* Header */}
-            <div className="mb-6 sm:mb-8">
-                <h1 className="text-2xl sm:text-3xl font-serif font-bold text-brand-ebony dark:text-white">
-                    Institute Admin
-                </h1>
-                <p className="text-sm text-brand-ebony/60 dark:text-white/50 mt-1">
-                    {userData?.instituteName || 'Your Institute'} — Manage members and content
-                </p>
+            {/* Dynamic Togglable Ribbon */}
+            <div className={`relative overflow-hidden rounded-3xl mb-8 transition-all duration-500 ease-in-out border border-brand-ebony/5 shadow-xl ${isBannerCollapsed ? 'h-24' : 'h-48 sm:h-64'}`}>
+                {/* Background Cover Photo */}
+                <div className="absolute inset-0 z-0">
+                    {coverPhoto ? (
+                        <img src={coverPhoto} alt="" className="w-full h-full object-cover opacity-60 dark:opacity-40" />
+                    ) : (
+                        <div className="w-full h-full bg-gradient-to-br from-brand-burgundy/10 to-indigo-500/10" />
+                    )}
+                    <div className="absolute inset-0 bg-gradient-to-t from-white dark:from-brand-ebony via-white/20 dark:via-brand-ebony/40 to-transparent" />
+                </div>
+
+                {/* Content */}
+                <div className="relative z-10 h-full flex flex-col justify-end p-6 sm:p-8">
+                    <div className="flex items-end justify-between gap-4">
+                        <div className="flex-1 min-w-0">
+                            <div className={`flex items-center gap-3 mb-2 flex-wrap transition-all duration-500 ${isBannerCollapsed ? 'opacity-0 h-0 overflow-hidden' : 'opacity-100'}`}>
+                                <span className="px-3 py-1 bg-brand-burgundy text-white text-[9px] font-black uppercase tracking-widest rounded-full shadow-lg shadow-brand-burgundy/20">
+                                    Official Dashboard
+                                </span>
+                                <span className="px-3 py-1 bg-emerald-500 text-white text-[9px] font-black uppercase tracking-widest rounded-full shadow-lg shadow-emerald-500/20 animate-pulse">
+                                    Live Pulse
+                                </span>
+                            </div>
+                            <h1 className={`font-serif font-black text-brand-ebony dark:text-white leading-tight transition-all duration-500 ${isBannerCollapsed ? 'text-xl' : 'text-3xl sm:text-5xl'}`}>
+                                {userData?.instituteName || 'Institute Admin'}
+                            </h1>
+                            {!isBannerCollapsed && (
+                                <p className="text-brand-ebony/60 dark:text-white/60 text-sm sm:text-base mt-2 font-medium max-w-2xl line-clamp-2 animate-in fade-in slide-in-from-left-4 duration-700">
+                                    Welcome back, admin. You are managing the Alumnest hub for {userData?.instituteName}.
+                                </p>
+                            )}
+                        </div>
+
+                        {/* Toggle Button */}
+                        <button
+                            onClick={() => setIsBannerCollapsed(!isBannerCollapsed)}
+                            className="p-3 bg-white/40 dark:bg-white/10 backdrop-blur-md hover:bg-white/60 dark:hover:bg-white/20 rounded-2xl transition-all shadow-xl border border-white/50 dark:border-white/10 group mb-1"
+                            title={isBannerCollapsed ? 'Expand Header' : 'Collapse Header'}
+                        >
+                            {isBannerCollapsed ? (
+                                <ChevronDown className="w-5 h-5 text-brand-ebony dark:text-white group-hover:translate-y-0.5 transition-transform" />
+                            ) : (
+                                <ChevronUp className="w-5 h-5 text-brand-ebony dark:text-white group-hover:-translate-y-0.5 transition-transform" />
+                            )}
+                        </button>
+                    </div>
+                </div>
             </div>
 
             {error && (
-                <div className="mb-4 p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-red-600 text-sm font-medium flex items-center justify-between">
+                <div className="mb-4 p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-red-600 text-sm font-medium flex items-center justify-between animate-in fade-in">
                     <span>{error}</span>
                     <button onClick={() => setError(null)} className="font-bold ml-3 text-red-400 hover:text-red-600">✕</button>
                 </div>
             )}
 
-            {/* Tab Switcher */}
-            <div className="flex gap-1 p-1 bg-brand-ebony/5 dark:bg-white/5 rounded-2xl mb-6 overflow-x-auto scrollbar-hide">
-                {tabs.map(tab => (
-                    <button
-                        key={tab.id}
-                        onClick={() => setActiveTab(tab.id)}
-                        className={`flex items-center gap-1.5 px-3 sm:px-4 py-2.5 rounded-xl text-xs font-bold uppercase tracking-widest transition-all whitespace-nowrap flex-1 justify-center ${
-                            activeTab === tab.id
-                                ? 'bg-white dark:bg-white/10 shadow-sm text-brand-burgundy'
-                                : 'text-brand-ebony/50 dark:text-white/40 hover:text-brand-ebony/70 dark:hover:text-white/60'
-                        }`}
-                    >
-                        {tab.icon}
-                        <span className="hidden xs:inline">{tab.label}</span>
-                        {tab.badge !== undefined && tab.badge > 0 && (
-                            <span className={`px-1.5 py-0.5 rounded-full text-[9px] font-black ${
-                                activeTab === tab.id
-                                    ? 'bg-brand-burgundy/10 text-brand-burgundy'
-                                    : 'bg-brand-ebony/10 dark:bg-white/10 text-brand-ebony/50 dark:text-white/40'
-                            }`}>
-                                {tab.badge}
-                            </span>
-                        )}
-                    </button>
-                ))}
+            {success && (
+                <div className="mb-4 p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-emerald-600 text-sm font-medium flex items-center justify-between animate-in fade-in">
+                    <span>{success}</span>
+                    <button onClick={() => setSuccess(null)} className="font-bold ml-3 text-emerald-400 hover:text-emerald-600">✕</button>
+                </div>
+            )}
+
+            {/* Dynamic Expanding Navigation Ribbon */}
+            <div className="flex justify-center mb-10 sticky top-4 z-50 px-2">
+                <div className="flex gap-4 p-2 bg-white/60 dark:bg-brand-ebony/40 backdrop-blur-xl rounded-full shadow-2xl border border-white dark:border-white/5 ring-1 ring-brand-ebony/5 transition-all hover:ring-brand-burgundy/20 max-w-full overflow-x-auto scrollbar-hide">
+                    {tabs.map(tab => {
+                        const isActive = activeTab === tab.id;
+                        return (
+                            <button
+                                key={tab.id}
+                                onClick={() => setActiveTab(tab.id)}
+                                className={`flex items-center px-8 py-3 rounded-full text-[10px] font-black uppercase tracking-[0.15em] transition-all duration-700 relative group/tab flex-shrink-0 ${
+                                    isActive 
+                                        ? 'bg-brand-burgundy text-white shadow-lg shadow-brand-burgundy/30' 
+                                        : 'text-brand-ebony/40 dark:text-white/40 hover:text-brand-ebony/80 hover:bg-brand-ebony/5 dark:hover:bg-white/5'
+                                }`}
+                            >
+                                <div className={`transition-all duration-500 ${isActive ? 'scale-110' : 'group-hover/tab:scale-110 group-hover/tab:text-brand-burgundy'}`}>
+                                    {tab.icon}
+                                </div>
+                                <span className={`transition-all duration-700 overflow-hidden whitespace-nowrap font-sans ${
+                                    isActive 
+                                        ? 'max-w-[200px] ml-4 opacity-100' 
+                                        : 'max-w-0 opacity-0 group-hover/tab:max-w-[200px] group-hover/tab:ml-4 group-hover/tab:opacity-100'
+                                }`}>
+                                    {tab.label}
+                                </span>
+                                {tab.badge !== undefined && tab.badge > 0 && (
+                                    <span className={`absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 flex items-center justify-center rounded-full text-[8px] font-black border-2 transition-all duration-500 ${
+                                        isActive 
+                                            ? 'bg-white text-brand-burgundy border-brand-burgundy scale-110' 
+                                            : 'bg-brand-burgundy text-white border-white dark:border-brand-ebony group-hover/tab:scale-110'
+                                    }`}>
+                                        {tab.badge}
+                                    </span>
+                                )}
+                                {isActive && (
+                                    <div className="absolute bottom-1.5 left-1/2 -translate-x-1/2 w-1 h-1 bg-white rounded-full animate-pulse" />
+                                )}
+                            </button>
+                        );
+                    })}
+                </div>
             </div>
 
             {/* ── OVERVIEW TAB ────────────────────────────────────── */}
@@ -497,6 +653,73 @@ export default function InstituteAdminPage() {
                             ))}
                         </div>
                     )}
+                </div>
+            )}
+            {/* ── APPROVALS TAB ────────────────────────────────────── */}
+            {activeTab === 'approvals' && (
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                    {/* Form */}
+                    <div className="lg:col-span-4">
+                        <div className="card-premium p-6">
+                            <h2 className="text-lg font-serif font-bold text-brand-ebony dark:text-white mb-4">Authorize Email</h2>
+                            <form onSubmit={handleAddApproval} className="space-y-4">
+                                <div>
+                                    <label className="block text-[10px] font-black text-brand-ebony/40 dark:text-white/40 mb-1.5 uppercase tracking-widest">Alumni Email</label>
+                                    <div className="relative">
+                                        <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-brand-ebony/30" />
+                                        <input
+                                            type="email"
+                                            placeholder="name@alumni.edu"
+                                            value={newApprovalEmail}
+                                            onChange={e => setNewApprovalEmail(e.target.value)}
+                                            className="w-full pl-9 pr-4 py-3 bg-brand-ebony/5 dark:bg-white/5 border border-brand-ebony/10 dark:border-white/10 rounded-xl text-sm outline-none focus:ring-2 focus:ring-brand-burgundy/20"
+                                            required
+                                        />
+                                    </div>
+                                </div>
+                                <button
+                                    type="submit"
+                                    disabled={approving}
+                                    className="w-full py-3 bg-brand-burgundy text-white rounded-xl text-[10px] font-black uppercase tracking-[0.2em] hover:shadow-lg transition-all flex items-center justify-center gap-2"
+                                >
+                                    {approving ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Plus className="w-4 h-4" /> Grant Access</>}
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+
+                    {/* List */}
+                    <div className="lg:col-span-8">
+                        <div className="card-premium overflow-hidden">
+                            <div className="p-4 border-b border-brand-ebony/10 dark:border-white/10">
+                                <h2 className="text-lg font-serif font-bold text-brand-ebony dark:text-white">Authorized Accounts</h2>
+                            </div>
+                            {loadingApprovals ? (
+                                <div className="p-12 text-center"><Loader2 className="w-8 h-8 animate-spin mx-auto text-brand-burgundy/30" /></div>
+                            ) : approvals.length === 0 ? (
+                                <div className="p-12 text-center text-brand-ebony/40 dark:text-white/30 text-xs font-bold uppercase tracking-widest">No authorized emails yet</div>
+                            ) : (
+                                <div className="divide-y divide-brand-ebony/5 dark:divide-white/5">
+                                    {approvals.map(app => (
+                                        <div key={app.email} className="p-4 flex items-center justify-between group hover:bg-brand-ebony/[0.02] transition">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-8 h-8 rounded-lg bg-brand-burgundy/5 flex items-center justify-center text-brand-burgundy border border-brand-burgundy/10">
+                                                    <Mail className="w-4 h-4" />
+                                                </div>
+                                                <span className="text-sm font-bold text-brand-ebony dark:text-white">{app.email}</span>
+                                            </div>
+                                            <button
+                                                onClick={() => handleDeleteApproval(app.email)}
+                                                className="p-2 text-brand-ebony/10 hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-all opacity-0 group-hover:opacity-100"
+                                            >
+                                                <Trash2 className="w-4 h-4" />
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    </div>
                 </div>
             )}
         </div>

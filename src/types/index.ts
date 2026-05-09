@@ -11,6 +11,7 @@ export interface Notification {
   link?: string;
   createdAt: Timestamp;
   isRead: boolean;
+  instituteId?: string;
 }
 
 export interface Institute {
@@ -49,6 +50,9 @@ export interface User {
   isOnline?: boolean;
   lastSeen?: Timestamp | FieldValue;
   savedPosts?: string[];
+  mutedUsers?: string[];
+  blockedUsers?: string[];
+  bgTheme?: string;
 }
 
 export interface Post {
@@ -149,6 +153,7 @@ export interface Message {
   audioDuration?: number; // seconds
   poll?: Poll;
   reactions?: Record<string, string[]>; // emoji -> array of user uids
+  instituteId?: string;
 }
 
 export interface Poll {
@@ -187,4 +192,5 @@ export interface Chat {
   unreadCount?: Record<string, number>;
   participantDetails?: Record<string, { name: string; profilePic: string; isOnline?: boolean }>;
   deletedBy?: string[]; // Array of UIDs who have "deleted" (hidden) the chat
+  instituteId?: string;
 }

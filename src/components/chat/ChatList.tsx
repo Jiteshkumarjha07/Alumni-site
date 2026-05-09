@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { Chat, User, Group } from '@/types';
 import { collection, query, getDocs, where, doc, updateDoc, arrayUnion, onSnapshot, arrayRemove, writeBatch } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import { Search, Loader2, Trash2, MessageSquare, Plus, Users, MessageCircle, Sparkles, LogOut } from 'lucide-react';
+import { Search, Loader2, Trash2, MessageSquare, Plus, Users, MessageCircle, Sparkles, LogOut, MoreVertical, VolumeX, ShieldAlert } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { CreateGroupModal } from '../modals/CreateGroupModal';
 import { useMessaging } from '@/contexts/MessagingContext';
@@ -34,6 +34,42 @@ export function ChatList({ currentUser, chats, onSelectChat, onStartChat, onSele
     const [isDeletingGroup, setIsDeletingGroup] = useState<string | null>(null);
     const { unreadUsersCount } = useMessaging();
     const { suspendedUids } = useAuth();
+    const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
+
+    const handleMuteUser = async (e: React.MouseEvent, otherUserId: string) => {
+        e.stopPropagation();
+        setActiveMenuId(null);
+        try {
+            const isMuted = currentUser.mutedUsers?.includes(otherUserId);
+            await updateDoc(doc(db, 'users', currentUser.uid), {
+                mutedUsers: isMuted ? arrayRemove(otherUserId) : arrayUnion(otherUserId)
+            });
+        } catch (error) {
+            console.error('Error updating mute status:', error);
+        }
+    };
+
+    const handleBlockUser = async (e: React.MouseEvent, otherUserId: string) => {
+        e.stopPropagation();
+        setActiveMenuId(null);
+        const isBlocked = currentUser.blockedUsers?.includes(otherUserId);
+        if (!isBlocked && !window.confirm('Are you sure you want to block this user?')) return;
+        try {
+            await updateDoc(doc(db, 'users', currentUser.uid), {
+                blockedUsers: isBlocked ? arrayRemove(otherUserId) : arrayUnion(otherUserId)
+            });
+        } catch (error) {
+            console.error('Error updating block status:', error);
+        }
+    };
+
+    useEffect(() => {
+        const handleClickOutside = () => setActiveMenuId(null);
+        if (activeMenuId) {
+            window.addEventListener('click', handleClickOutside);
+        }
+        return () => window.removeEventListener('click', handleClickOutside);
+    }, [activeMenuId]);
 
     useEffect(() => {
         const searchUsers = async () => {
@@ -74,14 +110,18 @@ export function ChatList({ currentUser, chats, onSelectChat, onStartChat, onSele
 
         const timeoutId = setTimeout(searchUsers, 500);
         return () => clearTimeout(timeoutId);
-    }, [searchQuery, currentUser.uid]);
+    }, [searchQuery, currentUser.uid, suspendedUids]);
 
     useEffect(() => {
         if (!currentUser.uid || viewMode !== 'groups') return;
 
         setLoadingGroups(true);
         const groupsRef = collection(db, 'groups');
-        const q = query(groupsRef, where('members', 'array-contains', currentUser.uid));
+        const q = query(
+            groupsRef, 
+            where('members', 'array-contains', currentUser.uid),
+            where('instituteId', '==', currentUser.instituteId)
+        );
 
         const unsubscribe = onSnapshot(q, (snapshot) => {
             const fetchedGroups = snapshot.docs.map(doc => ({
@@ -96,7 +136,7 @@ export function ChatList({ currentUser, chats, onSelectChat, onStartChat, onSele
         });
 
         return () => unsubscribe();
-    }, [currentUser.uid, viewMode]);
+    }, [currentUser.uid, currentUser.instituteId, viewMode]);
 
     const handleDeleteChat = async (e: React.MouseEvent, chatId: string) => {
         e.stopPropagation();
@@ -155,7 +195,8 @@ export function ChatList({ currentUser, chats, onSelectChat, onStartChat, onSele
         const isDeleted = chat.deletedBy?.includes(currentUser.uid);
         const otherUserId = chat.participants.find(id => id !== currentUser.uid);
         const isOtherSuspended = otherUserId ? suspendedUids.has(otherUserId) : false;
-        return !isDeleted && !isOtherSuspended;
+        const isOtherBlocked = otherUserId ? currentUser.blockedUsers?.includes(otherUserId) : false;
+        return !isDeleted && !isOtherSuspended && !isOtherBlocked;
     });
 
     return (
@@ -275,13 +316,13 @@ export function ChatList({ currentUser, chats, onSelectChat, onStartChat, onSele
                             </div>
                         ) : searchResults.length > 0 ? (
                             searchResults.map((user) => (
-                                <button
+                                <div
                                     key={user.uid}
                                     onClick={() => {
                                         onStartChat(user);
                                         setSearchQuery('');
                                     }}
-                                    className="w-full flex items-center p-4 hover:bg-white dark:hover:bg-brand-ebony/20 rounded-2xl transition-all group border border-transparent hover:border-brand-ebony/5"
+                                    className="w-full flex items-center p-4 hover:bg-white dark:hover:bg-brand-ebony/20 rounded-2xl transition-all group border border-transparent hover:border-brand-ebony/5 cursor-pointer"
                                 >
                                     <div className="relative shrink-0 mr-4">
                                         <img
@@ -295,7 +336,7 @@ export function ChatList({ currentUser, chats, onSelectChat, onStartChat, onSele
                                         <p className="text-[10px] text-brand-ebony/30 uppercase tracking-widest font-bold mt-1 truncate">{user.profession || `Class of ${user.batch}`}</p>
                                     </div>
                                     <MessageCircle className="w-4 h-4 text-brand-ebony/10 group-hover:text-brand-burgundy transition-colors" />
-                                </button>
+                                </div>
                             ))
                         ) : (
                             <div className="text-center py-20">
@@ -365,14 +406,43 @@ export function ChatList({ currentUser, chats, onSelectChat, onStartChat, onSele
                                                 </p>
                                             </div>
 
-                                            <button
-                                                onClick={(e) => handleDeleteChat(e, chat.id)}
-                                                disabled={isDeleting === chat.id}
-                                                className="absolute right-4 top-1/2 -translate-y-1/2 p-2.5 text-brand-ebony/10 hover:text-red-500 hover:bg-red-500/10 rounded-xl transition-all opacity-0 group-hover:opacity-100"
-                                                title="Delete conversation"
-                                            >
-                                                {isDeleting === chat.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
-                                            </button>
+                                            <div className="relative">
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        setActiveMenuId(activeMenuId === chat.id ? null : chat.id);
+                                                    }}
+                                                    className={`p-2 text-brand-ebony/20 hover:text-brand-ebony/60 hover:bg-brand-ebony/5 rounded-xl transition-all ${activeMenuId === chat.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}
+                                                >
+                                                    <MoreVertical className="w-4 h-4" />
+                                                </button>
+
+                                                {activeMenuId === chat.id && (
+                                                    <div className="absolute right-0 top-full mt-1 w-48 bg-white dark:bg-brand-parchment rounded-2xl shadow-2xl border border-brand-ebony/10 z-[100] overflow-hidden animate-in fade-in zoom-in duration-200">
+                                                        <button
+                                                            onClick={(e) => handleDeleteChat(e, chat.id)}
+                                                            className="w-full flex items-center gap-3 px-4 py-3 text-xs font-bold text-red-500 hover:bg-red-500/10 transition-colors border-b border-brand-ebony/5"
+                                                        >
+                                                            <Trash2 className="w-4 h-4" />
+                                                            Delete Chat
+                                                        </button>
+                                                        <button
+                                                            onClick={(e) => handleMuteUser(e, otherUserId!)}
+                                                            className="w-full flex items-center gap-3 px-4 py-3 text-xs font-bold text-brand-ebony/60 hover:bg-brand-ebony/5 transition-colors border-b border-brand-ebony/5"
+                                                        >
+                                                            <VolumeX className="w-4 h-4" />
+                                                            {currentUser.mutedUsers?.includes(otherUserId!) ? 'Unmute User' : 'Mute User'}
+                                                        </button>
+                                                        <button
+                                                            onClick={(e) => handleBlockUser(e, otherUserId!)}
+                                                            className="w-full flex items-center gap-3 px-4 py-3 text-xs font-bold text-brand-ebony/60 hover:bg-brand-ebony/5 transition-colors"
+                                                        >
+                                                            <ShieldAlert className="w-4 h-4" />
+                                                            {currentUser.blockedUsers?.includes(otherUserId!) ? 'Unblock User' : 'Block User'}
+                                                        </button>
+                                                    </div>
+                                                )}
+                                            </div>
                                         </div>
                                     );
                                 })
@@ -395,10 +465,10 @@ export function ChatList({ currentUser, chats, onSelectChat, onStartChat, onSele
                                 userGroups.map((group) => {
                                     const isActive = selectedGroupId === group.id;
                                     return (
-                                        <button
+                                        <div
                                             key={group.id}
                                             onClick={() => onSelectGroup(group.id)}
-                                            className={`w-full flex items-center p-2.5 rounded-xl transition-all mb-1 relative border group ${
+                                            className={`w-full flex items-center p-2.5 rounded-xl transition-all mb-1 relative border group cursor-pointer ${
                                                 isActive 
                                                     ? 'bg-white dark:bg-brand-parchment border-brand-burgundy/10 shadow-lg' 
                                                     : 'hover:bg-white dark:hover:bg-brand-ebony/10 border-transparent hover:border-brand-ebony/5'
@@ -452,7 +522,7 @@ export function ChatList({ currentUser, chats, onSelectChat, onStartChat, onSele
                                                     <LogOut className="w-4 h-4" />
                                                 )}
                                             </button>
-                                        </button>
+                                        </div>
                                     );
                                 })
                             )

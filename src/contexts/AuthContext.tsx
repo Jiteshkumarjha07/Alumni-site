@@ -150,6 +150,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         };
     }, []);
 
+    // Theme logic is now handled by ThemeContext.
+
     const signIn = async (email: string, password: string) => {
         try {
             setError(null);
