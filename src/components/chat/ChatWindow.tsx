@@ -12,6 +12,7 @@ import { Send, Loader2, ArrowLeft, X, CheckCheck, ShieldCheck, Lock, Image as Im
 import { encryptMessage, decryptMessage, getSharedSecret } from '@/lib/encryption';
 import { uploadMedia, uploadVideo, uploadFile, uploadAudio } from '@/lib/media';
 import { useAuth } from '@/contexts/AuthContext';
+import EmojiPicker from 'emoji-picker-react';
 
 interface ChatWindowProps {
     chatId: string;
@@ -871,17 +872,31 @@ export function ChatWindow({ chatId, currentUser, otherUser, isGroup = false, gr
                     
                     <form onSubmit={handleSendMessage} className="flex-1 flex items-center gap-4">
                         <div className="flex-1 relative group">
-                            <input
-                                type="text"
+                            <textarea
                                 value={newMessage}
-                                onChange={(e) => setNewMessage(e.target.value)}
+                                onChange={(e) => {
+                                    setNewMessage(e.target.value);
+                                    e.target.style.height = 'auto';
+                                    e.target.style.height = `${Math.min(e.target.scrollHeight, 120)}px`;
+                                }}
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter' && !e.shiftKey) {
+                                        e.preventDefault();
+                                        if (newMessage.trim() || mediaPreview) {
+                                            handleSendMessage(e as any);
+                                            e.currentTarget.style.height = 'auto';
+                                        }
+                                    }
+                                }}
+                                rows={1}
                                 placeholder={editingMessage ? 'Revising message...' : (replyingToMessage ? 'Drafting response...' : 'Share a thought with the circle...')}
                                 onFocus={() => {
                                     setTimeout(() => {
                                         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
                                     }, 100);
                                 }}
-                                className="w-full px-5 py-2.5 pr-14 bg-white/60 dark:bg-white/5 border border-white dark:border-white/10 rounded-full focus:outline-none focus:ring-2 focus:ring-brand-burgundy/20 focus:border-brand-burgundy/50 transition-all font-bold text-[13.5px] shadow-inner placeholder:text-brand-ebony/30"
+                                className="w-full px-5 py-[11px] pr-12 bg-white/60 dark:bg-white/5 border border-white dark:border-white/10 rounded-[22px] focus:outline-none focus:ring-2 focus:ring-brand-burgundy/20 focus:border-brand-burgundy/50 transition-colors font-bold text-[13.5px] shadow-inner placeholder:text-brand-ebony/30 resize-none overflow-y-auto leading-relaxed scrollbar-hide block"
+                                style={{ maxHeight: '120px', minHeight: '44px' }}
                                 disabled={sending}
                             />
                             <button
@@ -893,14 +908,15 @@ export function ChatWindow({ chatId, currentUser, otherUser, isGroup = false, gr
                             </button>
                             
                             {showEmojiPicker && (
-                                <div ref={emojiPickerRef} className="absolute bottom-full right-0 mb-6 p-4 card-premium shadow-2xl z-[120] w-72 animate-in fade-in zoom-in-95">
-                                    <div className="grid grid-cols-6 gap-2">
-                                        {COMMON_EMOJIS.slice(0, 18).map(emoji => (
-                                            <button key={emoji} type="button" onClick={() => { setNewMessage(prev => prev + emoji); setShowEmojiPicker(false); }} className="text-xl p-2 hover:bg-brand-ebony/5 rounded-xl transition-all hover:scale-125">
-                                                {emoji}
-                                            </button>
-                                        ))}
-                                    </div>
+                                <div ref={emojiPickerRef} className="absolute bottom-full right-0 mb-6 z-[120] animate-in fade-in zoom-in-95 shadow-2xl rounded-[20px] overflow-hidden border border-brand-ebony/10">
+                                    <EmojiPicker 
+                                        onEmojiClick={(emojiData) => {
+                                            setNewMessage(prev => prev + emojiData.emoji);
+                                        }}
+                                        width={320}
+                                        height={400}
+                                        searchPlaceholder="Search emojis..."
+                                    />
                                 </div>
                             )}
                         </div>
