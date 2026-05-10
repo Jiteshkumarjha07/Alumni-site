@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, Users, User, MessageSquare, Briefcase, Calendar, Store } from 'lucide-react';
+import { Home, Users, User, MessageSquare, Briefcase, Calendar, Store, Globe2 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useMessaging } from '@/contexts/MessagingContext';
 import { ComingSoonModal } from '../modals/ComingSoonModal';
@@ -21,6 +21,7 @@ export function MobileNav() {
         { name: 'Messages', href: '/messages', icon: MessageSquare },
         { name: 'Jobs',     href: '/jobs',     icon: Briefcase },
         { name: 'Events',   href: '/events',   icon: Calendar },
+        { name: 'Lobby',    href: '/lobby',    icon: Globe2 },
         { name: 'Network',  href: '/network',  icon: Users },
         { name: 'Market',   href: '#',         icon: Store, isMarketplace: true },
         { name: 'Profile',  href: '/profile',  icon: User },

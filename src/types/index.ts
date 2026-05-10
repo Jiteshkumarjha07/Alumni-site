@@ -1,9 +1,15 @@
 import { Timestamp, FieldValue } from 'firebase/firestore';
 
+export interface MediaAttachment {
+  url: string;
+  type: 'image' | 'video' | 'file';
+  name?: string;
+}
+
 export interface Notification {
   id: string;
   userId: string;
-  type: 'like' | 'comment' | 'connection_request' | 'connection_accepted' | 'message';
+  type: 'like' | 'comment' | 'connection_request' | 'connection_accepted' | 'message' | 'lobby_post';
   sourceUserUid: string;
   sourceUserName: string;
   sourceUserProfilePic?: string;
@@ -12,6 +18,27 @@ export interface Notification {
   createdAt: Timestamp;
   isRead: boolean;
   instituteId?: string;
+}
+
+export interface LobbyPost {
+  id: string;
+  authorUid: string;
+  authorName: string;
+  authorInstituteName: string;
+  authorInstituteId: string;
+  authorProfilePic?: string;
+  title: string;
+  content: string;
+  imageUrl?: string;
+  mediaUrl?: string;
+  mediaType?: 'image' | 'video' | 'file';
+  mediaName?: string;
+  attachments?: MediaAttachment[];
+  poll?: Poll;
+  likes: string[];
+  createdAt: Timestamp;
+  isPinned?: boolean;
+  tags?: string[];
 }
 
 export interface Institute {
@@ -67,6 +94,7 @@ export interface Post {
   mediaUrl?: string;
   mediaType?: 'image' | 'video' | 'file';
   fileName?: string;
+  attachments?: MediaAttachment[];
   likes?: string[];
   comments?: Comment[];
   createdAt: Timestamp;

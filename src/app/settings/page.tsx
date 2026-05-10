@@ -218,15 +218,20 @@ export default function SettingsPage() {
                 ))}
             </div>
 
-            <div className="mt-12 text-center p-8 border-t border-brand-ebony/10">
-                <div className="flex items-center justify-center gap-2 mb-2 text-brand-gold">
+            <a 
+                href="https://www.alumnest.co.in/" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="block mt-12 text-center p-8 border-t border-brand-ebony/10 group hover:bg-brand-burgundy/5 transition-all"
+            >
+                <div className="flex items-center justify-center gap-2 mb-2 text-brand-gold group-hover:text-brand-burgundy transition-colors">
                     <Info className="w-4 h-4" />
-                    <span className="font-serif italic text-sm">About Alumnest</span>
+                    <span className="font-serif italic text-sm underline decoration-brand-gold/30 underline-offset-4">About Alumnest</span>
                 </div>
                 <p className="text-xs font-bold text-brand-ebony/30 uppercase tracking-[0.3em]">
                     Version 1.2.0 • For the Tribe
                 </p>
-            </div>
+            </a>
 
 
             {userData && (

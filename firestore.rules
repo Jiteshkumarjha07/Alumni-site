@@ -114,6 +114,15 @@ service cloud.firestore {
       allow write: if isAdmin() || isInsAdminFor(instId);
     }
 
+    // ── Lobby Posts (Cross-Institute) ─────────────────────────────────────────
+    match /lobbyPosts/{postId} {
+      // Simplified: Allow all signed-in users to read and create
+      allow read, create: if isSignedIn();
+      // Allow all signed-in users to update (likes); only creator can delete
+      allow update: if isSignedIn();
+      allow delete: if isSignedIn() && resource.data.authorUid == request.auth.uid;
+    }
+
     // ── Email Approvals ───────────────────────────────────────────────────────
     match /approvals/{email} {
       allow read: if true;

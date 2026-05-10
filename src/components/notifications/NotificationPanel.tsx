@@ -9,7 +9,7 @@ import {
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { Notification } from '@/types';
-import { Bell, Heart, MessageCircle, UserPlus, CheckCheck, X, Check } from 'lucide-react';
+import { Bell, Heart, MessageCircle, UserPlus, CheckCheck, X, Check, Globe2 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useUI } from '@/contexts/UIContext';
@@ -32,6 +32,7 @@ function NotifIcon({ type }: { type: string }) {
   if (type === 'comment') return <MessageCircle className="w-3.5 h-3.5 text-brand-burgundy" />;
   if (type === 'connection_request') return <UserPlus className="w-3.5 h-3.5 text-brand-gold" />;
   if (type === 'connection_accepted') return <Check className="w-3.5 h-3.5 text-emerald-500" />;
+  if (type === 'lobby_post') return <Globe2 className="w-3.5 h-3.5 text-violet-500" />;
   return <Bell className="w-3.5 h-3.5 text-brand-ebony/30" />;
 }
 

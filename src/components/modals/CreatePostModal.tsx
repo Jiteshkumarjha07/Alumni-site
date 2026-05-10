@@ -10,7 +10,13 @@ interface CreatePostModalProps {
     onClose: () => void;
     onSubmit: (
         content: string, 
-        mediaPayload?: { imageUrl?: string; mediaUrl?: string; mediaType?: 'image' | 'video' | 'file'; fileName?: string }
+        mediaPayload?: { 
+            imageUrl?: string; 
+            mediaUrl?: string; 
+            mediaType?: 'image' | 'video' | 'file'; 
+            fileName?: string;
+            attachments?: { url: string; type: 'image' | 'video' | 'file'; name?: string }[];
+        }
     ) => Promise<void>;
     currentUser: {
         name: string;
@@ -25,82 +31,79 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
     currentUser,
 }) => {
     const [content, setContent] = useState('');
-    const [selectedFile, setSelectedFile] = useState<File | null>(null);
-    const [previewUrl, setPreviewUrl] = useState<string>('');
-    const [fileType, setFileType] = useState<'image' | 'video' | 'file' | null>(null);
+    const [selectedFiles, setSelectedFiles] = useState<{ file: File, type: 'image' | 'video' | 'file', preview?: string }[]>([]);
     const [loading, setLoading] = useState(false);
 
     if (!isOpen) return null;
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (file) {
-            const type = file.type;
-            const isVideo = type.startsWith('video/');
-
-            // Storage threshold: 10MB max for videos, 5MB for everything else
+        const files = Array.from(e.target.files || []);
+        const newFiles = files.map(file => {
+            const isVideo = file.type.startsWith('video/');
+            const isImage = file.type.startsWith('image/');
             const limitMB = isVideo ? 10 : 5;
+            
             if (file.size > limitMB * 1024 * 1024) {
-                alert(`File size exceeds limit (${limitMB}MB max). Please choose a smaller file.`);
-                return;
+                alert(`File ${file.name} exceeds limit (${limitMB}MB max). Skipping.`);
+                return null;
             }
 
-            if (type.startsWith('image/')) {
-                setFileType('image');
-                setPreviewUrl(URL.createObjectURL(file));
-            } else if (isVideo) {
-                setFileType('video');
-                setPreviewUrl(URL.createObjectURL(file));
-            } else {
-                setFileType('file');
-                setPreviewUrl(''); // No true visual preview for raw files
-            }
-            setSelectedFile(file);
-        }
+            const type = isImage ? 'image' : isVideo ? 'video' : 'file';
+            const preview = (isImage || isVideo) ? URL.createObjectURL(file) : undefined;
+            
+            return { file, type: type as any, preview };
+        }).filter(Boolean) as any[];
+
+        setSelectedFiles(prev => [...prev, ...newFiles]);
     };
 
-    const handleRemoveFile = () => {
-        setSelectedFile(null);
-        setPreviewUrl('');
-        setFileType(null);
+    const handleRemoveFile = (index: number) => {
+        setSelectedFiles(prev => {
+            const newFiles = [...prev];
+            if (newFiles[index].preview) URL.revokeObjectURL(newFiles[index].preview!);
+            newFiles.splice(index, 1);
+            return newFiles;
+        });
     };
 
     const handleSubmit = async () => {
-        if (!content.trim() && !selectedFile) return;
+        if (!content.trim() && selectedFiles.length === 0) return;
 
         setLoading(true);
         try {
-            let payload: Parameters<typeof onSubmit>[1] = undefined;
-
-            if (selectedFile) {
-                let uploadedUrl: string | null = null;
+            const attachments: { url: string, type: 'image' | 'video' | 'file', name: string }[] = [];
+            
+            const uploadPromises = selectedFiles.map(async (m) => {
+                let url = '';
+                if (m.type === 'image') url = await uploadMedia(m.file) || '';
+                else if (m.type === 'video') url = await uploadVideo(m.file, 'posts/videos') || '';
+                else url = await uploadFile(m.file, 'posts/files') || '';
                 
-                if (fileType === 'image') {
-                    uploadedUrl = await uploadMedia(selectedFile);
-                } else if (fileType === 'video') {
-                    uploadedUrl = await uploadVideo(selectedFile, 'posts/videos');
-                } else {
-                    uploadedUrl = await uploadFile(selectedFile, 'posts/files');
+                if (url) {
+                    attachments.push({ url, type: m.type, name: m.file.name });
                 }
+            });
 
-                if (uploadedUrl) {
-                    if (fileType === 'image') {
-                        payload = { imageUrl: uploadedUrl, mediaUrl: uploadedUrl, mediaType: 'image', fileName: selectedFile.name };
-                    } else if (fileType === 'video') {
-                        payload = { mediaUrl: uploadedUrl, mediaType: 'video', fileName: selectedFile.name };
-                    } else {
-                        payload = { mediaUrl: uploadedUrl, mediaType: 'file', fileName: selectedFile.name };
-                    }
-                }
+            await Promise.all(uploadPromises);
+
+            let payload: Parameters<typeof onSubmit>[1] = undefined;
+            if (attachments.length > 0) {
+                payload = { 
+                    attachments,
+                    imageUrl: attachments.find(a => a.type === 'image')?.url,
+                    mediaUrl: attachments[0].url,
+                    mediaType: attachments[0].type,
+                    fileName: attachments[0].name
+                };
             }
 
             await onSubmit(content.trim(), payload);
             setContent('');
-            handleRemoveFile();
+            setSelectedFiles([]);
             onClose();
         } catch (error) {
             console.error('Error creating post:', error);
-            alert('Failed to create post. Please try again.');
+            alert('Failed to create post.');
         } finally {
             setLoading(false);
         }
@@ -161,82 +164,53 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
                             />
 
                             {/* Media Preview Area */}
-                            {selectedFile && (
-                                <div className="mt-6 relative rounded-2xl overflow-hidden border border-brand-ebony/10 bg-brand-ebony/5 shadow-premium group/media">
-                                    <button
-                                        onClick={handleRemoveFile}
-                                        disabled={loading}
-                                        className="absolute top-4 right-4 z-10 p-2.5 bg-black/60 hover:bg-red-500 text-white rounded-full transition-all disabled:opacity-50 shadow-xl backdrop-blur-md active:scale-90"
-                                    >
-                                        <X className="w-4 h-4" />
-                                    </button>
+                            {selectedFiles.length > 0 && (
+                                <div className="mt-6 grid grid-cols-2 gap-3">
+                                    {selectedFiles.map((m, idx) => (
+                                        <div key={idx} className="relative rounded-xl overflow-hidden border border-brand-ebony/10 bg-brand-ebony/5 aspect-video flex items-center justify-center group/media shadow-sm">
+                                            <button
+                                                onClick={() => handleRemoveFile(idx)}
+                                                disabled={loading}
+                                                className="absolute top-2 right-2 z-10 p-1.5 bg-black/60 hover:bg-red-500 text-white rounded-full transition-all opacity-0 group-hover/media:opacity-100"
+                                            >
+                                                <X className="w-3.5 h-3.5" />
+                                            </button>
 
-                                    {fileType === 'image' && previewUrl && (
-                                        <div className="flex items-center justify-center bg-black/5 w-full max-h-[300px]">
-                                            <img
-                                                src={previewUrl}
-                                                alt="Preview"
-                                                className="w-full max-h-[300px] object-contain transition-transform duration-700 ease-out"
-                                            />
+                                            {m.preview ? (
+                                                m.type === 'image' ? (
+                                                    <img src={m.preview} alt="" className="w-full h-full object-cover" />
+                                                ) : (
+                                                    <video src={m.preview} className="w-full h-full object-cover" />
+                                                )
+                                            ) : (
+                                                <div className="flex flex-col items-center gap-1 p-2 text-center">
+                                                    <FileIcon className="w-5 h-5 text-indigo-500" />
+                                                    <span className="text-[10px] font-bold text-brand-ebony truncate w-full px-2">{m.file.name}</span>
+                                                </div>
+                                            )}
                                         </div>
-                                    )}
-
-                                    {fileType === 'video' && previewUrl && (
-                                        <div className="flex items-center justify-center bg-black w-full max-h-[300px]">
-                                            <video 
-                                                src={previewUrl} 
-                                                controls 
-                                                className="w-full max-h-[300px] object-contain"
-                                            />
-                                        </div>
-                                    )}
-
-                                    {fileType === 'file' && (
-                                        <div className="flex items-center gap-4 p-6 bg-white dark:bg-[#1c1a2c]">
-                                            <div className="w-12 h-12 rounded-xl bg-indigo-500/10 text-indigo-500 flex items-center justify-center shrink-0">
-                                                <FileIcon className="w-6 h-6" />
-                                            </div>
-                                            <div className="min-w-0">
-                                                <p className="font-bold text-sm text-brand-ebony truncate">{selectedFile.name}</p>
-                                                <p className="text-[11px] font-semibold text-brand-ebony/40 uppercase tracking-widest mt-0.5">
-                                                    {(selectedFile.size / 1024 / 1024).toFixed(2)} MB • File Payload
-                                                </p>
-                                            </div>
-                                        </div>
-                                    )}
+                                    ))}
                                 </div>
                             )}
 
-                            {/* Upload Buttons if no file selected */}
-                            {!selectedFile && (
-                                <div className="mt-6 flex flex-wrap items-center gap-3">
-                                    {/* Upload trigger hidden input */}
-                                    <label className="flex items-center gap-2 px-5 py-3 bg-brand-ebony/4 hover:bg-brand-burgundy/10 text-brand-ebony/60 hover:text-brand-burgundy rounded-xl cursor-pointer transition-all border border-transparent hover:border-brand-burgundy/10 active:scale-95">
-                                        <ImageIcon className="w-4 h-4" />
-                                        <span className="text-[11px] font-bold uppercase tracking-widest">Image</span>
-                                        <input
-                                            type="file"
-                                            accept="image/*"
-                                            onChange={handleFileChange}
-                                            className="hidden"
-                                            disabled={loading}
-                                        />
-                                    </label>
-
-
-                                    <label className="flex items-center gap-2 px-5 py-3 bg-brand-ebony/4 hover:bg-emerald-500/10 text-brand-ebony/60 hover:text-emerald-600 rounded-xl cursor-pointer transition-all border border-transparent hover:border-emerald-500/10 active:scale-95">
-                                        <FileText className="w-4 h-4" />
-                                        <span className="text-[11px] font-bold uppercase tracking-widest">Doc</span>
-                                        <input
-                                            type="file"
-                                            accept=".pdf,.doc,.docx,.txt,.csv,.xlsx,.xls"
-                                            onChange={handleFileChange}
-                                            className="hidden"
-                                            disabled={loading}
-                                        />
-                                    </label>
-                                </div>
-                            )}
+                            {/* Upload Buttons */}
+                            <div className="mt-6 flex flex-wrap items-center gap-3">
+                                <label className="flex items-center gap-2 px-5 py-3 bg-brand-ebony/4 hover:bg-brand-burgundy/10 text-brand-ebony/60 hover:text-brand-burgundy rounded-xl cursor-pointer transition-all border border-transparent hover:border-brand-burgundy/10 active:scale-95">
+                                    <ImageIcon className="w-4 h-4" />
+                                    <span className="text-[11px] font-bold uppercase tracking-widest">Image</span>
+                                    <input type="file" accept="image/*" multiple onChange={handleFileChange} className="hidden" disabled={loading} />
+                                </label>
+                                <label className="flex items-center gap-2 px-5 py-3 bg-brand-ebony/4 hover:bg-indigo-500/10 text-brand-ebony/60 hover:text-indigo-600 rounded-xl cursor-pointer transition-all border border-transparent hover:border-indigo-500/10 active:scale-95">
+                                    <Video className="w-4 h-4" />
+                                    <span className="text-[11px] font-bold uppercase tracking-widest">Video</span>
+                                    <input type="file" accept="video/*" multiple onChange={handleFileChange} className="hidden" disabled={loading} />
+                                </label>
+                                <label className="flex items-center gap-2 px-5 py-3 bg-brand-ebony/4 hover:bg-emerald-500/10 text-brand-ebony/60 hover:text-emerald-600 rounded-xl cursor-pointer transition-all border border-transparent hover:border-emerald-500/10 active:scale-95">
+                                    <FileText className="w-4 h-4" />
+                                    <span className="text-[11px] font-bold uppercase tracking-widest">Doc</span>
+                                    <input type="file" accept=".pdf,.doc,.docx,.txt" multiple onChange={handleFileChange} className="hidden" disabled={loading} />
+                                </label>
+                            </div>
                         </div>
                     </div>
 
@@ -266,7 +240,7 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
                             </button>
                             <button
                                 onClick={handleSubmit}
-                                disabled={loading || (!content.trim() && !selectedFile)}
+                                disabled={loading || (!content.trim() && selectedFiles.length === 0)}
                                 className="flex-1 sm:flex-none px-10 py-4 bg-brand-burgundy text-white rounded-2xl font-bold text-[11px] tracking-[0.25em] uppercase shadow-lg hover:shadow-indigo-500/30 transition-all disabled:opacity-20 disabled:cursor-not-allowed group relative overflow-hidden active:scale-[0.97]"
                             >
                                 <div className="relative z-10 flex items-center justify-center gap-3">

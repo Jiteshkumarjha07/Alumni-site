@@ -159,30 +159,15 @@ export default function HomePage() {
 
   const handleCreatePost = async (
     content: string, 
-    mediaPayload?: { imageUrl?: string; mediaUrl?: string; mediaType?: 'image' | 'video' | 'file'; fileName?: string }
+    mediaPayload?: { 
+      imageUrl?: string; 
+      mediaUrl?: string; 
+      mediaType?: 'image' | 'video' | 'file'; 
+      fileName?: string;
+      attachments?: any[];
+    }
   ) => {
     if (!userData) return;
-
-    // Optimistic UI: Prepend to feed instantly
-    const pseudoId = `temp-${Date.now()}`;
-    const newPost: Post = {
-      id: pseudoId,
-      authorUid: userData.uid,
-      authorName: userData.name,
-      authorBatch: userData.batch || 0,
-      authorProfilePic: userData.profilePic,
-      content,
-      imageUrl: mediaPayload?.imageUrl || '',
-      mediaUrl: mediaPayload?.mediaUrl,
-      mediaType: mediaPayload?.mediaType,
-      fileName: mediaPayload?.fileName,
-      likes: [],
-      comments: [],
-      instituteId: userData.instituteId || '',
-      createdAt: new Date() as any // Temporary visual timestamp
-    };
-    
-    setPosts(current => [newPost, ...current]);
 
     // Background Firebase operation
     const payloadFields: any = {
@@ -195,7 +180,8 @@ export default function HomePage() {
       likes: [],
       comments: [],
       instituteId: userData.instituteId || '',
-      createdAt: serverTimestamp()
+      createdAt: serverTimestamp(),
+      attachments: mediaPayload?.attachments || []
     };
 
     if (mediaPayload?.mediaUrl) payloadFields.mediaUrl = mediaPayload.mediaUrl;

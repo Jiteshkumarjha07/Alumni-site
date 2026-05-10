@@ -1,7 +1,7 @@
 'use client';
 
 import { Post, User } from '@/types';
-import { Heart, MessageCircle, Share2, MoreHorizontal, Pencil, Trash2, Sparkles, Bookmark } from 'lucide-react';
+import { Heart, MessageCircle, Share2, MoreHorizontal, Pencil, Trash2, Sparkles, Bookmark, File as FileIcon } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { db } from '@/lib/firebase';
@@ -183,6 +183,35 @@ export const PostCard: React.FC<PostCardProps> = ({
 
                 {/* ── Media Renderer ── */}
                 {(() => {
+                    const attachments = post.attachments || [];
+                    
+                    if (attachments.length > 0) {
+                        return (
+                            <div className={`grid gap-2 mb-5 -mx-1 ${
+                                attachments.length === 1 ? 'grid-cols-1' :
+                                attachments.length === 2 ? 'grid-cols-2' :
+                                'grid-cols-2 md:grid-cols-3'
+                            }`}>
+                                {attachments.map((a: any, idx: number) => (
+                                    <div key={idx} className="relative rounded-2xl overflow-hidden border border-brand-ebony/5 bg-brand-ebony/5 aspect-video flex items-center justify-center group/media shadow-sm">
+                                        {a.type === 'image' ? (
+                                            <img src={a.url} alt="" className="w-full h-full object-cover" />
+                                        ) : a.type === 'video' ? (
+                                            <video src={a.url} controls className="w-full h-full object-cover" />
+                                        ) : (
+                                            <a href={a.url} target="_blank" rel="noopener noreferrer" className="flex flex-col items-center justify-center p-4 w-full h-full bg-white/50 dark:bg-white/5 hover:bg-white transition-all group">
+                                                <div className="w-10 h-10 rounded-xl bg-indigo-500/10 text-indigo-500 flex items-center justify-center mb-2 group-hover:bg-indigo-500 group-hover:text-white transition-colors">
+                                                    <FileIcon className="w-5 h-5" />
+                                                </div>
+                                                <span className="text-[10px] font-bold text-brand-ebony truncate w-full text-center px-2">{a.name || 'Doc'}</span>
+                                            </a>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+                        );
+                    }
+
                     const type = post.mediaType || (post.imageUrl ? 'image' : null);
                     const url = post.mediaUrl || post.imageUrl;
 
@@ -222,7 +251,7 @@ export const PostCard: React.FC<PostCardProps> = ({
                                 className="flex items-center gap-4 p-4 mb-5 rounded-2xl bg-white dark:bg-white/5 border border-brand-ebony/10 hover:border-brand-burgundy/30 hover:shadow-md transition-all group/file -mx-1"
                             >
                                 <div className="w-12 h-12 rounded-xl bg-indigo-500/10 text-indigo-500 flex items-center justify-center shrink-0 group-hover/file:bg-indigo-500 group-hover/file:text-white transition-colors">
-                                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
+                                    <FileIcon className="w-6 h-6" />
                                 </div>
                                 <div className="min-w-0 flex-1">
                                     <p className="font-bold text-sm text-brand-ebony truncate group-hover/file:text-brand-burgundy transition-colors">{post.fileName || 'Shared Document'}</p>
