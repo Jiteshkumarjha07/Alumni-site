@@ -11,7 +11,7 @@ import { LobbyPost, Poll, PollOption, MediaAttachment, User } from '@/types';
 import {
   Globe2, Pin, Heart, Send, Lock, Tag, Loader2,
   Image as ImageIcon, Video as VideoIcon, FileText, BarChart3,
-  Plus, Trash2, Download, Play, X
+  Plus, Trash2, Download, Play, X, MessageSquare, Share2
 } from 'lucide-react';
 import { uploadMedia, uploadVideo, uploadFile } from '@/lib/media';
 
@@ -30,19 +30,52 @@ function timeAgo(ts: any): string {
 const TAG_OPTIONS = ['Announcement', 'Collaboration', 'Event', 'Research', 'Achievement', 'General'];
 
 // ── LobbyPostCard ─────────────────────────────────────────────────────────
-function LobbyPostCard({ post, currentUid, onLike, onVote }: {
+function LobbyPostCard({ post, currentUid, onLike, onVote, userData }: {
   post: LobbyPost;
   currentUid: string;
   onLike: (post: LobbyPost) => void;
   onVote?: (postId: string, optionId: string) => void;
+  userData: User;
 }) {
   const isLiked = post.likes?.includes(currentUid);
   const [likeAnim, setLikeAnim] = useState(false);
+  const [showComments, setShowComments] = useState(false);
+  const [commentText, setCommentText] = useState('');
+  const [isSubmittingComment, setIsSubmittingComment] = useState(false);
 
   const handleLike = () => {
     setLikeAnim(true);
     onLike(post);
     setTimeout(() => setLikeAnim(false), 400);
+  };
+
+  const handleComment = async () => {
+    if (!commentText.trim() || isSubmittingComment) return;
+    setIsSubmittingComment(true);
+    try {
+      const postRef = doc(db, 'lobbyPosts', post.id);
+      const newComment = {
+        id: Math.random().toString(36).substring(7),
+        authorUid: userData.uid,
+        authorName: userData.name,
+        text: commentText.trim(),
+        createdAt: new Date()
+      };
+      await updateDoc(postRef, {
+        comments: arrayUnion(newComment)
+      });
+      setCommentText('');
+    } catch (err) {
+      console.error('Error adding comment to lobby post:', err);
+    } finally {
+      setIsSubmittingComment(false);
+    }
+  };
+
+  const handleShare = () => {
+    const url = `${window.location.origin}/lobby?post=${post.id}`;
+    navigator.clipboard.writeText(url);
+    alert('Link copied to clipboard!');
   };
 
   return (
@@ -207,22 +240,80 @@ function LobbyPostCard({ post, currentUid, onLike, onVote }: {
           </div>
         )}
 
-        {/* Footer – like button */}
-        <div className="flex items-center gap-3 pt-3 border-t border-brand-ebony/5">
-          <button
-            onClick={handleLike}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all active:scale-95
-              ${isLiked
-                ? 'bg-red-50 dark:bg-red-900/20 text-red-500 border border-red-200/40'
-                : 'bg-brand-parchment/40 dark:bg-white/5 text-brand-ebony/50 hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 border border-transparent hover:border-red-200/30'
-              }`}
-          >
-            <Heart
-              className={`w-3.5 h-3.5 transition-transform ${likeAnim ? 'scale-125' : 'scale-100'}`}
-              fill={isLiked ? 'currentColor' : 'none'}
-            />
-            <span>{post.likes?.length || 0}</span>
-          </button>
+        {/* Footer – Actions */}
+        <div className="flex flex-col gap-4 pt-3 border-t border-brand-ebony/5">
+          <div className="flex items-center gap-2">
+            {/* Like */}
+            <button
+              onClick={handleLike}
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all active:scale-95
+                ${isLiked
+                  ? 'bg-red-50 dark:bg-red-900/20 text-red-500 border border-red-200/40'
+                  : 'bg-brand-parchment/40 dark:bg-white/5 text-brand-ebony/50 hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 border border-transparent hover:border-red-200/30'
+                }`}
+            >
+              <Heart
+                className={`w-3.5 h-3.5 transition-transform ${likeAnim ? 'scale-125' : 'scale-100'}`}
+                fill={isLiked ? 'currentColor' : 'none'}
+              />
+              <span>{post.likes?.length || 0}</span>
+            </button>
+
+            {/* Comment */}
+            <button
+              onClick={() => setShowComments(!showComments)}
+              className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold bg-brand-parchment/40 dark:bg-white/5 text-brand-ebony/50 hover:text-violet-500 hover:bg-violet-50 transition-all border border-transparent hover:border-violet-200/30"
+            >
+              <MessageSquare className="w-3.5 h-3.5" />
+              <span>{post.comments?.length || 0}</span>
+            </button>
+
+            {/* Share */}
+            <button
+              onClick={handleShare}
+              className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold bg-brand-parchment/40 dark:bg-white/5 text-brand-ebony/50 hover:text-blue-500 hover:bg-blue-50 transition-all border border-transparent hover:border-blue-200/30"
+            >
+              <Share2 className="w-3.5 h-3.5" />
+              <span>Share</span>
+            </button>
+          </div>
+
+          {/* Comment Section */}
+          {showComments && (
+            <div className="space-y-4 animate-in slide-in-from-top-2 duration-300">
+              <div className="flex items-center gap-3">
+                <input
+                  type="text"
+                  value={commentText}
+                  onChange={(e) => setCommentText(e.target.value)}
+                  placeholder="Write a comment..."
+                  className="flex-1 bg-white/70 dark:bg-white/5 border border-brand-ebony/10 rounded-xl px-4 py-2 text-xs text-brand-ebony outline-none focus:border-violet-300"
+                  onKeyDown={(e) => e.key === 'Enter' && handleComment()}
+                />
+                <button
+                  onClick={handleComment}
+                  disabled={!commentText.trim() || isSubmittingComment}
+                  className="p-2 bg-violet-500 text-white rounded-xl hover:bg-violet-600 disabled:opacity-50 transition-all"
+                >
+                  <Send className="w-3.5 h-3.5" />
+                </button>
+              </div>
+
+              {post.comments && post.comments.length > 0 && (
+                <div className="space-y-3 pl-2 border-l-2 border-brand-ebony/5">
+                  {post.comments.map((c: any) => (
+                    <div key={c.id} className="flex flex-col gap-1">
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] font-black text-brand-ebony uppercase tracking-widest">{c.authorName}</span>
+                        <span className="text-[9px] text-brand-ebony/30">{new Date(c.createdAt?.toDate?.() || c.createdAt).toLocaleDateString()}</span>
+                      </div>
+                      <p className="text-xs text-brand-ebony/70">{c.text}</p>
+                    </div>
+                  )).reverse()}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -735,6 +826,7 @@ export function InstituteLobby() {
               currentUid={userData.uid}
               onLike={handleLike}
               onVote={handleVote}
+              userData={userData}
             />
           ))}
         </div>

@@ -39,6 +39,7 @@ export interface LobbyPost {
   createdAt: Timestamp;
   isPinned?: boolean;
   tags?: string[];
+  comments?: Comment[];
 }
 
 export interface Institute {
