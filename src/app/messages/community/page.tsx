@@ -37,6 +37,9 @@ export default function CommunityChatPage() {
 
             setMessages(fetchedMessages.slice(-50)); // Keep last 50 messages
             setLoading(false);
+        }, (error) => {
+            console.error('Error fetching community messages:', error);
+            setLoading(false);
         });
 
         return () => unsubscribe();

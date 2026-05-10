@@ -11,13 +11,37 @@ import Link from 'next/link';
 import { BrandLogo } from '@/components/brand/BrandLogo';
 
 export default function LoginPage() {
-    const { signIn } = useAuth();
+    const { signIn, resetPassword } = useAuth();
     const router = useRouter();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
+    const [isResetting, setIsResetting] = useState(false);
+    const [resetSuccess, setResetSuccess] = useState('');
+
+    const handleResetPassword = async () => {
+        setError('');
+        setResetSuccess('');
+        
+        if (!email.trim()) {
+            setError('Please enter your email address to reset password');
+            return;
+        }
+
+        setIsResetting(true);
+        try {
+            await resetPassword(email.trim());
+            setResetSuccess('Password reset link sent! Check your email.');
+        } catch (err: unknown) {
+            console.error('Password reset error:', err);
+            const error = err as { message?: string };
+            setError(error.message || 'Failed to send password reset email');
+        } finally {
+            setIsResetting(false);
+        }
+    };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -105,11 +129,16 @@ export default function LoginPage() {
                         <p className="text-brand-ebony/60 text-sm font-medium">Sign in to your alumni account</p>
                     </div>
 
-                    {/* Error Message */}
                     {error && (
                         <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-xl flex items-center gap-3">
                             <div className="w-1.5 h-1.5 rounded-full bg-red-500 flex-shrink-0" />
                             <p className="text-sm text-red-600 dark:text-red-400 font-medium">{error}</p>
+                        </div>
+                    )}
+                    {resetSuccess && (
+                        <div className="mb-6 p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-xl flex items-center gap-3">
+                            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 flex-shrink-0" />
+                            <p className="text-sm text-emerald-600 dark:text-emerald-400 font-medium">{resetSuccess}</p>
                         </div>
                     )}
 
@@ -124,22 +153,32 @@ export default function LoginPage() {
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
                                 placeholder="your.email@example.com"
-                                className="w-full px-4 py-3.5 input-premium rounded-xl text-sm font-medium"
+                                className="w-full px-4 py-3.5 bg-slate-100 border-2 border-slate-300 dark:bg-white/5 dark:border-white/10 text-brand-ebony placeholder:text-brand-ebony/40 rounded-xl text-sm font-medium focus:border-brand-burgundy focus:ring-2 focus:ring-brand-burgundy/20 outline-none transition-all"
                                 disabled={loading}
                             />
                         </div>
 
                         <div>
-                            <label className="block text-[11px] font-bold text-brand-ebony/60 mb-2 uppercase tracking-[0.15em]">
-                                Password
-                            </label>
+                            <div className="flex justify-between items-center mb-2">
+                                <label className="block text-[11px] font-bold text-brand-ebony/60 uppercase tracking-[0.15em]">
+                                    Password
+                                </label>
+                                <button
+                                    type="button"
+                                    onClick={handleResetPassword}
+                                    disabled={isResetting || loading}
+                                    className="text-[11px] font-bold text-brand-burgundy hover:text-indigo-500 transition-colors"
+                                >
+                                    {isResetting ? 'Sending...' : 'Forgot Password?'}
+                                </button>
+                            </div>
                             <div className="relative">
                                 <input
                                     type={showPassword ? 'text' : 'password'}
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
                                     placeholder="Enter your password"
-                                    className="w-full px-4 py-3.5 input-premium rounded-xl text-sm font-medium pr-12"
+                                    className="w-full px-4 py-3.5 bg-slate-100 border-2 border-slate-300 dark:bg-white/5 dark:border-white/10 text-brand-ebony placeholder:text-brand-ebony/40 rounded-xl text-sm font-medium pr-12 focus:border-brand-burgundy focus:ring-2 focus:ring-brand-burgundy/20 outline-none transition-all"
                                     disabled={loading}
                                 />
                                 <button

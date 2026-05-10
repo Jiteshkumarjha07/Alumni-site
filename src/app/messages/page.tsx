@@ -34,7 +34,7 @@ function MessagesClient() {
     const [viewMode, setViewMode] = useState<'chats' | 'groups'>('chats');
     
     // Resizable Sidebar State
-    const [sidebarWidth, setSidebarWidth] = useState(400);
+    const [sidebarWidth, setSidebarWidth] = useState(350);
     const [isResizing, setIsResizing] = useState(false);
     const containerRef = useRef<HTMLDivElement>(null);
 
@@ -109,7 +109,7 @@ function MessagesClient() {
     }, [userData?.instituteId]);
 
     useEffect(() => {
-        if (!userData?.uid) {
+        if (!userData?.uid || !userData.instituteId) {
             setLoadingChats(false);
             return;
         }
@@ -182,9 +182,9 @@ function MessagesClient() {
             const containerLeft = containerRef.current.getBoundingClientRect().left;
             let newWidth = e.clientX - containerLeft;
             
-            // Limit bounds: 300px to 600px
-            if (newWidth < 300) newWidth = 300;
-            if (newWidth > 600) newWidth = 600;
+            // Limit bounds: 280px to 500px
+            if (newWidth < 280) newWidth = 280;
+            if (newWidth > 500) newWidth = 500;
             
             setSidebarWidth(newWidth);
         };

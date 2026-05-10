@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import Link from 'next/link';
 import { User, Message, Group, Poll } from '@/types';
 import { collection, query, orderBy, onSnapshot, addDoc, serverTimestamp, setDoc, doc, updateDoc, arrayUnion, increment } from 'firebase/firestore';
@@ -8,11 +9,12 @@ import { db } from '@/lib/firebase';
 import { MessageBubble } from './MessageBubble';
 import { ForwardMessageModal } from './ForwardMessageModal';
 import { PollModal } from '../modals/PollModal';
-import { Send, Loader2, ArrowLeft, X, CheckCheck, ShieldCheck, Lock, Image as ImageIcon, Video as VideoIcon, Plus, Users, Phone, Video, Mic, MicOff, Paperclip, FileText, BarChart2, Download, Smile, LogOut, ListChecks, CheckCircle2, Trash2, Sparkles, MoreHorizontal, Info, Pencil } from 'lucide-react';
+import { Send, Loader2, ArrowLeft, X, CheckCheck, ShieldCheck, Lock, Image as ImageIcon, Video as VideoIcon, Plus, Users, Phone, Video, Mic, MicOff, Paperclip, FileText, BarChart2, Download, Smile, LogOut, ListChecks, CheckCircle2, Trash2, Sparkles, MoreHorizontal, Info, Pencil, Clock, UserX } from 'lucide-react';
 import { encryptMessage, decryptMessage, getSharedSecret } from '@/lib/encryption';
 import { uploadMedia, uploadVideo, uploadFile, uploadAudio } from '@/lib/media';
 import { useAuth } from '@/contexts/AuthContext';
-import EmojiPicker from 'emoji-picker-react';
+import EmojiPicker, { EmojiStyle, Theme, Categories } from 'emoji-picker-react';
+import { EmojiRenderer } from './EmojiRenderer';
 
 interface ChatWindowProps {
     chatId: string;
@@ -53,6 +55,7 @@ export function ChatWindow({ chatId, currentUser, otherUser, isGroup = false, gr
     const docInputRef = useRef<HTMLInputElement>(null);
     const attachmentMenuRef = useRef<HTMLDivElement>(null);
     const headerMoreMenuRef = useRef<HTMLDivElement>(null);
+    const textareaRef = useRef<HTMLTextAreaElement>(null);
     const emojiPickerRef = useRef<HTMLDivElement>(null);
     const contextMenuRef = useRef<HTMLDivElement>(null);
 
@@ -289,6 +292,12 @@ export function ChatWindow({ chatId, currentUser, otherUser, isGroup = false, gr
     // to prevent unnecessary re-mounts that race with cleanup
     }, [chatId, currentUser.uid, isGroup, groupData?.id]);
 
+    useEffect(() => {
+        if (replyingToMessage || editingMessage) {
+            textareaRef.current?.focus();
+        }
+    }, [replyingToMessage, editingMessage]);
+
     const handleSendMessage = async (e: React.FormEvent) => {
         e.preventDefault();
         if ((!newMessage.trim() && !mediaPreview) || (!otherUser && !isGroup) || !chatId) return;
@@ -348,49 +357,54 @@ export function ChatWindow({ chatId, currentUser, otherUser, isGroup = false, gr
                     messageData.replyToText = encryptMessage(currentReply.text, encryptionSecret);
                     messageData.replyToSenderName = currentReply.senderName || 'Unknown';
                 }
-                if (!isGroup && otherUser) {
-                    // First, ensure the chat document exists with participant details.
-                    // Also reset deletedBy to [] so the conversation is visible to both
-                    // parties even if one previously deleted it.
-                    await setDoc(doc(db, 'chats', chatId), {
-                        participants: [currentUser.uid, otherUser.uid],
-                        lastMessage: messageText || (imageUrl ? (currentMedia?.type === 'file' ? '📄 File' : '📷 Photo') : '🎥 Video'),
-                        lastMessageAt: serverTimestamp(),
-                        deletedBy: [],   // ← clear any previous deletions so chat reappears
-                        participantDetails: { 
-                            [currentUser.uid]: {name: currentUser.name, profilePic: currentUser.profilePic || ''}, 
-                            [otherUser.uid]: {name: otherUser.name, profilePic: otherUser.profilePic || ''} 
-                        },
-                        instituteId: currentUser.instituteId
-                    }, { merge: true });
+            // Prepare all promises for parallel execution
+            const promises: Promise<any>[] = [];
 
-                    // Increment the unread count properly so multiple messages stack up
-                    await updateDoc(doc(db, 'chats', chatId), {
-                        [`unreadCount.${otherUser.uid}`]: increment(1)
-                    });
+            if (!isGroup && otherUser) {
+                // Update or create chat document
+                promises.push(setDoc(doc(db, 'chats', chatId), {
+                    participants: [currentUser.uid, otherUser.uid],
+                    lastMessage: messageText || (imageUrl ? (currentMedia?.type === 'file' ? '📄 File' : '📷 Photo') : '🎥 Video'),
+                    lastMessageAt: serverTimestamp(),
+                    deletedBy: [],
+                    participantDetails: { 
+                        [currentUser.uid]: {name: currentUser.name, profilePic: currentUser.profilePic || ''}, 
+                        [otherUser.uid]: {name: otherUser.name, profilePic: otherUser.profilePic || ''} 
+                    },
+                    instituteId: currentUser.instituteId
+                }, { merge: true }));
 
-                    // Send a notification to the receiver so their notification bell lights up
-                    await addDoc(collection(db, 'notifications'), {
-                        userId: otherUser.uid,
-                        type: 'message',
-                        sourceUserUid: currentUser.uid,
-                        sourceUserName: currentUser.name,
-                        sourceUserProfilePic: currentUser.profilePic || '',
-                        message: `sent you a message: "${(messageText || '📷 Media').substring(0, 40)}${messageText?.length > 40 ? '...' : ''}"`,
-                        link: `/messages`,
-                        createdAt: serverTimestamp(),
-                        isRead: false,
-                        instituteId: currentUser.instituteId
-                    }).catch(() => {}); // Non-blocking — don't fail the message send if notification fails
-                } else if (isGroup) {
-                    await updateDoc(doc(db, 'groups', chatId), {
-                        lastMessage: messageText || (imageUrl ? '📷 Photo' : '🎥 Video'),
-                        lastMessageAt: serverTimestamp(),
-                        lastSenderName: currentUser.name
-                    });
-                }
+                // Increment unread count
+                promises.push(updateDoc(doc(db, 'chats', chatId), {
+                    [`unreadCount.${otherUser.uid}`]: increment(1)
+                }));
 
-                await addDoc(collection(db, collectionPath, chatId, 'messages'), messageData);
+                // Send notification (already parallel but adding to list)
+                promises.push(addDoc(collection(db, 'notifications'), {
+                    userId: otherUser.uid,
+                    type: 'message',
+                    sourceUserUid: currentUser.uid,
+                    sourceUserName: currentUser.name,
+                    sourceUserProfilePic: currentUser.profilePic || '',
+                    message: `sent you a message: "${(messageText || '📷 Media').substring(0, 40)}${messageText?.length > 40 ? '...' : ''}"`,
+                    link: `/messages`,
+                    createdAt: serverTimestamp(),
+                    isRead: false,
+                    instituteId: currentUser.instituteId
+                }).catch(() => {}));
+            } else if (isGroup) {
+                promises.push(updateDoc(doc(db, 'groups', chatId), {
+                    lastMessage: messageText || (imageUrl ? '📷 Photo' : '🎥 Video'),
+                    lastMessageAt: serverTimestamp(),
+                    lastSenderName: currentUser.name
+                }));
+            }
+
+            // Create the actual message
+            promises.push(addDoc(collection(db, collectionPath, chatId, 'messages'), messageData));
+
+            // Run all writes in parallel
+            await Promise.all(promises);
             }
         } catch (error) {
             console.error('Error sending message:', error);
@@ -427,6 +441,18 @@ export function ChatWindow({ chatId, currentUser, otherUser, isGroup = false, gr
             console.error('Error creating poll:', error);
         } finally {
             setSending(false);
+        }
+    };
+
+    const scrollToMessage = (messageId: string) => {
+        const element = document.getElementById(messageId);
+        if (element) {
+            element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            // Add a temporary highlight effect
+            element.classList.add('ring-4', 'ring-brand-burgundy/40', 'rounded-2xl', 'scale-[1.02]');
+            setTimeout(() => {
+                element.classList.remove('ring-4', 'ring-brand-burgundy/40', 'rounded-2xl', 'scale-[1.02]');
+            }, 2000);
         }
     };
 
@@ -503,6 +529,68 @@ export function ChatWindow({ chatId, currentUser, otherUser, isGroup = false, gr
         }
     };
 
+    const handleClearChat = async () => {
+        if (!chatId) return;
+        if (!window.confirm('Are you sure you want to clear all messages? This cannot be undone.')) return;
+        try {
+            const promises = messages.map(m => updateDoc(doc(db, isGroup ? 'groups' : 'chats', chatId, 'messages', m.id), { hiddenBy: arrayUnion(currentUser.uid) }));
+            
+            // Update the main chat document to reflect no messages in the preview
+            const chatUpdatePromise = updateDoc(doc(db, isGroup ? 'groups' : 'chats', chatId), {
+                lastMessage: '',
+                lastMessageAt: serverTimestamp()
+            });
+
+            await Promise.all([...promises, chatUpdatePromise]);
+            setShowMoreMenu(false);
+        } catch (error) {
+            console.error('Error clearing chat:', error);
+        }
+    };
+
+    const handleDeleteChat = async () => {
+        if (!chatId) return;
+        if (!window.confirm('Are you sure you want to delete this conversation?')) return;
+        try {
+            await updateDoc(doc(db, isGroup ? 'groups' : 'chats', chatId), {
+                deletedBy: arrayUnion(currentUser.uid)
+            });
+            setShowMoreMenu(false);
+            onBack?.();
+        } catch (error) {
+            console.error('Error deleting chat:', error);
+        }
+    };
+
+    const handleBlockUser = async () => {
+        if (isGroup || !otherUser) return;
+        if (!window.confirm(`Are you sure you want to block ${otherUser.name}?`)) return;
+        try {
+            await updateDoc(doc(db, 'users', currentUser.uid), {
+                blockedUsers: arrayUnion(otherUser.uid)
+            });
+            setShowMoreMenu(false);
+            onBack?.();
+        } catch (error) {
+            console.error('Error blocking user:', error);
+        }
+    };
+
+    const handleToggleMute = async () => {
+        if (!chatId) return;
+        try {
+            const isMuted = (currentUser as any)?.mutedChats?.includes(chatId);
+            await updateDoc(doc(db, 'users', currentUser.uid), {
+                mutedChats: isMuted 
+                    ? (currentUser as any).mutedChats.filter((id: string) => id !== chatId)
+                    : arrayUnion(chatId)
+            });
+            setShowMoreMenu(false);
+        } catch (error) {
+            console.error('Error toggling mute:', error);
+        }
+    };
+
     const handleBulkDelete = async () => {
         if (selectedMessageIds.length === 0) return;
         try {
@@ -542,7 +630,7 @@ export function ChatWindow({ chatId, currentUser, otherUser, isGroup = false, gr
                 <div className="flex items-center gap-3 px-6 py-3 bg-brand-burgundy/5 rounded-2xl border border-brand-burgundy/10 shadow-inner group transition-all hover:bg-brand-burgundy/10">
                     <ShieldCheck className="w-5 h-5 text-brand-burgundy/60 group-hover:scale-110 transition-transform" />
                     <span className="text-[10px] md:text-[11px] font-black uppercase tracking-[0.2em] text-brand-burgundy/60">
-                        Secured by AlumNest E2EE
+                        Secure Legacy Exchange
                     </span>
                 </div>
             </div>
@@ -575,7 +663,7 @@ export function ChatWindow({ chatId, currentUser, otherUser, isGroup = false, gr
             )}
 
             {/* Chat Header */}
-            <div className="flex items-center justify-between px-6 py-2 bg-white dark:bg-brand-cream border-b border-brand-ebony/10 dark:border-white/10 z-30 sticky top-0 shadow-sm">
+            <div className="flex items-center justify-between px-8 py-3 bg-white dark:bg-brand-cream border-b border-brand-ebony/10 dark:border-white/10 z-30 sticky top-0 shadow-sm">
                 <div className="flex items-center flex-1 min-w-0 pr-4">
                     {onBack && (
                         <button onClick={onBack} className="md:hidden -ml-2 mr-2 p-2.5 hover:bg-brand-burgundy/10 active:bg-brand-burgundy/20 text-brand-ebony/80 rounded-xl transition-all shrink-0 active:scale-90 flex items-center justify-center">
@@ -635,7 +723,7 @@ export function ChatWindow({ chatId, currentUser, otherUser, isGroup = false, gr
                 <div className="flex items-center gap-2 shrink-0">
                     <div className="hidden lg:flex items-center gap-1.5 px-4 py-2 bg-brand-ebony/[0.03] rounded-full mr-2 ring-1 ring-brand-ebony/5">
                         <Lock className="w-3.5 h-3.5 text-brand-ebony/40" />
-                        <span className="text-[9px] font-extrabold text-brand-ebony/40 uppercase tracking-widest whitespace-nowrap">End-to-End Encrypted</span>
+                        <span className="text-[9px] font-extrabold text-brand-ebony/40 uppercase tracking-widest whitespace-nowrap">Secure Connection</span>
                     </div>
 
                     <button 
@@ -655,14 +743,33 @@ export function ChatWindow({ chatId, currentUser, otherUser, isGroup = false, gr
                         {showMoreMenu && (
                             <div className="absolute right-0 top-14 w-60 card-premium shadow-2xl z-[80] overflow-hidden animate-in fade-in slide-in-from-top-2 duration-300">
                                 <div className="p-2 space-y-1">
-                                    <button onClick={() => { setIsSelectionMode(true); setShowMoreMenu(false); }} className="w-full flex items-center gap-3 px-4 py-3 text-xs font-bold text-brand-ebony hover:bg-brand-ebony/5 rounded-xl transition-all">
-                                        <ListChecks className="w-4 h-4 text-brand-burgundy" />
+                                    <button onClick={() => { setIsSelectionMode(true); setShowMoreMenu(false); }} className="w-full flex items-center gap-3 px-4 py-3 text-[11px] font-extrabold uppercase tracking-wider text-brand-ebony hover:bg-brand-burgundy/5 hover:text-brand-burgundy rounded-xl transition-all group">
+                                        <ListChecks className="w-4 h-4 text-brand-burgundy group-hover:scale-110 transition-transform" />
                                         Select Messages
                                     </button>
-                                    <button className="w-full flex items-center gap-3 px-4 py-3 text-xs font-bold text-brand-ebony hover:bg-brand-ebony/5 rounded-xl transition-all opacity-50 cursor-not-allowed">
-                                        <Info className="w-4 h-4 text-brand-burgundy" />
-                                        Circle Info
+                                    <div className="h-px bg-brand-ebony/5 dark:bg-white/5 my-1 mx-2" />
+                                    
+                                    <button onClick={handleClearChat} className="w-full flex items-center gap-3 px-4 py-3 text-[11px] font-extrabold uppercase tracking-wider text-brand-ebony hover:bg-brand-burgundy/5 hover:text-brand-burgundy rounded-xl transition-all group">
+                                        <Clock className="w-4 h-4 text-brand-burgundy group-hover:rotate-12 transition-transform" />
+                                        Clear History
                                     </button>
+                                    <button onClick={handleDeleteChat} className="w-full flex items-center gap-3 px-4 py-3 text-[11px] font-extrabold uppercase tracking-wider text-brand-ebony hover:bg-brand-burgundy/5 hover:text-brand-burgundy rounded-xl transition-all group">
+                                        <LogOut className="w-4 h-4 text-brand-burgundy group-hover:translate-x-1 transition-transform" />
+                                        Delete {isGroup ? 'Group' : 'Chat'}
+                                    </button>
+                                    
+                                    <div className="h-px bg-brand-ebony/5 dark:bg-white/5 my-1 mx-2" />
+                                    
+                                    <button onClick={handleToggleMute} className="w-full flex items-center gap-3 px-4 py-3 text-[11px] font-extrabold uppercase tracking-wider text-brand-ebony hover:bg-brand-burgundy/5 hover:text-brand-burgundy rounded-xl transition-all group">
+                                        <MicOff className="w-4 h-4 text-brand-burgundy group-hover:scale-110 transition-transform" />
+                                        {(currentUser as any)?.mutedChats?.includes(chatId) ? 'Unmute Signals' : 'Mute Signals'}
+                                    </button>
+                                    {!isGroup && (
+                                        <button onClick={handleBlockUser} className="w-full flex items-center gap-3 px-4 py-3 text-[11px] font-extrabold uppercase tracking-wider text-red-500 hover:bg-red-500/10 rounded-xl transition-all group">
+                                            <UserX className="w-4 h-4 group-hover:scale-110 transition-transform" />
+                                            Block User
+                                        </button>
+                                    )}
                                     <button onClick={() => { onBack?.(); setShowMoreMenu(false); }} className="w-full flex items-center gap-3 px-4 py-3 text-xs font-bold text-rose-500 hover:bg-rose-500/5 rounded-xl transition-all">
                                         <LogOut className="w-4 h-4" />
                                         Close Conversation
@@ -676,13 +783,23 @@ export function ChatWindow({ chatId, currentUser, otherUser, isGroup = false, gr
 
             {/* Messages Area */}
             <div
-                className="flex-1 overflow-y-auto px-2 md:px-6 pt-4 pb-[120px] md:pb-24 space-y-2.5 scrollbar-hide bg-white/30 dark:bg-brand-parchment/5"
+                className="flex-1 overflow-y-auto px-4 md:px-12 pt-6 pb-[180px] md:pb-40 space-y-5 scrollbar-hide bg-[#f2f4f7] dark:bg-[#0a0a0c]"
                 style={{ containerType: 'inline-size' }}
                 onContextMenu={(e) => {
                     // Disable custom context menu on touch devices to prioritize long-press selection
                     if ('ontouchstart' in window || navigator.maxTouchPoints > 0) return;
                     e.preventDefault();
-                    setContextMenu({ x: e.clientX, y: e.clientY });
+                    const x = e.clientX;
+                    const y = e.clientY;
+                    const windowWidth = window.innerWidth;
+                    const windowHeight = window.innerHeight;
+                    const menuWidth = 224; // w-56
+                    const menuHeight = 300; // Estimated max height
+
+                    setContextMenu({ 
+                        x: x + menuWidth > windowWidth ? x - menuWidth : x, 
+                        y: y + menuHeight > windowHeight ? y - menuHeight : y 
+                    });
                 }}
                 onClick={() => contextMenu && setContextMenu(null)}
             >
@@ -715,7 +832,7 @@ export function ChatWindow({ chatId, currentUser, otherUser, isGroup = false, gr
                             isOwnMessage={message.senderId === currentUser.uid}
                             onEdit={(m) => { setEditingMessage(m); setNewMessage(decryptMessage(m.text, encryptionSecret)); }}
                             onUnsend={setUnsendingMessage}
-                            onReply={setReplyingToMessage}
+                            onReply={(m) => setReplyingToMessage({ ...m, text: decryptMessage(m.text, encryptionSecret) })}
                             onForward={setForwardingMessage}
                             onReact={handleReact}
                             sharedSecret={encryptionSecret}
@@ -724,33 +841,34 @@ export function ChatWindow({ chatId, currentUser, otherUser, isGroup = false, gr
                             currentUserId={currentUser.uid}
                             isSelectionMode={isSelectionMode}
                             isSelected={selectedMessageIds.includes(message.id)}
+                            onJumpToMessage={scrollToMessage}
+                            onSelect={(id) => setSelectedMessageIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id])}
                             onLongPress={(id) => {
                                 if (!isSelectionMode) {
                                     setIsSelectionMode(true);
                                     setSelectedMessageIds([id]);
                                 }
                             }}
-                            onSelect={(id) => setSelectedMessageIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id])}
                         />
                     ))
                 )}
                 <div ref={messagesEndRef} />
             </div>
 
-            {/* Right-Click Context Menu */}
-            {contextMenu && (
+            {/* Right-Click Context Menu (Portaled to Body) */}
+            {contextMenu && typeof document !== 'undefined' && createPortal(
                 <>
                     <div
-                        className="fixed inset-0 z-[90]"
+                        className="fixed inset-0 z-[9998]"
                         onClick={() => setContextMenu(null)}
                         onContextMenu={(e) => { e.preventDefault(); setContextMenu(null); }}
                     />
                     <div
                         ref={contextMenuRef}
-                        className="fixed z-[100] w-56 bg-white/95 dark:bg-brand-parchment/10 backdrop-blur-2xl rounded-2xl border border-brand-ebony/10 dark:border-white/5 shadow-premium overflow-hidden animate-in fade-in zoom-in-95 duration-150 ring-1 ring-brand-ebony/5"
+                        className="fixed z-[9999] w-56 bg-white/95 dark:bg-[#1a1423] backdrop-blur-3xl rounded-2xl border border-brand-ebony/10 dark:border-white/5 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.4)] overflow-hidden animate-in fade-in zoom-in-95 duration-150 ring-1 ring-brand-ebony/5"
                         style={{ 
-                            top: typeof window !== 'undefined' ? Math.min(contextMenu.y, window.innerHeight - 150) : contextMenu.y, 
-                            left: typeof window !== 'undefined' ? Math.min(contextMenu.x, window.innerWidth - 240) : contextMenu.x 
+                            top: Math.min(contextMenu.y, window.innerHeight - 200), 
+                            left: Math.min(contextMenu.x, window.innerWidth - 230) 
                         }}
                     >
                         <div className="p-1.5 space-y-1">
@@ -771,11 +889,12 @@ export function ChatWindow({ chatId, currentUser, otherUser, isGroup = false, gr
                             </button>
                         </div>
                     </div>
-                </>
+                </>,
+                document.body
             )}
 
             {/* Input Footer Area */}
-            <div className="absolute bottom-0 md:bottom-6 left-0 right-0 md:left-6 md:right-6 z-40 px-2 py-2.5 md:px-3 md:py-3 bg-white/95 dark:bg-brand-parchment/40 backdrop-blur-3xl rounded-none md:rounded-[2rem] shadow-none md:shadow-[0_8px_32px_rgba(0,0,0,0.12)] border-t md:border border-brand-ebony/10 dark:border-brand-ebony/20 pointer-events-auto transition-all duration-300">
+            <div className="absolute bottom-0 md:bottom-6 left-0 right-0 md:left-6 md:right-6 z-40 px-4 py-4 md:px-6 md:py-6 bg-white/95 dark:bg-brand-parchment/40 backdrop-blur-3xl rounded-none md:rounded-[2rem] shadow-none md:shadow-[0_8px_32px_rgba(0,0,0,0.12)] border-t md:border border-brand-ebony/10 dark:border-brand-ebony/20 pointer-events-auto transition-all duration-300">
                 {editingMessage && (
                     <div className="flex items-center justify-between mb-4 px-5 py-3 bg-brand-burgundy/10 rounded-2xl border border-brand-burgundy/20 animate-in slide-in-from-bottom-2 mx-2">
                         <div className="flex items-center gap-3 text-brand-burgundy">
@@ -793,7 +912,7 @@ export function ChatWindow({ chatId, currentUser, otherUser, isGroup = false, gr
                             <p className="text-[10px] text-brand-burgundy font-extrabold uppercase tracking-[0.15em] mb-1.5 flex items-center gap-2">
                                 <Paperclip className="w-3 h-3" /> Responding to {replyingToMessage.senderName}
                             </p>
-                            <p className="text-xs text-brand-ebony/40 font-medium italic truncate">"{decryptMessage(replyingToMessage.text, encryptionSecret)}"</p>
+                            <p className="text-xs text-brand-ebony/40 font-medium italic truncate">"{replyingToMessage.text}"</p>
                         </div>
                         <button onClick={() => setReplyingToMessage(null)} className="p-2 text-brand-ebony/20 hover:text-red-500 transition-all">
                             <X className="w-4 h-4" />
@@ -872,33 +991,52 @@ export function ChatWindow({ chatId, currentUser, otherUser, isGroup = false, gr
                     
                     <form onSubmit={handleSendMessage} className="flex-1 flex items-center gap-4">
                         <div className="flex-1 relative group">
-                            <textarea
-                                value={newMessage}
-                                onChange={(e) => {
-                                    setNewMessage(e.target.value);
-                                    e.target.style.height = 'auto';
-                                    e.target.style.height = `${Math.min(e.target.scrollHeight, 120)}px`;
-                                }}
-                                onKeyDown={(e) => {
-                                    if (e.key === 'Enter' && !e.shiftKey) {
-                                        e.preventDefault();
-                                        if (newMessage.trim() || mediaPreview) {
-                                            handleSendMessage(e as any);
-                                            e.currentTarget.style.height = 'auto';
+                            <div 
+                                className="w-full px-5 py-[11px] pr-12 min-h-[44px] max-h-[120px] bg-white dark:bg-[#1a1423] border-2 border-brand-ebony/10 dark:border-white/10 rounded-[22px] focus-within:ring-2 focus-within:ring-brand-burgundy/20 focus-within:border-brand-burgundy/50 transition-all relative overflow-hidden shadow-sm"
+                            >
+                                {/* Mirroring Layer (Emojis look like the picker here) */}
+                                <div 
+                                    className="absolute inset-0 px-5 py-[11px] pr-12 text-[14px] font-semibold leading-relaxed whitespace-pre-wrap break-words pointer-events-none select-none overflow-hidden"
+                                    aria-hidden="true"
+                                    style={{ fontFamily: 'inherit' }}
+                                >
+                                    <EmojiRenderer text={newMessage || ' '} />
+                                    {/* Placeholder if empty */}
+                                    {!newMessage && <span className="text-brand-ebony/30">{editingMessage ? 'Revising message...' : (replyingToMessage ? 'Drafting response...' : 'Share a thought...')}</span>}
+                                </div>
+
+                                <textarea
+                                    ref={textareaRef}
+                                    value={newMessage}
+                                    onChange={(e) => {
+                                        setNewMessage(e.target.value);
+                                        e.target.style.height = 'auto';
+                                        e.target.style.height = `${Math.min(e.target.scrollHeight, 120)}px`;
+                                    }}
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter' && !e.shiftKey) {
+                                            e.preventDefault();
+                                            if (newMessage.trim() || mediaPreview) {
+                                                handleSendMessage(e as any);
+                                                e.currentTarget.style.height = 'auto';
+                                            }
                                         }
-                                    }
-                                }}
-                                rows={1}
-                                placeholder={editingMessage ? 'Revising message...' : (replyingToMessage ? 'Drafting response...' : 'Share a thought with the circle...')}
-                                onFocus={() => {
-                                    setTimeout(() => {
-                                        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-                                    }, 100);
-                                }}
-                                className="w-full px-5 py-[11px] pr-12 bg-white/60 dark:bg-white/5 border border-white dark:border-white/10 rounded-[22px] focus:outline-none focus:ring-2 focus:ring-brand-burgundy/20 focus:border-brand-burgundy/50 transition-colors font-bold text-[13.5px] shadow-inner placeholder:text-brand-ebony/30 resize-none overflow-y-auto leading-relaxed scrollbar-hide block"
-                                style={{ maxHeight: '120px', minHeight: '44px' }}
-                                disabled={sending}
-                            />
+                                    }}
+                                    rows={1}
+                                    onFocus={() => {
+                                        setTimeout(() => {
+                                            messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+                                        }, 100);
+                                    }}
+                                    className="w-full h-full bg-transparent border-none outline-none focus:ring-0 p-0 text-[14px] font-semibold leading-relaxed resize-none overflow-y-auto scrollbar-hide block relative z-10 text-transparent caret-brand-burgundy"
+                                    style={{ 
+                                        maxHeight: '120px', 
+                                        minHeight: '22px',
+                                        fontFamily: 'inherit'
+                                    }}
+                                    disabled={sending}
+                                />
+                            </div>
                             <button
                                 type="button"
                                 onClick={() => setShowEmojiPicker(!showEmojiPicker)}
@@ -908,14 +1046,33 @@ export function ChatWindow({ chatId, currentUser, otherUser, isGroup = false, gr
                             </button>
                             
                             {showEmojiPicker && (
-                                <div ref={emojiPickerRef} className="absolute bottom-full right-0 mb-6 z-[120] animate-in fade-in zoom-in-95 shadow-2xl rounded-[20px] overflow-hidden border border-brand-ebony/10">
+                                <div ref={emojiPickerRef} className="absolute bottom-full right-0 mb-6 z-[120] animate-in fade-in zoom-in-95 shadow-[0_20px_50px_rgba(0,0,0,0.3)] rounded-[24px] overflow-hidden border border-brand-ebony/10">
                                     <EmojiPicker 
                                         onEmojiClick={(emojiData) => {
                                             setNewMessage(prev => prev + emojiData.emoji);
                                         }}
-                                        width={320}
-                                        height={400}
+                                        width={300}
+                                        height={380}
                                         searchPlaceholder="Search emojis..."
+                                        emojiStyle={EmojiStyle.APPLE}
+                                        theme={Theme.AUTO}
+                                        lazyLoadEmojis={true}
+                                        previewConfig={{
+                                            showPreview: false
+                                        }}
+                                        searchDisabled={false}
+                                        skinTonesDisabled={true}
+                                        categories={[
+                                            { category: Categories.SUGGESTED, name: 'Recently Used' },
+                                            { category: Categories.SMILEYS_PEOPLE, name: 'Faces' },
+                                            { category: Categories.ANIMALS_NATURE, name: 'Nature' },
+                                            { category: Categories.FOOD_DRINK, name: 'Food' },
+                                            { category: Categories.ACTIVITIES, name: 'Activities' },
+                                            { category: Categories.TRAVEL_PLACES, name: 'Places' },
+                                            { category: Categories.OBJECTS, name: 'Objects' },
+                                            { category: Categories.SYMBOLS, name: 'Symbols' },
+                                            { category: Categories.FLAGS, name: 'Flags' }
+                                        ]}
                                     />
                                 </div>
                             )}

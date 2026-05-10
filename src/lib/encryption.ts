@@ -22,26 +22,20 @@ export const encryptMessage = (text: string, secret: string): string => {
 // CryptoJS throws "Malformed UTF-8 data" from WordArray.toString() which can
 // escape the outer try/catch in some versions, so we wrap that call separately.
 export const decryptMessage = (encryptedText: string, secret: string): string => {
-    // Guard: not a string, empty, or clearly not AES ciphertext → return as-is
     if (!encryptedText || typeof encryptedText !== 'string') return '';
 
+    let result = encryptedText;
+
     try {
-        let bytes: any;
-        try {
-            bytes = CryptoJS.AES.decrypt(encryptedText, secret);
-        } catch {
-            return encryptedText; // not valid AES ciphertext — return raw
-        }
-
-        let decrypted = '';
-        try {
-            decrypted = bytes.toString(CryptoJS.enc.Utf8);
-        } catch {
-            return encryptedText; // malformed UTF-8 — return raw
-        }
-
-        return decrypted || encryptedText;
+        const bytes = CryptoJS.AES.decrypt(encryptedText, secret);
+        const decrypted = bytes.toString(CryptoJS.enc.Utf8);
+        if (decrypted) result = decrypted;
     } catch {
-        return encryptedText;
+        // Keep as original if decryption fails (might be plain text)
     }
+
+    // Always strip E2E markers from start/end (flexible with spaces/colons/brackets)
+    return result
+        .replace(/^(E2E:?\s*|\[E2E\]\s*|\(E2E\)\s*)/i, '')
+        .replace(/(\s*[:\-]E2E|\s*\[E2E\]|\s*\(E2E\)|\s+E2E)$/i, '');
 };

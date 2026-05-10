@@ -48,6 +48,9 @@ export default function JobsPage() {
             })) as Job[];
             setJobs(fetchedJobs);
             setLoading(false);
+        }, (error) => {
+            console.error('Error fetching jobs:', error);
+            setLoading(false);
         });
 
         return () => unsubscribe();

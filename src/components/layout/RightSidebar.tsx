@@ -20,7 +20,7 @@ export function RightSidebar({ isOpen = false, onClose = () => {} }: RightSideba
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        if (!userData) { setLoading(false); return; }
+        if (!userData || !userData.instituteId) { setLoading(false); return; }
 
         const usersQuery = query(
             collection(db, 'users'),

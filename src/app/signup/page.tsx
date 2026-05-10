@@ -205,7 +205,7 @@ export default function SignUpPage() {
                                         setFormData({ ...formData, email: e.target.value });
                                         setIsApproved(false);
                                     }}
-                                    className="flex-1 px-4 py-3.5 input-premium rounded-xl font-medium text-sm disabled:opacity-50"
+                                    className="flex-1 px-4 py-3.5 bg-slate-100 border-2 border-slate-300 dark:bg-white/5 dark:border-white/10 text-brand-ebony placeholder:text-brand-ebony/40 focus:border-brand-burgundy focus:ring-2 focus:ring-brand-burgundy/20 outline-none transition-all rounded-xl font-medium text-sm disabled:opacity-50"
                                     required
                                     disabled={isApproved || checkLoading}
                                 />
@@ -315,7 +315,7 @@ export default function SignUpPage() {
                                         placeholder="John Doe"
                                         value={formData.name}
                                         onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                                        className="w-full px-4 py-3.5 input-premium rounded-xl font-medium text-sm"
+                                        className="w-full px-4 py-3.5 bg-slate-100 border-2 border-slate-300 dark:bg-white/5 dark:border-white/10 text-brand-ebony placeholder:text-brand-ebony/40 focus:border-brand-burgundy focus:ring-2 focus:ring-brand-burgundy/20 outline-none transition-all rounded-xl font-medium text-sm"
                                         required
                                     />
                                 </div>
@@ -330,7 +330,7 @@ export default function SignUpPage() {
                                             placeholder="Minimum 6 characters"
                                             value={formData.password}
                                             onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                                            className="w-full px-4 py-3.5 input-premium rounded-xl font-medium text-sm pr-12"
+                                            className="w-full px-4 py-3.5 bg-slate-100 border-2 border-slate-300 dark:bg-white/5 dark:border-white/10 text-brand-ebony placeholder:text-brand-ebony/40 focus:border-brand-burgundy focus:ring-2 focus:ring-brand-burgundy/20 outline-none transition-all rounded-xl font-medium text-sm pr-12"
                                             required
                                             minLength={6}
                                         />
@@ -354,7 +354,7 @@ export default function SignUpPage() {
                                             placeholder="e.g., 2020"
                                             value={formData.batch}
                                             onChange={(e) => setFormData({ ...formData, batch: parseInt(e.target.value) })}
-                                            className="w-full px-4 py-3.5 input-premium rounded-xl font-medium text-sm"
+                                            className="w-full px-4 py-3.5 bg-slate-100 border-2 border-slate-300 dark:bg-white/5 dark:border-white/10 text-brand-ebony placeholder:text-brand-ebony/40 focus:border-brand-burgundy focus:ring-2 focus:ring-brand-burgundy/20 outline-none transition-all rounded-xl font-medium text-sm"
                                             required
                                             min={1950}
                                             max={new Date().getFullYear()}
@@ -370,7 +370,7 @@ export default function SignUpPage() {
                                             placeholder="e.g., Software Engineer"
                                             value={formData.profession}
                                             onChange={(e) => setFormData({ ...formData, profession: e.target.value })}
-                                            className="w-full px-4 py-3.5 input-premium rounded-xl font-medium text-sm"
+                                            className="w-full px-4 py-3.5 bg-slate-100 border-2 border-slate-300 dark:bg-white/5 dark:border-white/10 text-brand-ebony placeholder:text-brand-ebony/40 focus:border-brand-burgundy focus:ring-2 focus:ring-brand-burgundy/20 outline-none transition-all rounded-xl font-medium text-sm"
                                             required
                                         />
                                     </div>

@@ -23,6 +23,12 @@ export default function AdminInstitutesPage() {
     const [success, setSuccess] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
 
+    useEffect(() => {
+        if (!authLoading && userData && !userData.isAdmin) {
+            router.replace('/');
+        }
+    }, [userData, authLoading, router]);
+
     // For assigning admin
     const [assignEmail, setAssignEmail] = useState('');
     const [assignLoading, setAssignLoading] = useState(false);
@@ -30,6 +36,11 @@ export default function AdminInstitutesPage() {
     const [assignError, setAssignError] = useState<string | null>(null);
 
     useEffect(() => {
+        if (!userData || !userData.isAdmin) {
+            setFetchLoading(false);
+            return;
+        }
+
         setFetchLoading(true);
         let hasLoaded = false;
 

@@ -17,9 +17,15 @@ interface Approval {
 }
 
 export default function AdminApprovalsPage() {
-    // Bug #11 fix: page-level guard — useAuth is already imported, re-use it
-    const { userData } = useAuth();
+    const { userData, loading: authLoading } = useAuth();
     const router = useRouter();
+
+    useEffect(() => {
+        if (!authLoading && userData && !userData.isAdmin && !userData.isinsadmin) {
+            router.replace('/');
+        }
+    }, [userData, authLoading, router]);
+
     const [email, setEmail] = useState('');
     const [selectedInstitutes, setSelectedInstitutes] = useState<string[]>([]);
     const [institutes, setInstitutes] = useState<Institute[]>([]);
@@ -36,6 +42,10 @@ export default function AdminApprovalsPage() {
     }, [userData]);
 
     useEffect(() => {
+        if (!userData || (!userData.isAdmin && !userData.instituteId)) {
+            setFetchLoading(false);
+            return;
+        }
         setFetchLoading(true);
         let instLoaded = false;
         let appLoaded = false;

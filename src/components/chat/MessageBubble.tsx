@@ -8,6 +8,7 @@ import { decryptMessage } from '@/lib/encryption';
 
 const REACTION_EMOJIS = ['❤️', '👍', '😂', '🎉', '😮', '😢', '🔥', '✨', '🤔', '😎', '👏', '💡', '🚀', '💯', '✅', '❌', '⭐', '🌈'];
 import Link from 'next/link';
+import { EmojiRenderer } from './EmojiRenderer';
 
 interface MessageBubbleProps {
     message: Message;
@@ -25,14 +26,16 @@ interface MessageBubbleProps {
     isSelected?: boolean;
     onSelect?: (id: string) => void;
     onLongPress?: (id: string) => void;
+    onJumpToMessage?: (id: string) => void;
 }
 
 export const MessageBubble = React.memo(function MessageBubble({ 
     message, isOwnMessage, onEdit, onUnsend, onReply, onForward, onReact, 
     sharedSecret, showSenderName = false, onVote, currentUserId,
-    isSelectionMode = false, isSelected = false, onSelect, onLongPress
+    isSelectionMode = false, isSelected = false, onSelect, onLongPress, onJumpToMessage
 }: MessageBubbleProps) {
     const [showMenu, setShowMenu] = useState(false);
+    const [menuDirection, setMenuDirection] = useState<'up' | 'down'>('up');
     const longPressTimer = React.useRef<NodeJS.Timeout | null>(null);
     const isLongPressActive = React.useRef(false);
 
@@ -146,7 +149,7 @@ export const MessageBubble = React.memo(function MessageBubble({
     const renderActionMenu = () => {
         if (!showMenu) return null;
         return (
-            <div className={`message-actions-menu absolute bottom-full mb-2 ${isOwnMessage ? 'right-0' : 'left-0'} w-48 bg-white dark:bg-[#1a1423] rounded-2xl shadow-premium border border-brand-ebony/5 dark:border-white/5 py-1.5 z-50 animate-in zoom-in-95 duration-200 max-h-[70vh] overflow-y-auto`}>
+            <div className={`message-actions-menu absolute ${menuDirection === 'up' ? 'bottom-full mb-2' : 'top-full mt-2'} ${isOwnMessage ? 'right-0' : 'left-0'} w-48 bg-white dark:bg-[#1a1423] rounded-2xl shadow-premium border border-brand-ebony/5 dark:border-white/5 py-1.5 z-50 animate-in zoom-in-95 duration-200 max-h-[70vh] overflow-y-auto`}>
                 {!message.isDeleted && (
                     <>
                         <button onClick={() => { setShowMenu(false); onReply?.(message); }} className="w-full flex items-center gap-3 px-4 py-2 hover:bg-brand-ebony/5 transition-colors text-xs font-bold text-brand-ebony/70 hover:text-brand-burgundy dark:text-white/70">
@@ -196,6 +199,7 @@ export const MessageBubble = React.memo(function MessageBubble({
 
     return (
         <div 
+            id={message.id}
             className={`flex w-full min-w-0 mb-4 group ${isOwnMessage ? 'justify-end' : 'justify-start'} transition-all`}
             onClick={() => {
                 if (isLongPressActive.current) return;
@@ -244,7 +248,12 @@ export const MessageBubble = React.memo(function MessageBubble({
                         {isOwnMessage && !isSelectionMode && (
                             <div className="relative mb-2">
                                 <button 
-                                    onClick={(e) => { e.stopPropagation(); setShowMenu(!showMenu); }} 
+                                    onClick={(e) => { 
+                                        e.stopPropagation(); 
+                                        const rect = e.currentTarget.getBoundingClientRect();
+                                        setMenuDirection(rect.top < 300 ? 'down' : 'up');
+                                        setShowMenu(!showMenu); 
+                                    }} 
                                     className="p-1.5 rounded-full text-brand-ebony/30 hover:bg-brand-ebony/5 hover:text-brand-ebony dark:text-white/40 dark:hover:text-white dark:hover:bg-white/10 transition-all opacity-0 group-hover:opacity-100 focus:opacity-100 [@media(hover:none)]:opacity-100"
                                 >
                                     <MoreVertical className="w-4 h-4" />
@@ -255,20 +264,26 @@ export const MessageBubble = React.memo(function MessageBubble({
 
                         <div className="relative min-w-0 group max-w-full">
                         <div
-                            className={`px-3 py-1.5 relative shadow-premium max-w-full w-fit transition-all duration-300 ${isOwnMessage
-                                ? 'bg-gradient-to-br from-brand-burgundy to-[#4a1c1f] text-white rounded-xl rounded-tr-sm border border-white/5'
-                                : 'bg-white/90 dark:bg-brand-parchment/10 backdrop-blur-md text-brand-ebony border border-white dark:border-white/5 rounded-xl rounded-tl-sm ring-1 ring-brand-ebony/5'
+                            className={`px-4 py-2 relative shadow-premium max-w-full w-fit transition-all duration-300 ${isOwnMessage
+                                ? 'bg-gradient-to-br from-brand-burgundy to-[#4a1c1f] text-white rounded-2xl rounded-tr-sm border border-white/10'
+                                : 'bg-white dark:bg-[#1a1423] text-brand-ebony dark:text-white border border-brand-ebony/10 dark:border-white/10 rounded-2xl rounded-tl-sm shadow-sm'
                             }`}
                         >
                             {/* Reply Context */}
                             {decryptedReplyText && (
-                                <div className={`mb-3 p-3 rounded-xl border-l-4 text-[12px] leading-relaxed ${
-                                    isOwnMessage 
-                                        ? 'bg-white/10 border-white/40 text-white/80' 
-                                        : 'bg-brand-ebony/5 border-brand-burgundy/20 text-brand-ebony/60'
-                                }`}>
+                                <div 
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        if (message.replyToId) onJumpToMessage?.(message.replyToId);
+                                    }}
+                                    className={`px-3 py-2 mb-2 rounded-xl text-[11px] border-l-[4px] border-brand-burgundy transition-all cursor-pointer hover:bg-brand-burgundy/10 active:scale-[0.98] ${
+                                        isOwnMessage 
+                                            ? 'bg-white/10 border-white/30 text-white' 
+                                            : 'bg-brand-ebony/5 border-brand-burgundy/20 text-brand-ebony/60'
+                                    }`}
+                                >
                                     <p className="font-extrabold mb-1 opacity-60 uppercase tracking-widest text-[9px]">{message.replyToSenderName || 'Original'}</p>
-                                    <p className="line-clamp-2 italic">"{decryptedReplyText}"</p>
+                                    <p className="line-clamp-2 italic">"<EmojiRenderer text={decryptedReplyText} />"</p>
                                 </div>
                             )}
 
@@ -340,15 +355,15 @@ export const MessageBubble = React.memo(function MessageBubble({
                                 {decryptedText && (
                                     <p 
                                         className={`leading-relaxed whitespace-pre-wrap break-words [overflow-wrap:anywhere] ${
-                                            decryptedText.length < 50 && !decryptedImageUrl && !decryptedVideoUrl && !message.sharedPostId ? 'font-bold tracking-tight' : 'font-medium opacity-90'
+                                            decryptedText.length < 50 && !decryptedImageUrl && !decryptedVideoUrl && !message.sharedPostId ? 'font-bold' : 'font-semibold'
                                         }`}
                                         style={{ 
                                             fontSize: (decryptedText.length < 50 && !decryptedImageUrl && !decryptedVideoUrl && !message.sharedPostId) 
-                                                ? 'clamp(14px, 1.5cqw + 7px, 15px)' 
-                                                : 'clamp(12px, 1.4cqw + 6px, 14px)' 
+                                                ? '15px' 
+                                                : '14px' 
                                         }}
                                     >
-                                        {decryptedText}
+                                        <EmojiRenderer text={decryptedText} />
                                     </p>
                                 )}
                                 
@@ -369,7 +384,7 @@ export const MessageBubble = React.memo(function MessageBubble({
                                                             : 'bg-white/50 dark:bg-black/20 border-black/5 dark:border-white/5 text-brand-ebony dark:text-white/60 hover:border-brand-burgundy/30'
                                                     } ${isSelectionMode ? 'cursor-default pointer-events-none' : ''}`}
                                                 >
-                                                    <span>{emoji}</span>
+                                                    <EmojiRenderer text={emoji} />
                                                     <span>{uids.length}</span>
                                                 </button>
                                             )
@@ -380,7 +395,11 @@ export const MessageBubble = React.memo(function MessageBubble({
                                 <div className={`flex items-center gap-2 mt-2 self-end opacity-40 text-[10px] font-extrabold uppercase tracking-tighter ${isOwnMessage ? 'text-white' : 'text-brand-ebony'}`}>
                                     {message.isEdited && <span className="italic">edited</span>}
                                     <span>{timeString}</span>
-                                    {isOwnMessage && (isRead ? <CheckCheck className="w-3.5 h-3.5" /> : <Check className="w-3.5 h-3.5" />)}
+                                    {isOwnMessage && (
+                                        isRead 
+                                            ? <CheckCheck className="w-3.5 h-3.5 text-blue-400" /> 
+                                            : (message.isDelivered ? <CheckCheck className="w-3.5 h-3.5 opacity-40" /> : <Check className="w-3.5 h-3.5 opacity-40" />)
+                                    )}
                                 </div>
                             </div>
                         </div>
@@ -389,7 +408,12 @@ export const MessageBubble = React.memo(function MessageBubble({
                         {!isOwnMessage && !isSelectionMode && (
                             <div className="relative mb-2">
                                 <button 
-                                    onClick={(e) => { e.stopPropagation(); setShowMenu(!showMenu); }} 
+                                    onClick={(e) => { 
+                                        e.stopPropagation(); 
+                                        const rect = e.currentTarget.getBoundingClientRect();
+                                        setMenuDirection(rect.top < 300 ? 'down' : 'up');
+                                        setShowMenu(!showMenu); 
+                                    }} 
                                     className="p-1.5 rounded-full text-brand-ebony/30 hover:bg-brand-ebony/5 hover:text-brand-ebony dark:text-white/40 dark:hover:text-white dark:hover:bg-white/10 transition-all opacity-0 group-hover:opacity-100 focus:opacity-100 [@media(hover:none)]:opacity-100"
                                 >
                                     <MoreVertical className="w-4 h-4" />

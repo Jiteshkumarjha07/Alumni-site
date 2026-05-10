@@ -57,6 +57,9 @@ export default function PersonalChatPage() {
 
             setMessages(fetchedMessages);
             setLoading(false);
+        }, (error) => {
+            console.error('Error fetching messages:', error);
+            setLoading(false);
         });
 
         return () => unsubscribe();

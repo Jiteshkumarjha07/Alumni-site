@@ -9,6 +9,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { CreateGroupModal } from '../modals/CreateGroupModal';
 import { useMessaging } from '@/contexts/MessagingContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { EmojiRenderer } from './EmojiRenderer';
 
 interface ChatListProps {
     currentUser: User;
@@ -113,7 +114,7 @@ export function ChatList({ currentUser, chats, onSelectChat, onStartChat, onSele
     }, [searchQuery, currentUser.uid, suspendedUids]);
 
     useEffect(() => {
-        if (!currentUser.uid || viewMode !== 'groups') return;
+        if (!currentUser.uid || !currentUser.instituteId || viewMode !== 'groups') return;
 
         setLoadingGroups(true);
         const groupsRef = collection(db, 'groups');
@@ -132,6 +133,9 @@ export function ChatList({ currentUser, chats, onSelectChat, onStartChat, onSele
             setUserGroups(fetchedGroups.sort((a, b) => 
                 (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0)
             ));
+            setLoadingGroups(false);
+        }, (error) => {
+            console.error('Error fetching groups:', error);
             setLoadingGroups(false);
         });
 
@@ -402,7 +406,10 @@ export function ChatList({ currentUser, chats, onSelectChat, onStartChat, onSele
                                                     )}
                                                 </div>
                                                 <p className={`text-xs truncate transition-colors ${unreadCount > 0 ? 'text-brand-ebony font-bold' : 'text-brand-ebony/40 font-medium'}`}>
-                                                    {chat.lastMessage || 'Sent a secure message'}
+                                                    <EmojiRenderer text={(chat.lastMessage || 'Sent a secure message')
+                                                        .replace(/^(E2E:?\s*|\[E2E\]\s*|\(E2E\)\s*)/i, '')
+                                                        .replace(/(\s*[:\-]E2E|\s*\[E2E\]|\s*\(E2E\)|\s+E2E)$/i, '')
+                                                    } />
                                                 </p>
                                             </div>
 
@@ -495,7 +502,10 @@ export function ChatList({ currentUser, chats, onSelectChat, onStartChat, onSele
                                                                 <span className="font-extrabold text-brand-burgundy/40 uppercase text-[9px] mr-1">
                                                                     {group.lastSenderName?.split(' ')[0]}:
                                                                 </span>
-                                                                {group.lastMessage}
+                                                                <EmojiRenderer text={group.lastMessage
+                                                                    .replace(/^(E2E:?\s*|\[E2E\]\s*|\(E2E\)\s*)/i, '')
+                                                                    .replace(/(\s*[:\-]E2E|\s*\[E2E\]|\s*\(E2E\)|\s+E2E)$/i, '')
+                                                                } />
                                                             </>
                                                         ) : (
                                                             'Be the first to say hello'

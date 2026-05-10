@@ -27,7 +27,7 @@ export const MessagingProvider: React.FC<{ children: ReactNode }> = ({ children 
     const [unreadUsersCount, setUnreadUsersCount] = useState(0);
 
     useEffect(() => {
-        if (!userData?.uid) {
+        if (!userData?.uid || !userData.instituteId) {
             setTotalUnreadCount(0);
             setUnreadUsersCount(0);
             return;

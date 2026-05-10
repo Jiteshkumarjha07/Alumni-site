@@ -56,7 +56,7 @@ export function NotificationBell() {
 
   // ── Live notifications listener ──
   useEffect(() => {
-    if (!userData?.uid) return;
+    if (!userData?.uid || !userData.instituteId) return;
     const q = query(
       collection(db, 'notifications'),
       where('userId', '==', userData.uid),

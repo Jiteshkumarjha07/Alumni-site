@@ -117,7 +117,7 @@ service cloud.firestore {
     // ── Email Approvals ───────────────────────────────────────────────────────
     match /approvals/{email} {
       allow read: if true;
-      allow write: if isAdmin();
+      allow write: if isAdmin() || isInsAdmin();
     }
   }
 }

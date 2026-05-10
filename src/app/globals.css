@@ -1,9 +1,9 @@
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600;1,700&family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600;1,700&family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Noto+Color+Emoji&display=swap');
 @import "tailwindcss";
 @variant dark (&:where(.dark, .dark *));
 
 @theme {
-  --font-sans: "Plus Jakarta Sans", "Inter", var(--font-geist-sans);
+  --font-sans: "Plus Jakarta Sans", "Inter", "Noto Color Emoji", "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", sans-serif;
   --font-mono: var(--font-geist-mono);
   --font-serif: "Cormorant Garamond", serif;
 
@@ -133,6 +133,7 @@
 
   input, textarea, select {
     color-scheme: light;
+    font-variant-emoji: emoji;
   }
   .dark input, .dark textarea, .dark select {
     color-scheme: dark;
@@ -280,8 +281,8 @@
 
   /* ── Input focus ring ── */
   .input-premium {
-    background: rgba(255,255,255,0.06);
-    border: 1px solid rgba(255,255,255,0.10);
+    background-color: #f1f5f9; /* Slate 100 */
+    border: 1px solid #cbd5e1; /* Slate 300 */
     outline: none;
     transition: all 0.2s ease;
     color: var(--color-brand-ebony);
@@ -355,5 +356,29 @@
   }
   .dark .dot-gold::before {
     color: #fbbf24;
+  }
+
+  /* ── Emoji Picker Overrides ──────────────────────────────── */
+  .EmojiPickerReact {
+    --epr-scrollbar-width: 0px !important;
+    --epr-emoji-padding: 2px !important;
+    border: none !important;
+  }
+
+  .EmojiPickerReact .epr-emoji-list::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  .EmojiPickerReact .epr-emoji-list {
+    scrollbar-width: none !important;
+    -ms-overflow-style: none !important;
+  }
+
+  .EmojiPickerReact .epr-body::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  .EmojiPickerReact .epr-body {
+    scrollbar-width: none !important;
   }
 }

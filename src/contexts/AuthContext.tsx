@@ -6,7 +6,8 @@ import {
     onAuthStateChanged,
     signInWithEmailAndPassword,
     createUserWithEmailAndPassword,
-    signOut as firebaseSignOut
+    signOut as firebaseSignOut,
+    sendPasswordResetEmail
 } from 'firebase/auth';
 import { doc, setDoc, onSnapshot, updateDoc, serverTimestamp, collection, query, where } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
@@ -20,6 +21,7 @@ interface AuthContextType {
     signIn: (email: string, password: string) => Promise<void>;
     signUp: (email: string, password: string, userData: Partial<User>) => Promise<void>;
     signOut: () => Promise<void>;
+    resetPassword: (email: string) => Promise<void>;
     switchInstitute: (instituteId: string, instituteName: string) => Promise<void>;
     clearError: () => void;
     suspendedUids: Set<string>;
@@ -251,6 +253,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     const clearError = () => setError(null);
 
+    const resetPassword = async (email: string) => {
+        try {
+            await sendPasswordResetEmail(auth, email);
+        } catch (err: unknown) {
+            console.error('Password reset error:', err);
+            const error = err as { message?: string };
+            setError(error.message || 'Failed to send password reset email');
+            throw err;
+        }
+    };
+
     const switchInstitute = async (instituteId: string, instituteName: string) => {
         if (!user) return;
         try {
@@ -272,6 +285,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         signIn,
         signUp,
         signOut,
+        resetPassword,
         switchInstitute,
         clearError,
         suspendedUids,

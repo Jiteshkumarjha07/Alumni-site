@@ -189,14 +189,14 @@ export default function NetworkPage() {
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                             placeholder="Search by name or profession..."
-                            className="w-full pl-12 pr-4 py-3 input-premium font-medium rounded-xl transition-all"
+                            className="w-full pl-12 pr-4 py-3 bg-slate-100 border-2 border-slate-300 dark:bg-white/5 dark:border-white/10 text-brand-ebony placeholder:text-brand-ebony/40 focus:border-brand-burgundy focus:ring-2 focus:ring-brand-burgundy/20 outline-none transition-all font-medium rounded-xl transition-all"
                         />
                     </div>
                     <div className="relative md:w-64">
                         <select
                             value={filterBatch}
                             onChange={(e) => setFilterBatch(e.target.value)}
-                            className="w-full px-4 py-3 input-premium font-medium rounded-xl appearance-none pr-10 cursor-pointer"
+                            className="w-full px-4 py-3 bg-slate-100 border-2 border-slate-300 dark:bg-white/5 dark:border-white/10 text-brand-ebony placeholder:text-brand-ebony/40 focus:border-brand-burgundy focus:ring-2 focus:ring-brand-burgundy/20 outline-none transition-all font-medium rounded-xl appearance-none pr-10 cursor-pointer"
                         >
                             <option value="all">All Batches</option>
                             {batches.map(batch => (
