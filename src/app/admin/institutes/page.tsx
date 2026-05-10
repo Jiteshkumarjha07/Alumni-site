@@ -11,7 +11,7 @@ import { useRouter } from 'next/navigation';
 import { Institute } from '@/types';
 
 export default function AdminInstitutesPage() {
-    const { user, userData } = useAuth();
+    const { user, userData, loading: authLoading } = useAuth();
     const router = useRouter();
 
     const [name, setName] = useState('');
