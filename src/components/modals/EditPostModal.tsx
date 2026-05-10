@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
+import { EmojiPicker } from '../ui/EmojiPicker';
 
 interface EditPostModalProps {
     isOpen: boolean;
@@ -59,11 +60,16 @@ export const EditPostModal: React.FC<EditPostModalProps> = ({
 
                 {/* Content */}
                 <div className="p-4">
-                    <textarea
-                        value={content}
-                        onChange={(e) => setContent(e.target.value)}
-                        className="w-full min-h-[150px] p-4 bg-white/50 dark:bg-black/20 border border-brand-ebony/10 rounded-xl focus:ring-2 focus:ring-brand-burgundy focus:border-transparent resize-none text-brand-ebony font-sans transition-all"
-                    />
+                    <div className="relative">
+                        <textarea
+                            value={content}
+                            onChange={(e) => setContent(e.target.value)}
+                            className="w-full min-h-[150px] p-4 bg-white/50 dark:bg-black/20 border border-brand-ebony/10 rounded-xl focus:ring-2 focus:ring-brand-burgundy focus:border-transparent resize-none text-brand-ebony font-sans transition-all"
+                        />
+                        <div className="absolute right-4 bottom-4">
+                            <EmojiPicker onEmojiSelect={(emoji) => setContent(prev => prev + emoji)} />
+                        </div>
+                    </div>
 
                     <div className="flex items-center justify-end gap-4 mt-6">
                         <button

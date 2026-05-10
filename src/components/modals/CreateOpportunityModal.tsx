@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { X, Briefcase, MapPin, Calendar, Clock, Sparkles, Send, Loader2, Check, ChevronDown } from 'lucide-react';
 import { Portal } from '../ui/Portal';
+import { EmojiPicker } from '../ui/EmojiPicker';
 
 interface CreateOpportunityModalProps {
     isOpen: boolean;
@@ -154,12 +155,17 @@ export const CreateOpportunityModal: React.FC<CreateOpportunityModalProps> = ({
 
                         <div className="space-y-3">
                             <label className={labelClass}>Mission Briefing & Requirements</label>
-                            <textarea
-                                value={formData.description}
-                                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                                className={`${inputClass} min-h-[160px] resize-none leading-relaxed pt-5`}
-                                placeholder="Detail the core objectives and the expertise required for this legacy path..."
-                            />
+                            <div className="relative">
+                                <textarea
+                                    value={formData.description}
+                                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                                    className={`${inputClass} min-h-[160px] resize-none leading-relaxed pt-5`}
+                                    placeholder="Detail the core objectives and the expertise required for this legacy path..."
+                                />
+                                <div className="absolute right-4 bottom-4">
+                                    <EmojiPicker onEmojiSelect={(emoji) => setFormData(prev => ({ ...prev, description: prev.description + emoji }))} />
+                                </div>
+                            </div>
                         </div>
 
                         <div className="space-y-3">

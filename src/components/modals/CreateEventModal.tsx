@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { X, Calendar, MapPin, AlignLeft, Image as ImageIcon, Sparkles, Upload, Loader2, Check } from 'lucide-react';
 import { Portal } from '../ui/Portal';
+import { EmojiPicker } from '../ui/EmojiPicker';
 
 interface CreateEventModalProps {
     isOpen: boolean;
@@ -151,7 +152,10 @@ export const CreateEventModal: React.FC<CreateEventModalProps> = ({
                                     className={`${inputClass} min-h-[140px] resize-none leading-relaxed pt-5`}
                                     placeholder="Outline the significance and itinerary of this gathering..."
                                 />
-                                <AlignLeft className="absolute right-5 top-5 w-4 h-4 text-brand-ebony/20" />
+                                <div className="absolute right-4 bottom-4 flex items-center gap-2">
+                                    <EmojiPicker onEmojiSelect={(emoji) => setFormData(prev => ({ ...prev, description: prev.description + emoji }))} />
+                                    <AlignLeft className="w-4 h-4 text-brand-ebony/20" />
+                                </div>
                             </div>
                         </div>
 

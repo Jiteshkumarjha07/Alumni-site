@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { X, Plus, Trash2, BarChart2, Sparkles, Check } from 'lucide-react';
+import { EmojiPicker } from '../ui/EmojiPicker';
 
 interface PollModalProps {
     isOpen: boolean;
@@ -74,14 +75,19 @@ export function PollModal({ isOpen, onClose, onSubmit }: PollModalProps) {
                 <form onSubmit={handleSubmit} className="p-8 space-y-8">
                     <div className="space-y-3">
                         <label className={labelClass}>Inquiry (Question)</label>
-                        <input
-                            type="text"
-                            value={question}
-                            onChange={(e) => setQuestion(e.target.value)}
-                            placeholder="What insight are you seeking?"
-                            className={inputClass}
-                            required
-                        />
+                        <div className="relative">
+                            <input
+                                type="text"
+                                value={question}
+                                onChange={(e) => setQuestion(e.target.value)}
+                                placeholder="What insight are you seeking?"
+                                className={inputClass}
+                                required
+                            />
+                            <div className="absolute right-4 top-1/2 -translate-y-1/2">
+                                <EmojiPicker onEmojiSelect={(emoji) => setQuestion(prev => prev + emoji)} />
+                            </div>
+                        </div>
                     </div>
 
                     <div className="space-y-4">
@@ -98,9 +104,12 @@ export function PollModal({ isOpen, onClose, onSubmit }: PollModalProps) {
                                             value={option}
                                             onChange={(e) => handleOptionChange(index, e.target.value)}
                                             placeholder={`Option ${index + 1}`}
-                                            className={`${inputClass} !py-3`}
+                                            className={`${inputClass} !py-3 pr-12`}
                                             required
                                         />
+                                        <div className="absolute right-3 top-1/2 -translate-y-1/2 scale-75">
+                                            <EmojiPicker onEmojiSelect={(emoji) => handleOptionChange(index, option + emoji)} />
+                                        </div>
                                         <div className="absolute left-[-2px] top-1/2 -translate-y-1/2 w-1 h-6 bg-indigo-500 rounded-full opacity-0 group-focus-within/option:opacity-100 transition-opacity" />
                                     </div>
                                     {options.length > 2 && (

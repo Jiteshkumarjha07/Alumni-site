@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { X, Image as ImageIcon, Loader2, Send, Sparkles, Video, FileText, File as FileIcon } from 'lucide-react';
 import { uploadMedia, uploadVideo, uploadFile } from '@/lib/media';
 import { Portal } from '../ui/Portal';
+import { EmojiPicker } from '../ui/EmojiPicker';
 
 interface CreatePostModalProps {
     isOpen: boolean;
@@ -194,22 +195,25 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
                             )}
 
                             {/* Upload Buttons */}
-                            <div className="mt-6 flex flex-wrap items-center gap-3">
-                                <label className="flex items-center gap-2 px-5 py-3 bg-brand-ebony/4 hover:bg-brand-burgundy/10 text-brand-ebony/60 hover:text-brand-burgundy rounded-xl cursor-pointer transition-all border border-transparent hover:border-brand-burgundy/10 active:scale-95">
-                                    <ImageIcon className="w-4 h-4" />
-                                    <span className="text-[11px] font-bold uppercase tracking-widest">Image</span>
-                                    <input type="file" accept="image/*" multiple onChange={handleFileChange} className="hidden" disabled={loading} />
-                                </label>
-                                <label className="flex items-center gap-2 px-5 py-3 bg-brand-ebony/4 hover:bg-indigo-500/10 text-brand-ebony/60 hover:text-indigo-600 rounded-xl cursor-pointer transition-all border border-transparent hover:border-indigo-500/10 active:scale-95">
-                                    <Video className="w-4 h-4" />
-                                    <span className="text-[11px] font-bold uppercase tracking-widest">Video</span>
-                                    <input type="file" accept="video/*" multiple onChange={handleFileChange} className="hidden" disabled={loading} />
-                                </label>
-                                <label className="flex items-center gap-2 px-5 py-3 bg-brand-ebony/4 hover:bg-emerald-500/10 text-brand-ebony/60 hover:text-emerald-600 rounded-xl cursor-pointer transition-all border border-transparent hover:border-emerald-500/10 active:scale-95">
-                                    <FileText className="w-4 h-4" />
-                                    <span className="text-[11px] font-bold uppercase tracking-widest">Doc</span>
-                                    <input type="file" accept=".pdf,.doc,.docx,.txt" multiple onChange={handleFileChange} className="hidden" disabled={loading} />
-                                </label>
+                            <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
+                                <div className="flex flex-wrap items-center gap-3">
+                                    <label className="flex items-center gap-2 px-5 py-3 bg-brand-ebony/4 hover:bg-brand-burgundy/10 text-brand-ebony/60 hover:text-brand-burgundy rounded-xl cursor-pointer transition-all border border-transparent hover:border-brand-burgundy/10 active:scale-95">
+                                        <ImageIcon className="w-4 h-4" />
+                                        <span className="text-[11px] font-bold uppercase tracking-widest">Image</span>
+                                        <input type="file" accept="image/*" multiple onChange={handleFileChange} className="hidden" disabled={loading} />
+                                    </label>
+                                    <label className="flex items-center gap-2 px-5 py-3 bg-brand-ebony/4 hover:bg-indigo-500/10 text-brand-ebony/60 hover:text-indigo-600 rounded-xl cursor-pointer transition-all border border-transparent hover:border-indigo-500/10 active:scale-95">
+                                        <Video className="w-4 h-4" />
+                                        <span className="text-[11px] font-bold uppercase tracking-widest">Video</span>
+                                        <input type="file" accept="video/*" multiple onChange={handleFileChange} className="hidden" disabled={loading} />
+                                    </label>
+                                    <label className="flex items-center gap-2 px-5 py-3 bg-brand-ebony/4 hover:bg-emerald-500/10 text-brand-ebony/60 hover:text-emerald-600 rounded-xl cursor-pointer transition-all border border-transparent hover:border-emerald-500/10 active:scale-95">
+                                        <FileText className="w-4 h-4" />
+                                        <span className="text-[11px] font-bold uppercase tracking-widest">Doc</span>
+                                        <input type="file" accept=".pdf,.doc,.docx,.txt" multiple onChange={handleFileChange} className="hidden" disabled={loading} />
+                                    </label>
+                                </div>
+                                <EmojiPicker onEmojiSelect={(emoji) => setContent(prev => prev + emoji)} />
                             </div>
                         </div>
                     </div>

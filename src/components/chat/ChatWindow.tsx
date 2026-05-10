@@ -13,7 +13,7 @@ import { Send, Loader2, ArrowLeft, X, CheckCheck, ShieldCheck, Lock, Image as Im
 import { encryptMessage, decryptMessage, getSharedSecret } from '@/lib/encryption';
 import { uploadMedia, uploadVideo, uploadFile, uploadAudio } from '@/lib/media';
 import { useAuth } from '@/contexts/AuthContext';
-import EmojiPicker, { EmojiStyle, Theme, Categories } from 'emoji-picker-react';
+import { EmojiPicker } from '../ui/EmojiPicker';
 import { EmojiRenderer } from './EmojiRenderer';
 
 interface ChatWindowProps {
@@ -1037,45 +1037,9 @@ export function ChatWindow({ chatId, currentUser, otherUser, isGroup = false, gr
                                     disabled={sending}
                                 />
                             </div>
-                            <button
-                                type="button"
-                                onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-                                className={`absolute right-4 top-1/2 -translate-y-1/2 p-2 rounded-full transition-colors ${showEmojiPicker ? 'bg-brand-burgundy text-white' : 'text-brand-ebony/20 hover:text-brand-burgundy'}`}
-                            >
-                                <Smile className="w-5 h-5" />
-                            </button>
-                            
-                            {showEmojiPicker && (
-                                <div ref={emojiPickerRef} className="absolute bottom-full right-0 mb-6 z-[120] animate-in fade-in zoom-in-95 shadow-[0_20px_50px_rgba(0,0,0,0.3)] rounded-[24px] overflow-hidden border border-brand-ebony/10">
-                                    <EmojiPicker 
-                                        onEmojiClick={(emojiData) => {
-                                            setNewMessage(prev => prev + emojiData.emoji);
-                                        }}
-                                        width={300}
-                                        height={380}
-                                        searchPlaceholder="Search emojis..."
-                                        emojiStyle={EmojiStyle.APPLE}
-                                        theme={Theme.AUTO}
-                                        lazyLoadEmojis={true}
-                                        previewConfig={{
-                                            showPreview: false
-                                        }}
-                                        searchDisabled={false}
-                                        skinTonesDisabled={true}
-                                        categories={[
-                                            { category: Categories.SUGGESTED, name: 'Recently Used' },
-                                            { category: Categories.SMILEYS_PEOPLE, name: 'Faces' },
-                                            { category: Categories.ANIMALS_NATURE, name: 'Nature' },
-                                            { category: Categories.FOOD_DRINK, name: 'Food' },
-                                            { category: Categories.ACTIVITIES, name: 'Activities' },
-                                            { category: Categories.TRAVEL_PLACES, name: 'Places' },
-                                            { category: Categories.OBJECTS, name: 'Objects' },
-                                            { category: Categories.SYMBOLS, name: 'Symbols' },
-                                            { category: Categories.FLAGS, name: 'Flags' }
-                                        ]}
-                                    />
-                                </div>
-                            )}
+                            <div className="absolute right-4 top-1/2 -translate-y-1/2">
+                                <EmojiPicker onEmojiSelect={(emoji) => setNewMessage(prev => prev + emoji)} />
+                            </div>
                         </div>
 
                         {/* Mic & Send */}

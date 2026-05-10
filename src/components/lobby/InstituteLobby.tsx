@@ -14,6 +14,7 @@ import {
   Plus, Trash2, Download, Play, X, MessageSquare, Share2
 } from 'lucide-react';
 import { uploadMedia, uploadVideo, uploadFile } from '@/lib/media';
+import { EmojiPicker } from '../ui/EmojiPicker';
 
 // ── Helpers ───────────────────────────────────────────────────────────────
 function timeAgo(ts: any): string {
@@ -297,6 +298,7 @@ function LobbyPostCard({ post, currentUid, onLike, onVote, userData }: {
                 >
                   <Send className="w-3.5 h-3.5" />
                 </button>
+                <EmojiPicker onEmojiSelect={(emoji) => setCommentText(prev => prev + emoji)} />
               </div>
 
               {post.comments && post.comments.length > 0 && (
@@ -395,13 +397,18 @@ function CreateLobbyPost({ onSubmit }: {
           <span className="text-xs font-black text-violet-600 uppercase tracking-widest">Broadcast to All Institutes</span>
         </div>
 
-        <input
-          type="text"
-          value={title}
-          onChange={e => setTitle(e.target.value)}
-          placeholder="Post title / topic..."
-          className="w-full bg-white/70 dark:bg-white/5 border border-violet-200/40 rounded-2xl px-4 py-3 text-sm font-bold text-brand-ebony placeholder-brand-ebony/30 focus:outline-none focus:ring-2 focus:ring-violet-400/40 mb-3 transition-all"
-        />
+        <div className="relative mb-3">
+          <input
+            type="text"
+            value={title}
+            onChange={e => setTitle(e.target.value)}
+            placeholder="Post title / topic..."
+            className="w-full bg-white/70 dark:bg-white/5 border border-violet-200/40 rounded-2xl px-4 py-3 text-sm font-bold text-brand-ebony placeholder-brand-ebony/30 focus:outline-none focus:ring-2 focus:ring-violet-400/40 transition-all pr-12"
+          />
+          <div className="absolute right-4 top-1/2 -translate-y-1/2">
+            <EmojiPicker onEmojiSelect={(emoji) => setTitle(prev => prev + emoji)} />
+          </div>
+        </div>
 
         <textarea
           value={content}
@@ -556,6 +563,8 @@ function CreateLobbyPost({ onSubmit }: {
               >
                 <BarChart3 className="w-4 h-4" />
               </button>
+              <div className="w-px h-4 bg-violet-100 mx-1" />
+              <EmojiPicker onEmojiSelect={(emoji) => setContent(prev => prev + emoji)} />
             </div>
 
             <button

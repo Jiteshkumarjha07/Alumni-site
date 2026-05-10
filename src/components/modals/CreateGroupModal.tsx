@@ -3,6 +3,7 @@ import { User } from '@/types';
 import { collection, query, getDocs, addDoc, serverTimestamp, doc, updateDoc, arrayUnion, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { X, Search, Loader2, Users, Check, Sparkles } from 'lucide-react';
+import { EmojiPicker } from '../ui/EmojiPicker';
 
 interface CreateGroupModalProps {
     isOpen: boolean;
@@ -132,13 +133,18 @@ export function CreateGroupModal({ isOpen, onClose, currentUser, onGroupCreated 
                     {/* Group Name */}
                     <div>
                         <label className="block text-xs font-extrabold text-brand-ebony/40 uppercase tracking-[0.2em] mb-3 px-1">Circle Identity</label>
-                        <input
-                            type="text"
-                            placeholder="e.g. Batch of 2020 Founders"
-                            value={groupName}
-                            onChange={(e) => setGroupName(e.target.value)}
-                            className="w-full px-6 py-4 bg-brand-ebony/5 border border-brand-ebony/5 rounded-2xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all placeholder:text-brand-ebony/25 font-bold text-sm"
-                        />
+                        <div className="relative">
+                            <input
+                                type="text"
+                                placeholder="e.g. Batch of 2020 Founders"
+                                value={groupName}
+                                onChange={(e) => setGroupName(e.target.value)}
+                                className="w-full px-6 py-4 bg-brand-ebony/5 border border-brand-ebony/5 rounded-2xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all placeholder:text-brand-ebony/25 font-bold text-sm pr-12"
+                            />
+                            <div className="absolute right-4 top-1/2 -translate-y-1/2">
+                                <EmojiPicker onEmojiSelect={(emoji) => setGroupName(prev => prev + emoji)} />
+                            </div>
+                        </div>
                     </div>
 
                     {/* Member Selection */}

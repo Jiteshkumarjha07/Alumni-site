@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { X, Send, Trash2, Loader2, Reply, Smile, Sparkles, Hash, MessageCircle } from 'lucide-react';
+import { EmojiPicker } from '../ui/EmojiPicker';
 import { Comment as AppComment } from '@/types';
 import { formatDistanceToNow } from 'date-fns';
 import { Portal } from '../ui/Portal';
@@ -307,7 +308,7 @@ export const CommentModal: React.FC<CommentModalProps> = ({
                 }}
             >
                 <div
-                    className={`bg-white dark:bg-brand-parchment/10 sm:rounded-[2.5rem] max-w-2xl w-full h-full sm:h-auto sm:max-h-[85vh] flex flex-col border border-brand-ebony/5 shadow-2xl overflow-hidden ${
+                    className={`bg-white dark:bg-brand-parchment/10 sm:rounded-[2.5rem] max-w-2xl w-full h-full sm:h-auto sm:max-h-[85vh] flex flex-col border border-brand-ebony/5 shadow-2xl ${
                         touchTranslate > 0 ? '' : 'transition-transform duration-300'
                     } slide-up-animation`}
                     style={{ transform: `translateY(${touchTranslate}px)` }}
@@ -415,7 +416,7 @@ export const CommentModal: React.FC<CommentModalProps> = ({
                             </div>
                         )}
 
-                        <div className="flex gap-4">
+                        <div className="flex gap-4 relative">
                             <input
                                 ref={inputRef}
                                 type="text"
@@ -427,9 +428,12 @@ export const CommentModal: React.FC<CommentModalProps> = ({
                                         ? `Reply to ${replyingTo.authorName}...`
                                         : 'Express your perspective...'
                                 }
-                                className="flex-1 px-6 py-4 bg-brand-ebony/5 border border-brand-ebony/5 rounded-2xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all outline-none font-bold text-sm text-brand-ebony placeholder:text-brand-ebony/25 shadow-inner"
+                                className="flex-1 px-6 py-4 pr-28 bg-brand-ebony/5 border border-brand-ebony/5 rounded-2xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all outline-none font-bold text-sm text-brand-ebony placeholder:text-brand-ebony/25 shadow-inner"
                                 disabled={loading}
                             />
+                            <div className="absolute right-[76px] top-1/2 -translate-y-1/2">
+                                <EmojiPicker onEmojiSelect={(emoji) => setCommentText(prev => prev + emoji)} />
+                            </div>
                             <button
                                 type="button"
                                 onClick={handleSubmit}
@@ -444,18 +448,7 @@ export const CommentModal: React.FC<CommentModalProps> = ({
                             </button>
                         </div>
 
-                        <div className="flex flex-wrap gap-2.5 mt-5 px-1">
-                            {['❤️', '👏', '🔥', '💯', '✨', '🙌'].map((emoji) => (
-                                <button
-                                    key={emoji}
-                                    type="button"
-                                    onClick={() => setCommentText((prev) => prev + emoji)}
-                                    className="w-10 h-10 flex items-center justify-center hover:bg-brand-ebony/5 rounded-xl transition-all hover:scale-125 hover:-translate-y-1"
-                                >
-                                    <span className="text-xl">{emoji}</span>
-                                </button>
-                            ))}
-                        </div>
+                        {/* Removed static emoji bar as picker is now integrated */}
                     </div>
                 </div>
             </div>

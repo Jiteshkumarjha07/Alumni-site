@@ -25,12 +25,12 @@ export function Sidebar() {
             />
 
             {/* --- FIXED FULL SIDEBAR (Identity & Marketplace) --- */}
-            <aside className="hidden md:flex fixed top-24 bottom-6 left-6 z-50 flex-col items-center pointer-events-none">
+            <aside className="hidden md:flex fixed top-32 left-6 z-50 flex-col items-center pointer-events-none">
                 <div 
-                    className="pointer-events-auto flex flex-col h-full w-64 sidebar-glass border border-brand-ebony/10 shadow-[0_8px_32px_rgba(0,0,0,0.06)] rounded-[2.5rem] py-5 px-4 overflow-hidden"
+                    className="pointer-events-auto flex flex-col h-fit w-64 sidebar-glass border border-brand-ebony/10 shadow-[0_8px_32px_rgba(0,0,0,0.06)] rounded-[2.5rem] py-5 px-4 overflow-hidden"
                 >
                     {/* Portals Section */}
-                    <div className="mb-2">
+                    <div className="mb-6">
                         <p className="px-5 text-[10px] font-black text-brand-ebony/30 uppercase tracking-[0.2em] mb-2">Portals</p>
                         <button
                             onClick={() => setIsMarketplaceOpen(true)}
@@ -58,7 +58,7 @@ export function Sidebar() {
                         </Link>
                     </div>
 
-                    <div className="flex-1" />
+
 
                     {/* Bottom Governance Section */}
                     <div className="space-y-4 pt-4 border-t border-brand-ebony/5">

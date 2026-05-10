@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { X, Upload, Camera, Sparkles, MapPin, Briefcase, User as UserIcon, Check } from 'lucide-react';
 import { Portal } from '../ui/Portal';
+import { EmojiPicker } from '../ui/EmojiPicker';
 
 interface EditProfileModalProps {
     isOpen: boolean;
@@ -103,15 +104,20 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
                 <Icon className="w-3 h-3 text-indigo-500 shrink-0" />
                 {label}
             </label>
-            <input
-                id={id}
-                type="text"
-                value={value}
-                onChange={(e) => onChange(e.target.value)}
-                placeholder={placeholder}
-                disabled={loading}
-                className="w-full px-5 py-3.5 bg-brand-ebony/[0.04] border border-brand-ebony/[0.08] rounded-2xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none font-semibold text-sm text-brand-ebony placeholder:text-brand-ebony/25 transition-all disabled:opacity-60"
-            />
+            <div className="relative">
+                <input
+                    id={id}
+                    type="text"
+                    value={value}
+                    onChange={(e) => onChange(e.target.value)}
+                    placeholder={placeholder}
+                    disabled={loading}
+                    className="w-full px-5 py-3.5 pr-12 bg-brand-ebony/[0.04] border border-brand-ebony/[0.08] rounded-2xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none font-semibold text-sm text-brand-ebony placeholder:text-brand-ebony/25 transition-all disabled:opacity-60"
+                />
+                <div className="absolute right-3 top-1/2 -translate-y-1/2 scale-75">
+                    <EmojiPicker onEmojiSelect={(emoji) => onChange(value + emoji)} />
+                </div>
+            </div>
         </div>
     );
 
