@@ -7,7 +7,7 @@ import {
   serverTimestamp, doc, updateDoc, getDocs, limit, arrayUnion, arrayRemove
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import { LobbyPost, Poll, PollOption } from '@/types';
+import { LobbyPost, Poll, PollOption, MediaAttachment, User } from '@/types';
 import {
   Globe2, Pin, Heart, Send, Lock, Tag, Loader2,
   Image as ImageIcon, Video as VideoIcon, FileText, BarChart3,
