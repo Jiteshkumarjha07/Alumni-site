@@ -9,6 +9,10 @@ import { Loader2 } from 'lucide-react';
 import { useParams, useRouter } from 'next/navigation';
 import { ChatWindow } from '@/components/chat/ChatWindow';
 
+export function generateStaticParams() {
+  return [];
+}
+
 export default function GroupChatPage() {
     const { userData } = useAuth();
     const params = useParams();

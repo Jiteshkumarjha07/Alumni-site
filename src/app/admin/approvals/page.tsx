@@ -132,17 +132,24 @@ export default function AdminApprovalsPage() {
                 updatedAt: serverTimestamp(),
             }, { merge: true });
 
-            // 2. If this email was previously suspended, restore their account
+            // 2. Update existing user doc if it exists (add institute IDs and restore if suspended)
             const usersQuery = query(collection(db, 'users'), where('email', '==', emailClean));
             const userSnap = await getDocs(usersQuery);
-            const restorePromises = userSnap.docs
-                .filter(userDoc => userDoc.data().isSuspended)
-                .map(userDoc =>
-                    updateDoc(doc(db, 'users', userDoc.id), { isSuspended: false })
-                );
-            await Promise.all(restorePromises);
+            let restoredCount = 0;
+            const updatePromises = userSnap.docs.map(userDoc => {
+                const data = userDoc.data();
+                const updates: any = {
+                    instituteIds: arrayUnion(...selectedInstitutes)
+                };
+                if (data.isSuspended) {
+                    updates.isSuspended = false;
+                    restoredCount++;
+                }
+                return updateDoc(doc(db, 'users', userDoc.id), updates);
+            });
+            await Promise.all(updatePromises);
 
-            setSuccess(`Access granted to ${emailClean}${restorePromises.length > 0 ? ' — account restored.' : '.'}`);
+            setSuccess(`Access granted to ${emailClean}${restoredCount > 0 ? ' — account restored.' : '.'}`);
             setEmail('');
             setSelectedInstitutes([]);
         } catch (err: any) {

@@ -43,7 +43,7 @@ export function LayoutClient({ children }: { children: React.ReactNode }) {
     const { isFocusMode, focusType } = useUI();
     
     const [isMobile, setIsMobile] = React.useState(false);
-    const tabs = ['/', '/messages', '/jobs', '/events', '/network', '/profile'];
+    const tabs = ['/', '/messages', '/jobs', '/events', '/lobby', '/network', '/profile'];
     const [prevPath, setPrevPath] = React.useState(pathname);
     
     React.useEffect(() => {
@@ -56,6 +56,12 @@ export function LayoutClient({ children }: { children: React.ReactNode }) {
     React.useEffect(() => {
         setPrevPath(pathname);
     }, [pathname]);
+
+    // Match sub-routes to their parent tabs for consistent animation indexing
+    const getTabIndex = (path: string) => tabs.findIndex(tab => {
+        if (tab === '/') return path === '/';
+        return path.startsWith(tab);
+    });
 
     // ── Suspension wall ────────────────────────────────────────────────────────
     // All hooks are declared above this point. An early return here is safe.
@@ -85,7 +91,7 @@ export function LayoutClient({ children }: { children: React.ReactNode }) {
         );
     }
 
-    const direction = tabs.indexOf(pathname) > tabs.indexOf(prevPath) ? 1 : -1;
+    const direction = getTabIndex(pathname) > getTabIndex(prevPath) ? 1 : -1;
 
     const isAuthPage = pathname === '/login' || pathname === '/signup';
     const isGlobalAdminPage = pathname.startsWith('/admin');

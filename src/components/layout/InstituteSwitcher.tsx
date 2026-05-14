@@ -68,7 +68,7 @@ export function InstituteSwitcher() {
 
             {isOpen && (
                 <div className="absolute top-full left-0 right-0 mt-3 bg-white dark:bg-gray-900 backdrop-blur-2xl rounded-2xl shadow-premium border border-white dark:border-white/10 overflow-hidden z-[60] animate-in fade-in zoom-in-95 slide-in-from-top-2 duration-300 ring-1 ring-brand-ebony/5 dark:ring-white/5">
-                    <div className="p-2 space-y-1">
+                    <div className="p-2 space-y-1 max-h-60 overflow-y-auto custom-scrollbar">
                         <p className="px-3 py-2 text-[9px] font-black text-brand-ebony/40 dark:text-white/50 uppercase tracking-[0.2em] border-b border-brand-ebony/5 dark:border-white/10 mb-2">
                             Select Network
                         </p>
