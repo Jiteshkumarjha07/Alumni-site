@@ -20,7 +20,7 @@ export const usePushNotifications = (userId: string | undefined) => {
 
                     // Replace with your actual VAPID key from Firebase Console
                     const currentToken = await getToken(messagingInstance, {
-                        vapidKey: 'YOUR_VAPID_KEY_HERE' 
+                        vapidKey: 'BPuWbTBLzBnCsDblq_l1VJ0trRpQKozfsNoJkp5J95UlzKcBUMkQmHqS0LSvKr0GoaJH6TbpFRSx6KneUWOi6_s'
                     });
 
                     if (currentToken) {
