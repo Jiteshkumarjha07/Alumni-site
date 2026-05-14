@@ -12,6 +12,7 @@ import {
 import { doc, setDoc, onSnapshot, updateDoc, serverTimestamp, collection, query, where } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 import { User } from '@/types';
+import { usePushNotifications } from '@/hooks/usePushNotifications';
 
 interface AuthContextType {
     user: FirebaseUser | null;
@@ -47,6 +48,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const [suspendedUids, setSuspendedUids] = useState<Set<string>>(new Set());
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+
+    // Initialize push notifications
+    usePushNotifications(user?.uid);
 
     useEffect(() => {
         let unsubscribeUser: (() => void) | null = null;

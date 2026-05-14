@@ -86,6 +86,7 @@ export interface User {
   mutedUsers?: string[];
   blockedUsers?: string[];
   bgTheme?: string;
+  fcmTokens?: string[];
 }
 
 export interface Post {
