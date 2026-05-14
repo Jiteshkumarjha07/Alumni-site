@@ -62,6 +62,11 @@ export interface User {
   profession: string;
   headline?: string; // Professional headline for sidebar-profile cards
   location: string;
+  liveLocation?: {
+    lat: number;
+    lng: number;
+    updatedAt: Timestamp | FieldValue;
+  };
   instituteId: string;
   instituteName?: string;
   instituteIds?: string[];

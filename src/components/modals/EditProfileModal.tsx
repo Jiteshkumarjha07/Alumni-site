@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { X, Upload, Camera, Sparkles, MapPin, Briefcase, User as UserIcon, Check } from 'lucide-react';
 import { Portal } from '../ui/Portal';
 import { EmojiPicker } from '../ui/EmojiPicker';
+import { LocationAutocomplete } from '../ui/LocationAutocomplete';
 
 interface EditProfileModalProps {
     isOpen: boolean;
@@ -218,12 +219,16 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
                                 (v) => setFormData({ ...formData, profession: v }),
                                 'e.g. Senior Software Engineer'
                             )}
-                            {field(
-                                'edit-location', 'Location', MapPin,
-                                formData.location,
-                                (v) => setFormData({ ...formData, location: v }),
-                                'e.g. Mumbai, India'
-                            )}
+                            <div className="flex flex-col gap-2">
+                                <label className="flex items-center gap-2 text-[10px] font-black text-brand-ebony/40 uppercase tracking-[0.18em]">
+                                    <MapPin className="w-3 h-3 text-indigo-500 shrink-0" />
+                                    Location
+                                </label>
+                                <LocationAutocomplete
+                                    value={formData.location}
+                                    onChange={(location) => setFormData({ ...formData, location })}
+                                />
+                            </div>
                         </div>
                     </div>
 

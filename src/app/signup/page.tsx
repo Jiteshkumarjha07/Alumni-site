@@ -129,6 +129,12 @@ export default function SignUpPage() {
             return;
         }
 
+        if (!formData.location.trim()) {
+            setLocalError("Please select a location from the dropdown.");
+            setLoading(false);
+            return;
+        }
+
         try {
             let profilePicUrl = '';
             if (profilePicFile) {

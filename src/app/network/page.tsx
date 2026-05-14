@@ -2,11 +2,12 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { collection, query, onSnapshot, updateDoc, arrayUnion, arrayRemove, doc, where } from 'firebase/firestore';
+import { collection, query, onSnapshot, updateDoc, arrayUnion, arrayRemove, doc, where, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { User } from '@/types';
 import { AlumniCard } from '@/components/network/AlumniCard';
-import { Users, Search, Sparkles } from 'lucide-react';
+import { AlumniAtlas } from '@/components/network/AlumniAtlas';
+import { Users, Search, Sparkles, Map, LayoutGrid, Navigation, Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 export default function NetworkPage() {
@@ -22,7 +23,54 @@ export default function NetworkPage() {
     const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
     const [filterBatch, setFilterBatch] = useState<string>('all');
+    const [viewMode, setViewMode] = useState<'list' | 'atlas'>('list');
     const [loading, setLoading] = useState(true);
+    const [sharingLocation, setSharingLocation] = useState(false);
+    const [locationToast, setLocationToast] = useState<{ type: 'success' | 'error'; msg: string } | null>(null);
+
+    const showToast = (type: 'success' | 'error', msg: string) => {
+        setLocationToast({ type, msg });
+        setTimeout(() => setLocationToast(null), 4000);
+    };
+
+    const shareLiveLocation = () => {
+        if (!userData) return;
+        if (!navigator.geolocation) {
+            showToast('error', 'Geolocation is not supported by your browser.');
+            return;
+        }
+        setSharingLocation(true);
+        navigator.geolocation.getCurrentPosition(
+            async (position) => {
+                try {
+                    const userRef = doc(db, 'users', userData.uid);
+                    await updateDoc(userRef, {
+                        liveLocation: {
+                            lat: position.coords.latitude,
+                            lng: position.coords.longitude,
+                            updatedAt: serverTimestamp()
+                        }
+                    });
+                    setSharingLocation(false);
+                    showToast('success', `📍 Location shared! (${position.coords.latitude.toFixed(4)}, ${position.coords.longitude.toFixed(4)})`);
+                } catch (err) {
+                    console.error('Error sharing live location:', err);
+                    setSharingLocation(false);
+                    showToast('error', 'Failed to save location. Check Firestore permissions.');
+                }
+            },
+            (err) => {
+                setSharingLocation(false);
+                const msgs: Record<number, string> = {
+                    1: 'Permission denied. Please allow location access in your browser settings.',
+                    2: 'Position unavailable. Try again or check your GPS.',
+                    3: 'Location request timed out. Please try again.',
+                };
+                showToast('error', msgs[err.code] || 'Unable to get location.');
+            },
+            { enableHighAccuracy: true, timeout: 10000 }
+        );
+    };
 
     // Fetch all users
     useEffect(() => {
@@ -142,12 +190,31 @@ export default function NetworkPage() {
     return (
         <div className="max-w-5xl mx-auto px-4 md:px-8 pt-8 pb-12 w-full animate-fade-up">
             {/* Header */}
-            <div className="flex items-center gap-4 mb-8">
-                <div className="page-header-accent glow-indigo"></div>
-                <h1 className="text-3xl sm:text-4xl font-serif font-extrabold text-brand-ebony tracking-tight flex items-center gap-3">
-                    Alumni Network
-                    <Sparkles className="w-6 h-6 text-brand-gold animate-pulse" />
-                </h1>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+                <div className="flex items-center gap-4">
+                    <div className="page-header-accent glow-indigo"></div>
+                    <h1 className="text-3xl sm:text-4xl font-serif font-extrabold text-brand-ebony tracking-tight flex items-center gap-3">
+                        Alumni Network
+                        <Sparkles className="w-6 h-6 text-brand-gold animate-pulse" />
+                    </h1>
+                </div>
+                
+                <div className="flex bg-slate-200/50 dark:bg-white/5 p-1 rounded-xl w-fit self-start sm:self-auto">
+                    <button 
+                        onClick={() => setViewMode('list')}
+                        className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm transition-all ${viewMode === 'list' ? 'bg-white dark:bg-brand-ebony text-brand-burgundy dark:text-brand-gold shadow-sm' : 'text-brand-ebony/60 hover:text-brand-ebony'}`}
+                    >
+                        <LayoutGrid className="w-4 h-4" />
+                        <span className="hidden sm:inline">Directory</span>
+                    </button>
+                    <button 
+                        onClick={() => setViewMode('atlas')}
+                        className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm transition-all ${viewMode === 'atlas' ? 'bg-white dark:bg-brand-ebony text-brand-burgundy dark:text-brand-gold shadow-sm' : 'text-brand-ebony/60 hover:text-brand-ebony'}`}
+                    >
+                        <Map className="w-4 h-4" />
+                        <span className="hidden sm:inline">Atlas</span>
+                    </button>
+                </div>
             </div>
 
             {/* Pending Requests Section */}
@@ -210,30 +277,57 @@ export default function NetworkPage() {
                 </div>
             </div>
 
-            {/* Alumni Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                {filteredUsers.length > 0 ? (
-                    filteredUsers.map(user => (
-                        <AlumniCard
-                            key={user.uid}
-                            user={user}
-                            connectionStatus={getConnectionStatus(user)}
-                            onConnect={handleConnect}
-                            onCancelRequest={handleCancelRequest}
-                            onAcceptRequest={handleAcceptRequest}
-                            onRejectRequest={handleRejectRequest}
-                        />
-                    ))
-                ) : (
-                    <div className="col-span-full card-premium p-16 text-center border-dashed border-2 border-brand-ebony/10">
-                        <div className="w-16 h-16 bg-brand-ebony/5 rounded-full flex items-center justify-center mx-auto mb-4 border border-brand-ebony/10">
-                            <Users className="w-8 h-8 text-brand-ebony/30" />
-                        </div>
-                        <p className="text-brand-ebony/60 font-medium text-lg font-serif italic mb-1">No alumni found</p>
-                        <p className="text-brand-ebony/40 text-sm">Try adjusting your search filters.</p>
+            {/* Alumni View */}
+            {viewMode === 'atlas' ? (
+                <div className="flex flex-col gap-3">
+                    <div className="flex items-center justify-between flex-wrap gap-3 px-1">
+                        <p className="text-brand-ebony/50 text-sm font-medium flex items-center gap-2">
+                            <Map className="w-4 h-4" />
+                            Showing <span className="font-bold text-brand-ebony">{filteredUsers.length}</span> alumni · click a pin to view profile
+                        </p>
+                        <button 
+                            onClick={shareLiveLocation}
+                            disabled={sharingLocation}
+                            className="flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-95 transition-all text-sm tracking-wide disabled:opacity-70 disabled:cursor-not-allowed text-white"
+                            style={{ background: 'linear-gradient(135deg,#881337,#c2185b)', boxShadow: '0 4px 18px rgba(136,19,55,.35)' }}
+                        >
+                            {sharingLocation ? <Loader2 className="w-4 h-4 animate-spin" /> : <Navigation className="w-4 h-4" />}
+                            {sharingLocation ? 'Getting GPS…' : 'Share Live Location'}
+                        </button>
                     </div>
-                )}
-            </div>
+                    {locationToast && (
+                        <div className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold animate-fade-up ${locationToast.type === 'success' ? 'bg-emerald-50 border border-emerald-200 text-emerald-800' : 'bg-red-50 border border-red-200 text-red-700'}`}>
+                            <span>{locationToast.type === 'success' ? '✅' : '⚠️'}</span>
+                            {locationToast.msg}
+                        </div>
+                    )}
+                    <AlumniAtlas users={filteredUsers} />
+                </div>
+            ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                    {filteredUsers.length > 0 ? (
+                        filteredUsers.map(user => (
+                            <AlumniCard
+                                key={user.uid}
+                                user={user}
+                                connectionStatus={getConnectionStatus(user)}
+                                onConnect={handleConnect}
+                                onCancelRequest={handleCancelRequest}
+                                onAcceptRequest={handleAcceptRequest}
+                                onRejectRequest={handleRejectRequest}
+                            />
+                        ))
+                    ) : (
+                        <div className="col-span-full card-premium p-16 text-center border-dashed border-2 border-brand-ebony/10">
+                            <div className="w-16 h-16 bg-brand-ebony/5 rounded-full flex items-center justify-center mx-auto mb-4 border border-brand-ebony/10">
+                                <Users className="w-8 h-8 text-brand-ebony/30" />
+                            </div>
+                            <p className="text-brand-ebony/60 font-medium text-lg font-serif italic mb-1">No alumni found</p>
+                            <p className="text-brand-ebony/40 text-sm">Try adjusting your search filters.</p>
+                        </div>
+                    )}
+                </div>
+            )}
         </div>
     );
 }
