@@ -13,12 +13,6 @@ export function EmojiRenderer({ text, className }: EmojiRendererProps) {
     // Comprehensive emoji regex
     const emojiRegex = /(\u00a9|\u00ae|[\u2000-\u3300]|\ud83c[\ud000-\udfff]|\ud83d[\ud000-\udfff]|\ud83e[\ud000-\udfff])/g;
     
-    const parts = text.split(emojiRegex);
-    const matches = text.match(emojiRegex) || [];
-    
-    let matchIndex = 0;
-    const result = [];
-
     // Actually, a better way is to iterate through the string and find matches
     const finalResult: React.ReactNode[] = [];
     let lastIndex = 0;
