@@ -33,10 +33,9 @@ service cloud.firestore {
       allow create: if isAdmin() || (isSignedIn() && isOwner(userId)) || isInsAdminFor(request.resource.data.get('instituteId', ''));
       allow delete: if isAdmin() || isInsAdminFor(resource.data.get('instituteId', '')) || (isSignedIn() && isOwner(userId));
       allow update: if isAdmin() || 
-                    isInsAdminFor(resource.data.get('instituteId', '')) || 
-                    isInsAdminFor(request.resource.data.get('instituteId', '')) ||
+                    isInsAdmin() || // Allow any institute admin to update users (for approvals/sync)
                     (isSignedIn() && isOwner(userId)) ||
-                    isSignedIn(); // Broad update for connection requests
+                    (isSignedIn() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['connections', 'pendingRequests', 'fcmTokens', 'liveLocation']));
     }
 
     // ── Posts ─────────────────────────────────────────────────────────────────

@@ -130,7 +130,7 @@ export function RightSidebar({ isOpen = false, onClose = () => {} }: RightSideba
                                         className="card-premium p-3.5 flex items-center gap-3 group hover:shadow-[0_4px_16px_rgba(79,70,229,0.12)] transition-all duration-200"
                                     >
                                         {/* Avatar */}
-                                        <Link href={`/profile/${user.uid}`} className="relative h-10 w-10 flex-shrink-0 rounded-full overflow-hidden ring-2 ring-white dark:ring-brand-parchment group-hover:ring-brand-burgundy/40 transition-all block">
+                                        <Link href={`/profile/view?id=${user.uid}`} className="relative h-10 w-10 flex-shrink-0 rounded-full overflow-hidden ring-2 ring-white dark:ring-brand-parchment group-hover:ring-brand-burgundy/40 transition-all block">
                                             <Image
                                                 src={user.profilePic || `https://placehold.co/80x80/4f46e5/ffffff?text=${user.name.substring(0, 1)}`}
                                                 alt={user.name}
@@ -142,7 +142,7 @@ export function RightSidebar({ isOpen = false, onClose = () => {} }: RightSideba
 
                                         {/* Info */}
                                         <div className="flex-1 min-w-0">
-                                            <Link href={`/profile/${user.uid}`}>
+                                            <Link href={`/profile/view?id=${user.uid}`}>
                                                 <p className="text-sm font-serif font-bold text-brand-ebony truncate hover:text-brand-burgundy transition-colors leading-tight">
                                                     {user.name}
                                                 </p>
@@ -180,3 +180,4 @@ export function RightSidebar({ isOpen = false, onClose = () => {} }: RightSideba
         </>
     );
 }
+

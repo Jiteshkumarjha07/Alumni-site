@@ -5,14 +5,22 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { Moon, Sun, Monitor, Bell, User, Info, ArrowLeft, Settings2, Lock, Shield, Trash2, LogOut, Bookmark } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { AccountSettingsModal } from '@/components/modals/AccountSettingsModal';
 import { auth, db } from '@/lib/firebase';
 
 export default function SettingsPage() {
     const { theme, setTheme } = useTheme();
-    const { userData } = useAuth();
+    const { userData, signOut: authSignOut } = useAuth();
+    const router = useRouter();
     const [showAccountModal, setShowAccountModal] = React.useState(false);
     const [mounted, setMounted] = React.useState(false);
+
+    React.useEffect(() => {
+        if (mounted && !userData) {
+            router?.push('/login');
+        }
+    }, [userData, mounted, router]);
 
     React.useEffect(() => {
         setMounted(true);
@@ -104,7 +112,7 @@ export default function SettingsPage() {
                     description: 'Log out of your current session.',
                     content: (
                         <button
-                            onClick={() => auth.signOut()}
+                            onClick={() => authSignOut()}
                             className="flex items-center gap-2 px-4 py-2 bg-red-500/10 text-red-600 rounded-lg text-sm font-bold hover:bg-red-500/20 transition-all border border-red-500/20"
                         >
                             <LogOut className="w-4 h-4" />

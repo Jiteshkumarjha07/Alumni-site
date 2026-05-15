@@ -157,11 +157,23 @@ export function AccountSettingsModal({ isOpen, onClose, userEmail, userId, onAcc
         try {
             await reauthenticate(deletePw);
             const u = auth.currentUser; if (!u) throw new Error();
+            
+            // 1. Erase from whitelist/approvals
+            if (userEmail) {
+                await deleteDoc(doc(db, 'approvals', userEmail.toLowerCase().trim()));
+            }
+
+            // 2. Erase user document
             await deleteDoc(doc(db, 'users', userId));
+
+            // 3. Delete auth account
             await deleteUser(u);
+            
             onAccountDeleted();
-        } catch { setError('Failed to delete account. Please try again.'); }
-        finally { setLoading(false); }
+        } catch (err: any) {
+            console.error('Account deletion error:', err);
+            setError('Failed to delete account. Please try again.'); 
+        } finally { setLoading(false); }
     };
 
     if (!isOpen) return null;

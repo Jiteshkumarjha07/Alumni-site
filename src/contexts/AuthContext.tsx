@@ -241,10 +241,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const signOut = async () => {
         try {
             if (userData?.uid) {
-                await updateDoc(doc(db, 'users', userData.uid), {
-                    isOnline: false,
-                    lastSeen: serverTimestamp()
-                });
+                try {
+                    await updateDoc(doc(db, 'users', userData.uid), {
+                        isOnline: false,
+                        lastSeen: serverTimestamp()
+                    });
+                } catch (presenceErr) {
+                    console.error('Failed to update presence during sign out:', presenceErr);
+                }
             }
             await firebaseSignOut(auth);
         } catch (err: unknown) {

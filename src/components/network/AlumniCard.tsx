@@ -28,7 +28,7 @@ export const AlumniCard: React.FC<AlumniCardProps> = ({
     return (
         <div className="card-premium p-6 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 ease-out group">
             <div className="flex flex-col items-center text-center">
-                <Link href={`/profile/${user.uid}`} className="flex flex-col items-center group/avatar cursor-pointer">
+                <Link href={`/profile/view?id=${user.uid}`} className="flex flex-col items-center group/avatar cursor-pointer">
                     <div className="relative w-20 h-20 mb-4 rounded-full overflow-hidden border-4 border-white dark:border-brand-parchment shadow-lg group-hover/avatar:scale-105 transition-transform duration-300">
                         <Image
                             src={user.profilePic || `https://placehold.co/100x100/4f46e5/ffffff?text=${user.name.substring(0, 1)}`}
@@ -108,3 +108,4 @@ export const AlumniCard: React.FC<AlumniCardProps> = ({
         </div>
     );
 };
+

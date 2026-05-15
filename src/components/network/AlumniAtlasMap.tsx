@@ -199,7 +199,7 @@ export default function AlumniAtlasMap({ users }: AlumniAtlasMapProps) {
                     </div>
                     {/* Body */}
                     <div style={{ padding: '34px 16px 16px' }}>
-                      <Link href={`/profile/${m.user.uid}`} style={{ display: 'block', color: '#1a1a2e', fontWeight: 900, fontSize: 15, marginBottom: 2, textDecoration: 'none' }}>{m.user.name}</Link>
+                      <Link href={`/profile/view?id=${m.user.uid}`} style={{ display: 'block', color: '#1a1a2e', fontWeight: 900, fontSize: 15, marginBottom: 2, textDecoration: 'none' }}>{m.user.name}</Link>
                       <span style={{ fontSize: 10, fontWeight: 700, color: '#f59e0b', background: 'rgba(251,191,36,.12)', padding: '2px 8px', borderRadius: 20, display: 'inline-block', marginBottom: 12, textTransform: 'uppercase', letterSpacing: 1 }}>Batch {m.user.batch}</span>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 7, marginBottom: 14 }}>
                         {m.user.profession && <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#4b5563', fontSize: 12 }}><Briefcase style={{ width: 13, height: 13, flexShrink: 0 }} /><span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m.user.profession}</span></div>}
@@ -208,7 +208,7 @@ export default function AlumniAtlasMap({ users }: AlumniAtlasMapProps) {
                           <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m.user.location || 'Unknown'}</span>
                         </div>
                       </div>
-                      <Link href={`/profile/${m.user.uid}`}
+                      <Link href={`/profile/view?id=${m.user.uid}`}
                         style={{ display: 'block', textAlign: 'center', padding: '10px 0', borderRadius: 12, fontSize: 13, fontWeight: 900, color: '#fff', textDecoration: 'none', background: m.isLive ? 'linear-gradient(135deg,#10b981,#059669)' : 'linear-gradient(135deg,#881337,#c2185b)', boxShadow: '0 4px 12px rgba(136,19,55,0.2)' }}>
                         View Profile →
                       </Link>
@@ -263,3 +263,4 @@ export default function AlumniAtlasMap({ users }: AlumniAtlasMapProps) {
     </>
   );
 }
+

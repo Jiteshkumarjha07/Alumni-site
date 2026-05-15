@@ -111,6 +111,10 @@ export default function AdminDashboard() {
     const handleDeleteUser = async (uid: string, name: string) => {
         if (!confirm(`PERMANENTLY DELETE user "${name}"?\n\nThis cannot be undone. All their data may become orphaned.`)) return;
         try {
+            const userToDelete = allUsers.find(u => u.uid === uid);
+            if (userToDelete?.email) {
+                await deleteDoc(doc(db, 'approvals', userToDelete.email.toLowerCase().trim()));
+            }
             await deleteDoc(doc(db, 'users', uid));
         } catch (err: unknown) {
             setError((err as { message?: string }).message || 'Failed to delete user.');

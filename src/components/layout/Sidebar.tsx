@@ -106,6 +106,13 @@ export function Sidebar() {
                                 >
                                     Settings
                                 </Link>
+                                <button 
+                                    onClick={() => signOut()}
+                                    className="col-span-2 mt-2 flex items-center justify-center gap-2 py-2.5 bg-red-500/5 hover:bg-red-500/10 rounded-xl border border-red-500/10 text-red-500 transition-all text-[9px] font-black uppercase tracking-wider active:scale-95"
+                                >
+                                    <LogOut className="w-3 h-3" />
+                                    Sign Out
+                                </button>
                             </div>
                         </div>
                     </div>

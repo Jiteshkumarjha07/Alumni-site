@@ -668,11 +668,19 @@ export function InstituteLobby() {
   // Uses a simple getDocs(collection) — no index needed, no where() clause.
   const notifyAllInstitutes = async (postId: string, instituteName: string, title: string) => {
     try {
-      // LIMIT to 50 users for performance and to avoid permission issues with broad collection reads
-      const snap = await getDocs(query(collection(db, 'users'), limit(50)));
-      const otherUsers = snap.docs
-        .map(d => ({ uid: d.id, ...(d.data() as any) }))
-        .filter(u => u.uid !== userData?.uid);
+      let otherUsers: any[] = [];
+      try {
+        // Fetch a limited set of users to notify. 
+        // Note: Broad collection reads on 'users' can hit permission limits if not careful.
+        const snap = await getDocs(query(collection(db, 'users'), limit(50)));
+        otherUsers = snap.docs
+          .map(d => ({ uid: d.id, ...(d.data() as any) }))
+          .filter(u => u.uid !== userData?.uid);
+      } catch (queryErr) {
+        console.error('[Lobby] Error fetching user list for notifications:', queryErr);
+        // Fallback: Continue without notifying others if user list is restricted
+        return;
+      }
 
       await Promise.allSettled(
         otherUsers.map(u =>

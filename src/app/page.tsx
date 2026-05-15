@@ -227,7 +227,7 @@ export default function HomePage() {
         sourceUserName: userData.name,
         sourceUserProfilePic: userData.profilePic || '',
         message: 'liked your post.',
-        link: `/posts/${postId}?action=view`,
+        link: `/posts/view?id=${postId}&action=view`,
         createdAt: serverTimestamp(),
         isRead: false,
         instituteId: userData.instituteId
@@ -273,7 +273,7 @@ export default function HomePage() {
         message: `${userData.name} commented on your post: "${text.substring(0, 30)}${
           text.length > 30 ? '...' : ''
         }"`,
-        link: `/posts/${commentingPost.id}?action=comment`,
+        link: `/posts/view?id=${commentingPost.id}&action=comment`,
         createdAt: serverTimestamp(),
         isRead: false,
         instituteId: userData.instituteId
@@ -567,4 +567,5 @@ export default function HomePage() {
     </div>
   );
 }
+
 

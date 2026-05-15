@@ -17,7 +17,7 @@ import { User, Post, Job } from '@/types';
 import { isAuthenticEmailDomain } from '@/lib/validation';
 import { serverTimestamp, setDoc, arrayUnion, arrayRemove, getDocs } from 'firebase/firestore';
 
-type Tab = 'overview' | 'members' | 'posts' | 'jobs' | 'approvals';
+type Tab = 'overview' | 'members' | 'posts' | 'jobs' | 'approvals' | 'suspended';
 
 export default function InstituteAdminPage() {
     const { userData, loading: authLoading } = useAuth();
@@ -287,6 +287,7 @@ export default function InstituteAdminPage() {
         { id: 'posts', label: 'Posts', icon: <FileText className="w-4 h-4" /> },
         { id: 'jobs', label: 'Jobs', icon: <Briefcase className="w-4 h-4" />, badge: overviewStats.jobs },
         { id: 'approvals', label: 'Whitelisting', icon: <ShieldCheck className="w-4 h-4" /> },
+        { id: 'suspended', label: 'Suspended', icon: <UserX className="w-4 h-4" />, badge: suspendedCount },
     ];
 
     return (
@@ -402,12 +403,18 @@ export default function InstituteAdminPage() {
             {/* ── OVERVIEW TAB ────────────────────────────────────── */}
             {activeTab === 'overview' && (
                 <div className="space-y-6">
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
                         {[
                             {
                                 label: 'Total Members', value: overviewStats.users,
                                 icon: <Users className="w-6 h-6 text-brand-burgundy" />,
                                 color: 'bg-brand-burgundy/10', tab: 'members' as Tab
+                            },
+                            {
+                                label: 'Suspended', value: suspendedCount,
+                                icon: <UserX className="w-6 h-6 text-red-600" />,
+                                color: 'bg-red-50 dark:bg-red-900/20', tab: 'suspended' as Tab,
+                                alert: suspendedCount > 0
                             },
                             {
                                 label: 'Total Posts', value: overviewStats.posts,
@@ -423,12 +430,12 @@ export default function InstituteAdminPage() {
                             <button
                                 key={stat.label}
                                 onClick={() => setActiveTab(stat.tab)}
-                                className="card-premium p-6 flex flex-col items-center justify-center text-center group hover:shadow-lg cursor-pointer transition-all"
+                                className={`card-premium p-6 flex flex-col items-center justify-center text-center group hover:shadow-lg cursor-pointer transition-all ${(stat as any).alert ? 'border-red-500/20 shadow-md shadow-red-500/5' : ''}`}
                             >
                                 <div className={`w-12 h-12 rounded-full ${stat.color} flex items-center justify-center mb-3 group-hover:scale-110 transition-transform`}>
                                     {stat.icon}
                                 </div>
-                                <h3 className="text-3xl font-serif font-bold text-brand-ebony dark:text-white">
+                                <h3 className={`text-3xl font-serif font-bold ${stat.label === 'Suspended' && suspendedCount > 0 ? 'text-red-600' : 'text-brand-ebony dark:text-white'}`}>
                                     {statsLoading ? <Loader2 className="w-6 h-6 animate-spin text-brand-ebony/20 mx-auto" /> : stat.value}
                                 </h3>
                                 <p className="text-[10px] font-black uppercase tracking-widest text-brand-ebony/40 dark:text-white/40 mt-1">{stat.label}</p>
@@ -720,6 +727,58 @@ export default function InstituteAdminPage() {
                             )}
                         </div>
                     </div>
+                </div>
+            )}
+            {/* ── SUSPENDED TAB ────────────────────────────────────── */}
+            {activeTab === 'suspended' && (
+                <div className="card-premium overflow-hidden">
+                    <div className="p-4 sm:p-6 border-b border-brand-ebony/10 dark:border-white/10">
+                        <h2 className="text-lg font-serif font-bold text-brand-ebony dark:text-white">Suspended Accounts</h2>
+                        <p className="text-xs text-brand-ebony/50 dark:text-white/40 mt-0.5">{suspendedCount} suspended {suspendedCount === 1 ? 'account' : 'accounts'} in your institute</p>
+                    </div>
+
+                    {loadingMembers ? (
+                        <div className="p-12 text-center"><Loader2 className="w-8 h-8 animate-spin mx-auto text-brand-burgundy/30" /></div>
+                    ) : suspendedCount === 0 ? (
+                        <div className="p-12 sm:p-20 text-center">
+                            <div className="w-16 h-16 bg-emerald-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <UserCheck className="w-8 h-8 text-emerald-500" />
+                            </div>
+                            <p className="text-brand-ebony/40 dark:text-white/30 text-sm font-bold uppercase tracking-widest">No suspended accounts</p>
+                        </div>
+                    ) : (
+                        <div className="divide-y divide-brand-ebony/5 dark:divide-white/5">
+                            {members.filter(u => u.isSuspended).map(u => (
+                                <div key={u.uid} className="p-4 sm:p-5 bg-red-50/30 dark:bg-red-900/10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                                    <div className="flex items-center gap-3 min-w-0 flex-1">
+                                        <img
+                                            src={u.profilePic || `https://placehold.co/80x80/EFEFEF/5a2427?text=${u.name?.charAt(0) || '?'}`}
+                                            alt={u.name}
+                                            className="w-10 h-10 rounded-full border-2 border-red-200 dark:border-red-800 shadow-sm flex-shrink-0 object-cover opacity-60"
+                                        />
+                                        <div className="min-w-0">
+                                            <p className="font-bold text-brand-ebony dark:text-white text-sm">{u.name}</p>
+                                            <p className="text-xs text-brand-ebony/50 dark:text-white/40 truncate">{u.email}</p>
+                                            <code className="inline-block mt-1 text-[10px] font-mono bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300 px-2 py-0.5 rounded">
+                                                UID: {u.uid}
+                                            </code>
+                                            <p className="text-[10px] text-brand-ebony/40 dark:text-white/30 mt-1">
+                                                Class of {u.batch} · {u.profession || 'Alumni'}
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <div className="flex gap-2 flex-shrink-0 self-end sm:self-center flex-wrap">
+                                        <button
+                                            onClick={() => handleSuspendUser(u.uid, true)}
+                                            className="flex items-center gap-1.5 px-3 py-2 bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20 rounded-xl text-xs font-bold uppercase tracking-wider transition-all border border-emerald-500/20"
+                                        >
+                                            <UserCheck className="w-3 h-3" /> Restore
+                                        </button>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
                 </div>
             )}
         </div>

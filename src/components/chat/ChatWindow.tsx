@@ -688,7 +688,7 @@ export function ChatWindow({ chatId, currentUser, otherUser, isGroup = false, gr
                         {isGroup ? (
                             <h3 className="text-lg md:text-xl font-serif font-black text-black dark:text-white truncate leading-tight tracking-tight">{title}</h3>
                         ) : (
-                            <Link href={`/profile/${otherUser?.uid}`}>
+                            <Link href={`/profile/view?id=${otherUser?.uid}`}>
                                 <h3 className="text-lg md:text-xl font-serif font-black text-black dark:text-white truncate leading-tight tracking-tight hover:text-brand-burgundy transition-colors">{title}</h3>
                             </Link>
                         )}
@@ -1092,3 +1092,4 @@ export function ChatWindow({ chatId, currentUser, otherUser, isGroup = false, gr
         </div>
     );
 }
+

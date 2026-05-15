@@ -289,7 +289,7 @@ export const MessageBubble = React.memo(function MessageBubble({
 
                             {/* Shared Post UI */}
                             {message.sharedPostId && (
-                                <Link href={`/posts/${message.sharedPostId}`} className="block mb-3">
+                                <Link href={`/posts/view?id=${message.sharedPostId}`} className="block mb-3">
                                     <div className={`p-4 rounded-2xl border transition-all hover:brightness-105 ${isOwnMessage ? 'bg-white/10 border-white/20' : 'bg-brand-ebony/5 border-brand-ebony/5'}`}>
                                         <div className="flex items-center gap-2 mb-3 opacity-60">
                                             <Share2 className="w-3.5 h-3.5" />
@@ -437,3 +437,4 @@ export const MessageBubble = React.memo(function MessageBubble({
         </div>
     );
 });
+

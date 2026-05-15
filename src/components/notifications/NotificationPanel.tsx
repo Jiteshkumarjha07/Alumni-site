@@ -136,7 +136,7 @@ export function NotificationBell() {
         sourceUserName: userData.name,
         sourceUserProfilePic: userData.profilePic || '',
         message: 'accepted your connection request.',
-        link: `/profile/${userData.uid}`,
+        link: `/profile/view?id=${userData.uid}`,
         createdAt: serverTimestamp(),
         isRead: false,
         instituteId: userData.instituteId
@@ -155,7 +155,7 @@ export function NotificationBell() {
   const handleNotificationClick = (notif: Notification) => {
     updateDoc(doc(db, 'notifications', notif.id), { isRead: true }).catch(console.error);
     closeDrawer();
-    router.push(notif.link || `/profile/${notif.sourceUserUid}`);
+    router.push(notif.link || `/profile/view?id=${notif.sourceUserUid}`);
   };
 
   const unreadCount = notifications.filter(n => !n.isRead).length;
@@ -331,3 +331,4 @@ export function NotificationBell() {
     </>
   );
 }
+

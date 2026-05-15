@@ -2,7 +2,7 @@
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "productName": " Alumnest",
   "version": "0.1.0",
-  "identifier": "com.tauri.dev",
+  "identifier": "com.alumnest.app",
   "build": {
     "frontendDist": "../out",
     "devUrl": "http://localhost:3000",
@@ -12,11 +12,12 @@
   "app": {
     "windows": [
       {
-        "title": "Alumnest",
-        "width": 800,
-        "height": 600,
+        "title": "Alumnest Desktop",
+        "width": 1280,
+        "height": 800,
         "resizable": true,
-        "fullscreen": false
+        "fullscreen": false,
+        "center": true
       }
     ],
     "security": {

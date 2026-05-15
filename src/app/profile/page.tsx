@@ -690,7 +690,7 @@ export default function ProfilePage() {
 function ConnectionCard({ connection }: { connection: User }) {
     return (
         <div className="card-premium p-4 flex items-center gap-4 hover:shadow-[0_4px_20px_rgba(79,70,229,0.1)] transition-all group">
-            <Link href={`/profile/${connection.uid}`} className="shrink-0">
+            <Link href={`/profile/view?id=${connection.uid}`} className="shrink-0">
                 <img
                     src={connection.profilePic || `https://placehold.co/80x80/4f46e5/ffffff?text=${connection.name[0]}`}
                     alt={connection.name}
@@ -698,7 +698,7 @@ function ConnectionCard({ connection }: { connection: User }) {
                 />
             </Link>
             <div className="flex-1 min-w-0">
-                <Link href={`/profile/${connection.uid}`}>
+                <Link href={`/profile/view?id=${connection.uid}`}>
                     <p className="font-serif font-bold text-brand-ebony truncate group-hover:text-brand-burgundy transition-colors">{connection.name}</p>
                 </Link>
                 <p className="text-[10px] font-black text-brand-ebony/40 uppercase tracking-widest">Class of {connection.batch}</p>
@@ -735,3 +735,4 @@ function SkeletonGrid({ count = 3 }: { count?: number }) {
         </div>
     );
 }
+

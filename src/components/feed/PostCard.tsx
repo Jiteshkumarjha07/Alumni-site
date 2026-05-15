@@ -103,7 +103,7 @@ export const PostCard: React.FC<PostCardProps> = ({
             <div className="relative p-5 md:p-6">
                 {/* ── Header ── */}
                 <div className="flex items-start justify-between mb-5">
-                    <Link href={`/profile/${post.authorUid}`} className="flex items-center gap-3.5 group/author">
+                    <Link href={`/profile/view?id=${post.authorUid}`} className="flex items-center gap-3.5 group/author">
                         <div className="relative shrink-0">
                             <div className="absolute -inset-0.5 bg-gradient-to-br from-brand-burgundy to-indigo-500 rounded-full opacity-0 group-hover/author:opacity-60 transition-opacity duration-300 blur-[2px]" />
                             <img
@@ -352,3 +352,4 @@ export const PostCard: React.FC<PostCardProps> = ({
         </div>
     );
 };
+
