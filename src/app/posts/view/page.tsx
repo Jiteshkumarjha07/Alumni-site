@@ -50,14 +50,15 @@ function PostViewClient() {
         });
     };
 
-    const handleAddComment = async (text: string, replyToId?: string) => {
+    const handleAddComment = async (text: string, replyToId?: string, replyToAuthor?: string) => {
         if (!userData || !post) return;
         const newComment: AppComment = {
             id: Math.random().toString(36).substr(2, 9),
             authorUid: userData.uid,
             authorName: userData.name,
             text, createdAt: new Date(), reactions: {},
-            ...(replyToId ? { replyToId } : {})
+            ...(replyToId ? { replyToId } : {}),
+            ...(replyToAuthor ? { replyToAuthor } : {})
         };
         await updateDoc(doc(db, 'posts', post.id), { comments: arrayUnion(newComment) });
     };
@@ -83,7 +84,20 @@ function PostViewClient() {
 
     const handleDeleteComment = async (comment: AppComment) => {
         if (!userData || !post) return;
-        await updateDoc(doc(db, 'posts', post.id), { comments: arrayRemove(comment) });
+        const updatedComments = (post.comments || []).filter(c => {
+            const isTarget = c.id && comment.id ? c.id === comment.id : (c.text === comment.text && c.authorUid === comment.authorUid);
+            const isReplyToTarget = comment.id && c.replyToId === comment.id;
+            return !isTarget && !isReplyToTarget;
+        });
+        await updateDoc(doc(db, 'posts', post.id), { comments: updatedComments });
+    };
+
+    const handleEditComment = async (comment: AppComment, newText: string) => {
+        if (!userData || !post) return;
+        const updatedComments = (post.comments || []).map(c => 
+            c.id === comment.id ? { ...c, text: newText, isEdited: true } : c
+        );
+        await updateDoc(doc(db, 'posts', post.id), { comments: updatedComments });
     };
 
     if (authLoading || loading) return (
@@ -115,6 +129,7 @@ function PostViewClient() {
                 <CommentModal
                     isOpen onClose={() => setIsCommenting(false)}
                     onSubmit={handleAddComment} onDelete={handleDeleteComment}
+                    onEdit={handleEditComment}
                     onReact={handleReactComment} comments={post.comments || []}
                     postAuthor={post.authorName} currentUserUid={userData!.uid} currentUserName={userData!.name}
                 />

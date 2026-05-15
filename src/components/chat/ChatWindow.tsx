@@ -14,7 +14,7 @@ import { encryptMessage, decryptMessage, getSharedSecret } from '@/lib/encryptio
 import { uploadMedia, uploadVideo, uploadFile, uploadAudio } from '@/lib/media';
 import { useAuth } from '@/contexts/AuthContext';
 import { EmojiPicker } from '../ui/EmojiPicker';
-import { EmojiRenderer } from './EmojiRenderer';
+import { EmojiRenderer } from '../ui/EmojiRenderer';
 
 interface ChatWindowProps {
     chatId: string;

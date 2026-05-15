@@ -6,6 +6,7 @@ import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { db } from '@/lib/firebase';
 import { doc, updateDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
+import { EmojiRenderer } from '../ui/EmojiRenderer';
 
 interface PostCardProps {
     post: Post;
@@ -36,6 +37,16 @@ export const PostCard: React.FC<PostCardProps> = ({
     const isOwnPost = post.authorUid === currentUser.uid;
     const likeCount = post.likes?.length ?? 0;
     const commentCount = post.comments?.length ?? 0;
+    const [currentSlide, setCurrentSlide] = useState(0);
+    const carouselRef = useRef<HTMLDivElement>(null);
+
+    const handleScroll = () => {
+        if (!carouselRef.current) return;
+        const scrollPosition = carouselRef.current.scrollLeft;
+        const width = carouselRef.current.clientWidth;
+        const newSlide = Math.round(scrollPosition / width);
+        if (newSlide !== currentSlide) setCurrentSlide(newSlide);
+    };
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -84,7 +95,7 @@ export const PostCard: React.FC<PostCardProps> = ({
         return date.toLocaleDateString();
     };
 
-    const previewComments = post.comments?.slice(-2) || [];
+
 
     return (
         <div
@@ -178,7 +189,7 @@ export const PostCard: React.FC<PostCardProps> = ({
 
                 {/* ── Content ── */}
                 <p className="text-brand-ebony/85 text-[14.5px] leading-[1.7] whitespace-pre-wrap mb-4 font-sans tracking-tight">
-                    {post.content}
+                    <EmojiRenderer text={post.content} />
                 </p>
 
                 {/* ── Media Renderer ── */}
@@ -187,27 +198,68 @@ export const PostCard: React.FC<PostCardProps> = ({
                     
                     if (attachments.length > 0) {
                         return (
-                            <div className={`grid gap-2 mb-5 -mx-1 ${
-                                attachments.length === 1 ? 'grid-cols-1' :
-                                attachments.length === 2 ? 'grid-cols-2' :
-                                'grid-cols-2 md:grid-cols-3'
-                            }`}>
-                                {attachments.map((a: any, idx: number) => (
-                                    <div key={idx} className="relative rounded-2xl overflow-hidden border border-brand-ebony/5 bg-brand-ebony/5 aspect-video flex items-center justify-center group/media shadow-sm">
-                                        {a.type === 'image' ? (
-                                            <img src={a.url} alt="" className="w-full h-full object-cover" />
-                                        ) : a.type === 'video' ? (
-                                            <video src={a.url} controls className="w-full h-full object-cover" />
-                                        ) : (
-                                            <a href={a.url} target="_blank" rel="noopener noreferrer" className="flex flex-col items-center justify-center p-4 w-full h-full bg-white/50 dark:bg-white/5 hover:bg-white transition-all group">
-                                                <div className="w-10 h-10 rounded-xl bg-indigo-500/10 text-indigo-500 flex items-center justify-center mb-2 group-hover:bg-indigo-500 group-hover:text-white transition-colors">
-                                                    <FileIcon className="w-5 h-5" />
-                                                </div>
-                                                <span className="text-[10px] font-bold text-brand-ebony truncate w-full text-center px-2">{a.name || 'Doc'}</span>
-                                            </a>
-                                        )}
-                                    </div>
-                                ))}
+                            <div className="relative mb-5 -mx-1 group/carousel">
+                                <div 
+                                    ref={carouselRef}
+                                    onScroll={handleScroll}
+                                    className="flex overflow-x-auto snap-x snap-mandatory scrollbar-hide rounded-2xl"
+                                    style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+                                >
+                                    {attachments.map((a: any, idx: number) => (
+                                        <div key={idx} className="w-full shrink-0 snap-center relative border border-brand-ebony/5 bg-brand-ebony/5 flex items-center justify-center">
+                                            {a.type === 'image' ? (
+                                                <img src={a.url} alt="" className="w-full max-h-[400px] object-contain" />
+                                            ) : a.type === 'video' ? (
+                                                <video src={a.url} controls className="w-full max-h-[400px] object-contain" />
+                                            ) : (
+                                                <a href={a.url} target="_blank" rel="noopener noreferrer" className="flex flex-col items-center justify-center p-4 w-full h-[300px] bg-white/50 dark:bg-white/5 hover:bg-white transition-all group">
+                                                    <div className="w-12 h-12 rounded-xl bg-indigo-500/10 text-indigo-500 flex items-center justify-center mb-3 group-hover:bg-indigo-500 group-hover:text-white transition-colors">
+                                                        <FileIcon className="w-6 h-6" />
+                                                    </div>
+                                                    <span className="text-sm font-bold text-brand-ebony truncate w-full max-w-[200px] text-center px-2">{a.name || 'Document'}</span>
+                                                </a>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+                                
+                                {/* Instagram-style Navigation Arrows (Desktop) */}
+                                {attachments.length > 1 && (
+                                    <>
+                                        <button 
+                                            onClick={(e) => {
+                                                e.preventDefault();
+                                                if (carouselRef.current) {
+                                                    carouselRef.current.scrollBy({ left: -carouselRef.current.clientWidth, behavior: 'smooth' });
+                                                }
+                                            }}
+                                            className={`absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white/80 backdrop-blur shadow text-brand-ebony flex items-center justify-center opacity-0 group-hover/carousel:opacity-100 transition-opacity disabled:opacity-0 ${currentSlide === 0 ? 'hidden' : ''}`}
+                                        >
+                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" /></svg>
+                                        </button>
+                                        <button 
+                                            onClick={(e) => {
+                                                e.preventDefault();
+                                                if (carouselRef.current) {
+                                                    carouselRef.current.scrollBy({ left: carouselRef.current.clientWidth, behavior: 'smooth' });
+                                                }
+                                            }}
+                                            className={`absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white/80 backdrop-blur shadow text-brand-ebony flex items-center justify-center opacity-0 group-hover/carousel:opacity-100 transition-opacity disabled:opacity-0 ${currentSlide === attachments.length - 1 ? 'hidden' : ''}`}
+                                        >
+                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" /></svg>
+                                        </button>
+                                        
+                                        {/* Instagram-style Dot Indicators */}
+                                        <div className="absolute -bottom-4 left-0 right-0 flex justify-center gap-1.5 pb-1">
+                                            {attachments.map((_, idx: number) => (
+                                                <div 
+                                                    key={idx} 
+                                                    className={`h-1.5 rounded-full transition-all duration-300 ${idx === currentSlide ? 'w-4 bg-brand-burgundy' : 'w-1.5 bg-brand-ebony/20'}`}
+                                                />
+                                            ))}
+                                        </div>
+                                    </>
+                                )}
                             </div>
                         );
                     }
@@ -264,22 +316,7 @@ export const PostCard: React.FC<PostCardProps> = ({
                     return null;
                 })()}
 
-                {/* ── Comment Previews ── */}
-                {previewComments.length > 0 && (
-                    <div className="mb-4 space-y-2">
-                        {previewComments.map((c, i) => (
-                            <div key={i} className="flex items-start gap-2.5 px-4 py-2.5 bg-brand-parchment/40 dark:bg-white/5 rounded-2xl">
-                                <div className="w-6 h-6 rounded-full bg-gradient-to-br from-indigo-400 to-brand-burgundy flex items-center justify-center text-white text-[9px] font-extrabold shrink-0 mt-0.5">
-                                    {c.authorName.substring(0, 1)}
-                                </div>
-                                <div className="min-w-0">
-                                    <span className="text-[11px] font-extrabold text-brand-ebony mr-1.5">{c.authorName}</span>
-                                    <span className="text-[12px] text-brand-ebony/65">{c.text}</span>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                )}
+
 
                 {/* ── Stats Bar ── */}
                 {(likeCount > 0 || commentCount > 0) && (

@@ -1,38 +1,22 @@
-import { imgbbApiKey } from './firebase-config';
 import { storage } from './firebase';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 /**
- * Uploads a file to ImgBB and returns the download URL
+ * Uploads a file to Firebase Storage and returns the download URL
  * @param file The file to upload
- * @param _path Ignored for ImgBB, kept for interface compatibility
+ * @param path The storage path (e.g., 'images')
  * @returns The download URL of the uploaded file
  */
-export const uploadMedia = async (file: File): Promise<string | null> => {
+export const uploadMedia = async (file: File, path: string = 'images'): Promise<string | null> => {
     if (!file) return null;
 
-    if (!imgbbApiKey) {
-        throw new Error("ImgBB API key is not configured.");
-    }
-
-    const formData = new FormData();
-    formData.append('image', file);
-
     try {
-        const response = await fetch(`https://api.imgbb.com/1/upload?key=${imgbbApiKey}`, {
-            method: 'POST',
-            body: formData,
-        });
-
-        const result = await response.json();
-
-        if (result.success) {
-            return result.data.url;
-        } else {
-            throw new Error(result.error?.message || 'Image upload failed.');
-        }
+        const storageRef = ref(storage, `${path}/${Date.now()}_${file.name}`);
+        const snapshot = await uploadBytes(storageRef, file);
+        const downloadURL = await getDownloadURL(snapshot.ref);
+        return downloadURL;
     } catch (error) {
-        console.error("ImgBB Upload Error:", error);
+        console.error("Firebase Storage Image Upload Error:", error);
         throw error;
     }
 };

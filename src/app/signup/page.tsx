@@ -34,9 +34,7 @@ export default function SignUpPage() {
     const [profilePicFile, setProfilePicFile] = useState<File | null>(null);
     const [previewUrl, setPreviewUrl] = useState<string>('');
 
-    useEffect(() => {
-        console.log("Signup page loaded. Firebase context ready.");
-    }, []);
+    useEffect(() => {}, []);
 
     const checkApproval = async () => {
         if (!formData.email) {
@@ -338,7 +336,8 @@ export default function SignUpPage() {
                                             onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                                             className="w-full px-4 py-3.5 bg-slate-100 border-2 border-slate-300 dark:bg-white/5 dark:border-white/10 text-brand-ebony placeholder:text-brand-ebony/40 focus:border-brand-burgundy focus:ring-2 focus:ring-brand-burgundy/20 outline-none transition-all rounded-xl font-medium text-sm pr-12"
                                             required
-                                            minLength={6}
+                                            minLength={8}
+                                            title="Password must be at least 8 characters"
                                         />
                                         <button
                                             type="button"

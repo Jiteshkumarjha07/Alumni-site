@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { EmojiPicker } from '../ui/EmojiPicker';
+import { EmojiRenderer } from '../ui/EmojiRenderer';
 
 interface EditPostModalProps {
     isOpen: boolean;
@@ -61,11 +62,21 @@ export const EditPostModal: React.FC<EditPostModalProps> = ({
                 {/* Content */}
                 <div className="p-4">
                     <div className="relative">
+                    <div className="relative w-full min-h-[150px] p-4 bg-white/50 dark:bg-black/20 border border-brand-ebony/10 rounded-xl focus-within:ring-2 focus-within:ring-brand-burgundy transition-all">
+                        {/* Mirroring Layer */}
+                        <div 
+                            className="absolute inset-0 p-4 text-brand-ebony pointer-events-none select-none overflow-hidden font-sans whitespace-pre-wrap break-words"
+                            aria-hidden="true"
+                        >
+                            <EmojiRenderer text={content || ' '} />
+                        </div>
                         <textarea
                             value={content}
                             onChange={(e) => setContent(e.target.value)}
-                            className="w-full min-h-[150px] p-4 bg-white/50 dark:bg-black/20 border border-brand-ebony/10 rounded-xl focus:ring-2 focus:ring-brand-burgundy focus:border-transparent resize-none text-brand-ebony font-sans transition-all"
+                            className="w-full h-full bg-transparent border-none outline-none focus:ring-0 p-0 text-transparent caret-brand-burgundy resize-none font-sans relative z-10"
+                            style={{ minHeight: '118px' }}
                         />
+                    </div>
                         <div className="absolute right-4 bottom-4">
                             <EmojiPicker onEmojiSelect={(emoji) => setContent(prev => prev + emoji)} />
                         </div>

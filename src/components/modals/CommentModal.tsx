@@ -1,11 +1,12 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { X, Send, Trash2, Loader2, Reply, Smile, Sparkles, Hash, MessageCircle } from 'lucide-react';
+import { X, Send, Trash2, Loader2, Reply, Smile, Sparkles, Hash, MessageCircle, Pencil } from 'lucide-react';
 import { EmojiPicker } from '../ui/EmojiPicker';
 import { Comment as AppComment } from '@/types';
 import { formatDistanceToNow } from 'date-fns';
 import { Portal } from '../ui/Portal';
+import { EmojiRenderer } from '../ui/EmojiRenderer';
 
 // ── Helpers (module-level so they're stable references) ─────────────────────
 
@@ -19,10 +20,40 @@ function highlightMentions(text: string) {
                 {part}
             </span>
         ) : (
-            part
+            <EmojiRenderer key={i} text={part} />
         )
     );
 }
+
+const timeAgo = (date: any) => {
+  if (!date) return '';
+  return formatDistanceToNow(date instanceof Date ? date : date.toDate(), { addSuffix: true });
+};
+
+const CommentEditUI = ({ editText, setEditText, onCancel, onSave }: any) => (
+  <div className="mt-1 space-y-2">
+    <div className="relative group">
+      <div className="w-full min-h-[60px] p-3 bg-white/50 border border-violet-100 rounded-lg focus-within:border-violet-300 transition-all relative overflow-hidden">
+        <div className="absolute inset-0 p-3 text-xs leading-relaxed whitespace-pre-wrap break-words pointer-events-none select-none overflow-hidden" aria-hidden="true">
+          <EmojiRenderer text={editText || ' '} />
+        </div>
+        <textarea 
+          value={editText} 
+          onChange={e => setEditText(e.target.value)}
+          className="w-full bg-transparent border-none outline-none focus:ring-0 p-0 text-xs leading-relaxed resize-none relative z-10 text-transparent caret-violet-500 overflow-hidden"
+                        rows={2}
+                      />
+                    </div>
+                    <div className="absolute right-2 bottom-2 z-20">
+                      <EmojiPicker onEmojiSelect={(emoji) => setEditText(prev => prev + emoji)} />
+                    </div>
+                 </div>
+                 <div className="flex justify-end gap-2">
+                   <button onClick={onCancel} className="text-[10px] font-bold text-brand-ebony/40 uppercase">Cancel</button>
+                   <button onClick={onSave} className="text-[10px] font-bold text-violet-600 uppercase">Save</button>
+                 </div>
+              </div>
+);
 
 function formatCommentDate(date: unknown): string {
     try {
@@ -42,6 +73,7 @@ interface CommentItemProps {
     onReply: () => void;
     onReact: (emoji: string) => void;
     onDelete: () => void;
+    onEdit: (newText: string) => void;
     currentUserUid?: string;
     showEmojiPicker: boolean;
     setShowEmojiPicker: (show: boolean) => void;
@@ -53,10 +85,21 @@ const CommentItem: React.FC<CommentItemProps> = ({
     onReply,
     onReact,
     onDelete,
+    onEdit,
     currentUserUid,
     showEmojiPicker,
     setShowEmojiPicker,
-}) => (
+}) => {
+    const [isEditing, setIsEditing] = useState(false);
+    const [editText, setEditText] = useState(comment.text);
+
+    const handleSave = () => {
+        if (!editText.trim()) return;
+        onEdit(editText.trim());
+        setIsEditing(false);
+    };
+
+    return (
     <div className="flex gap-4 group/item animate-in fade-in slide-in-from-left-2 duration-300">
         <div
             className={`shrink-0 ${isReply ? 'w-8 h-8' : 'w-10 h-10'} rounded-2xl bg-brand-ebony/5 flex items-center justify-center border border-brand-ebony/5 shadow-sm overflow-hidden`}
@@ -75,23 +118,51 @@ const CommentItem: React.FC<CommentItemProps> = ({
                 }`}
             >
                 <div className="flex justify-between items-center mb-1">
-                    <p className="font-extrabold text-[11px] text-indigo-500 uppercase tracking-widest">
+                    <p className="font-extrabold text-[11px] text-indigo-500 uppercase tracking-widest flex items-center gap-2">
                         {comment.authorName}
+                        {comment.isEdited && <span className="text-[8px] text-brand-ebony/20 font-bold uppercase">(Edited)</span>}
                     </p>
-                    {onDelete && currentUserUid === comment.authorUid && (
-                        <button
-                            type="button"
-                            onClick={onDelete}
-                            className="opacity-0 group-hover/comment:opacity-100 p-1.5 text-brand-ebony/20 hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-all"
-                        >
-                            <Trash2 className="w-3.5 h-3.5" />
-                        </button>
+                    {currentUserUid === comment.authorUid && (
+                        <div className="flex items-center gap-1 opacity-0 group-hover/comment:opacity-100 transition-opacity">
+                            {onEdit && (
+                                <button
+                                    type="button"
+                                    onClick={() => setIsEditing(!isEditing)}
+                                    className="p-1.5 text-brand-ebony/20 hover:text-indigo-500 hover:bg-indigo-500/10 rounded-lg transition-all"
+                                >
+                                    <Pencil className="w-3 h-3" />
+                                </button>
+                            )}
+                            {onDelete && (
+                                <button
+                                    type="button"
+                                    onClick={onDelete}
+                                    className="p-1.5 text-brand-ebony/20 hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-all"
+                                >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                            )}
+                        </div>
                     )}
                 </div>
 
-                <p className="text-brand-ebony leading-relaxed text-sm font-medium">
-                    {highlightMentions(comment.text)}
-                </p>
+                {isEditing ? (
+                    <CommentEditUI 
+                        editText={editText} 
+                        setEditText={setEditText} 
+                        onCancel={() => setIsEditing(false)} 
+                        onSave={handleSave} 
+                    />
+                ) : (
+                    <p className="text-brand-ebony leading-relaxed text-sm font-medium whitespace-pre-wrap flex flex-wrap items-center gap-1">
+                        {isReply && comment.replyToAuthor && (
+                            <span className="text-indigo-500 font-extrabold">
+                                @{comment.replyToAuthor}
+                            </span>
+                        )}
+                        <EmojiRenderer text={comment.text} />
+                    </p>
+                )}
 
                 {comment.reactions && Object.entries(comment.reactions).length > 0 && (
                     <div className="flex flex-wrap gap-1.5 mt-3">
@@ -106,7 +177,7 @@ const CommentItem: React.FC<CommentItemProps> = ({
                                         : 'bg-white/50 border-brand-ebony/5 text-brand-ebony/40'
                                 }`}
                             >
-                                <span>{emoji}</span>
+                                <span><EmojiRenderer text={emoji} /></span>
                                 <span>{uids.length}</span>
                             </button>
                         ))}
@@ -160,15 +231,17 @@ const CommentItem: React.FC<CommentItemProps> = ({
             </div>
         </div>
     </div>
-);
+    );
+};
 
 // ── CommentModal ─────────────────────────────────────────────────────────────
 
 interface CommentModalProps {
     isOpen: boolean;
     onClose: () => void;
-    onSubmit: (text: string, replyToId?: string) => Promise<void>;
+    onSubmit: (text: string, replyToId?: string, replyToAuthor?: string) => Promise<void>;
     onDelete?: (comment: AppComment) => Promise<void>;
+    onEdit?: (comment: AppComment, newText: string) => Promise<void>;
     onReact?: (comment: AppComment, emoji: string) => Promise<void>;
     comments: AppComment[];
     postAuthor: string;
@@ -181,6 +254,7 @@ export const CommentModal: React.FC<CommentModalProps> = ({
     onClose,
     onSubmit,
     onDelete,
+    onEdit,
     onReact,
     comments,
     postAuthor,
@@ -192,7 +266,7 @@ export const CommentModal: React.FC<CommentModalProps> = ({
     const [displayComments, setDisplayComments] = useState<AppComment[]>(comments);
     const [replyingTo, setReplyingTo] = useState<AppComment | null>(null);
     const [showEmojiPickerFor, setShowEmojiPickerFor] = useState<string | null>(null);
-    const inputRef = useRef<HTMLInputElement>(null);
+    const inputRef = useRef<HTMLTextAreaElement>(null);
 
     // Mobile dismissal
     const [touchStart, setTouchStart] = useState<number | null>(null);
@@ -256,31 +330,14 @@ export const CommentModal: React.FC<CommentModalProps> = ({
 
     // ── Submit comment ────────────────────────────────────────────────────────
     const handleSubmit = async () => {
-        if (!commentText.trim() || !currentUserUid) return;
-
-        const originalText = commentText;
-        const currentReplyToId = replyingTo?.id;
-
-        const optimisticComment: AppComment = {
-            id: Math.random().toString(36).substr(2, 9),
-            authorUid: currentUserUid,
-            authorName: currentUserName || 'You',
-            text: commentText.trim(),
-            createdAt: new Date(),
-            replyToId: currentReplyToId,
-        };
-
-        setDisplayComments((prev) => [...prev, optimisticComment]);
-        setCommentText('');
-        setReplyingTo(null);
+        if (!commentText.trim() || loading || !currentUserUid) return;
         setLoading(true);
-
         try {
-            await onSubmit(originalText, currentReplyToId);
+            await onSubmit(commentText.trim(), replyingTo?.id, replyingTo?.authorName);
+            setCommentText('');
+            setReplyingTo(null);
         } catch (error) {
-            console.error('Error adding comment:', error);
-            setDisplayComments((prev) => prev.filter((c) => c !== optimisticComment));
-            setCommentText(originalText);
+            console.error('Error submitting comment:', error);
         } finally {
             setLoading(false);
         }
@@ -288,9 +345,9 @@ export const CommentModal: React.FC<CommentModalProps> = ({
 
     // ── Delete comment ────────────────────────────────────────────────────────
     const handleDelete = async (comment: AppComment) => {
-        if (!onDelete) return;
+        if (!onDelete || !window.confirm('Are you sure you want to delete this comment? This will also delete all replies to it.')) return;
         const previousComments = [...displayComments];
-        setDisplayComments((prev) => prev.filter((c) => c !== comment));
+        setDisplayComments((prev) => prev.filter((c) => c.id !== comment.id && c.replyToId !== comment.id));
         try {
             await onDelete(comment);
         } catch {
@@ -357,6 +414,7 @@ export const CommentModal: React.FC<CommentModalProps> = ({
                                             onReply={() => handleSetReplyingTo(parentComment)}
                                             onReact={(emoji) => onReact?.(parentComment, emoji)}
                                             onDelete={() => handleDelete(parentComment)}
+                                            onEdit={(newText) => onEdit?.(parentComment, newText)}
                                             currentUserUid={currentUserUid}
                                             showEmojiPicker={showEmojiPickerFor === parentComment.id}
                                             setShowEmojiPicker={(show) =>
@@ -374,6 +432,7 @@ export const CommentModal: React.FC<CommentModalProps> = ({
                                                         onReply={() => handleSetReplyingTo(parentComment)}
                                                         onReact={(emoji) => onReact?.(reply, emoji)}
                                                         onDelete={() => handleDelete(reply)}
+                                                        onEdit={(newText) => onEdit?.(reply, newText)}
                                                         currentUserUid={currentUserUid}
                                                         showEmojiPicker={showEmojiPickerFor === reply.id}
                                                         setShowEmojiPicker={(show) =>
@@ -416,29 +475,42 @@ export const CommentModal: React.FC<CommentModalProps> = ({
                             </div>
                         )}
 
-                        <div className="flex gap-4 relative">
-                            <input
-                                ref={inputRef}
-                                type="text"
-                                value={commentText}
-                                onChange={(e) => setCommentText(e.target.value)}
-                                onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
-                                placeholder={
-                                    replyingTo
-                                        ? `Reply to ${replyingTo.authorName}...`
-                                        : 'Express your perspective...'
-                                }
-                                className="flex-1 px-6 py-4 pr-28 bg-brand-ebony/5 border border-brand-ebony/5 rounded-2xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all outline-none font-bold text-sm text-brand-ebony placeholder:text-brand-ebony/25 shadow-inner"
-                                disabled={loading}
-                            />
-                            <div className="absolute right-[76px] top-1/2 -translate-y-1/2">
-                                <EmojiPicker onEmojiSelect={(emoji) => setCommentText(prev => prev + emoji)} />
+                        <div className="flex gap-4 relative w-full items-end">
+                            <div className="flex-1 relative group">
+                                <div className="w-full px-6 py-4 pr-12 bg-brand-ebony/5 border border-brand-ebony/5 rounded-2xl focus-within:ring-4 focus-within:ring-indigo-500/10 focus-within:border-indigo-500 transition-all relative overflow-hidden shadow-inner min-h-[54px] flex items-center">
+                                    {/* Mirroring Layer */}
+                                    <div 
+                                        className="absolute inset-0 px-6 py-4 pr-12 text-sm font-bold leading-normal whitespace-pre-wrap break-words pointer-events-none select-none overflow-hidden flex items-center"
+                                        aria-hidden="true"
+                                    >
+                                        <EmojiRenderer text={commentText || ' '} />
+                                        {!commentText && <span className="text-brand-ebony/25">{replyingTo ? `Reply to ${replyingTo.authorName}...` : 'Express your perspective...'}</span>}
+                                    </div>
+
+                                    <textarea
+                                        ref={inputRef}
+                                        value={commentText}
+                                        onChange={(e) => {
+                                            setCommentText(e.target.value);
+                                            e.target.style.height = 'auto';
+                                            e.target.style.height = `${e.target.scrollHeight}px`;
+                                        }}
+                                        onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), handleSubmit())}
+                                        className="w-full bg-transparent border-none outline-none focus:ring-0 p-0 text-sm font-bold leading-normal relative z-10 text-transparent caret-indigo-500 resize-none overflow-hidden"
+                                        style={{ minHeight: '20px' }}
+                                        disabled={loading}
+                                        rows={1}
+                                    />
+                                </div>
+                                <div className="absolute right-4 bottom-4 z-20">
+                                    <EmojiPicker onEmojiSelect={(emoji) => setCommentText(prev => prev + emoji)} />
+                                </div>
                             </div>
                             <button
                                 type="button"
                                 onClick={handleSubmit}
                                 disabled={!commentText.trim() || loading || !currentUserUid}
-                                className="w-14 h-14 bg-gradient-indigo text-white rounded-2xl hover:brightness-110 active:scale-95 transition-all shadow-xl shadow-indigo-500/20 disabled:opacity-30 flex items-center justify-center"
+                                className="w-14 h-14 bg-gradient-indigo text-white rounded-2xl hover:brightness-110 active:scale-95 transition-all shadow-xl shadow-indigo-500/20 disabled:opacity-30 flex items-center justify-center shrink-0 mb-0.5"
                             >
                                 {loading ? (
                                     <Loader2 className="w-6 h-6 animate-spin" />

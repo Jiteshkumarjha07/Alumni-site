@@ -1,14 +1,13 @@
-// Firebase configuration and credentials from existing Loyola Alumni Association app
+// Firebase configuration — values are loaded from environment variables.
+// Copy .env.example to .env.local and fill in your credentials.
+// NEVER commit .env.local to GitHub.
 
 export const firebaseConfig = {
-  apiKey: "AIzaSyAwDtXrcjlscw2JdEoRQomJCzoofVvbOGE",
-  authDomain: "alumnest-19065.firebaseapp.com",
-  projectId: "alumnest-19065",
-  storageBucket: "alumnest-19065.firebasestorage.app",
-  messagingSenderId: "507932000309",
-  appId: "1:507932000309:web:af05d47b70dd0c0871b17c",
-  measurementId: "G-KGHKVDSQ5K"
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY!,
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN!,
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID!,
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET!,
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID!,
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID!,
+  measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
 };
-
-// ImgBB API Key for image uploads
-export const imgbbApiKey = "63493d1b3fcd73b7cfc9d5770c892935";

@@ -210,9 +210,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                 joinedAt: serverTimestamp(),
             };
 
-            console.log('User created in Auth, creating Firestore document...');
+
             await setDoc(doc(db, 'users', credential.user.uid), userDoc);
-            console.log('Firestore document created successfully');
+
         } catch (err: unknown) {
             console.error('Sign up error details:', {
                 error: err,
@@ -226,7 +226,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                 try {
                     console.warn('Deleting Auth user due to Firestore failure...');
                     await auth.currentUser.delete();
-                    console.log('Auth user deleted successfully');
+
                 } catch (deleteErr) {
                     console.error('Failed to delete Auth user after sync failure:', deleteErr);
                 }

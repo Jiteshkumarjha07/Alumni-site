@@ -31,9 +31,17 @@ function geocodeUser(user: User, allCities: ReturnType<typeof City.getAllCities>
 
 /* ── Icon ── */
 const createIcon = (user: User, isLive: boolean, isSelected: boolean) => {
-  const ring = isLive ? '#10b981' : isSelected ? '#f59e0b' : '#881337';
   const bg = isLive ? '#10b981' : isSelected ? '#f59e0b' : '#881337';
   const anim = isLive ? 'pulseLive' : 'pulseStatic';
+  
+  // Basic escaping to prevent XSS in Leaflet's divIcon HTML string
+  const escapeHtml = (str: string) => str.replace(/[&<>"']/g, m => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+  }[m] || m));
+
+  const safeProfilePic = user.profilePic ? escapeHtml(user.profilePic) : null;
+  const safeNameInitial = escapeHtml(user.name[0].toUpperCase());
+
   return L.divIcon({
     className: '',
     html: `<div style="position:relative;width:46px;height:54px">
@@ -41,7 +49,7 @@ const createIcon = (user: User, isLive: boolean, isSelected: boolean) => {
         display:flex;align-items:center;justify-content:center;overflow:hidden;
         box-shadow: 0 4px 12px rgba(0,0,0,0.15);
         animation:${anim} 2.5s infinite;cursor:pointer;">
-        ${user.profilePic ? `<img src="${user.profilePic}" style="width:100%;height:100%;object-fit:cover"/>` : `<span style="color:#fff;font-weight:700;font-size:17px;font-family:sans-serif">${user.name[0].toUpperCase()}</span>`}
+        ${safeProfilePic ? `<img src="${safeProfilePic}" style="width:100%;height:100%;object-fit:cover"/>` : `<span style="color:#fff;font-weight:700;font-size:17px;font-family:sans-serif">${safeNameInitial}</span>`}
         ${isLive ? `<div style="position:absolute;top:2px;right:2px;width:11px;height:11px;background:#10b981;border-radius:50%;border:2px solid #fff"></div>` : ''}
       </div>
       <div style="position:absolute;bottom:0;left:50%;transform:translateX(-50%);width:0;height:0;border-left:7px solid transparent;border-right:7px solid transparent;border-top:9px solid white"></div>
@@ -124,7 +132,7 @@ export default function AlumniAtlasMap({ users }: AlumniAtlasMapProps) {
 
   return (
     <>
-      <style dangerouslySetInnerHTML={{ __html: `
+      <style>{`
         @keyframes pulseStatic{0%{box-shadow:0 0 0 0 rgba(136,19,55,.4)}70%{box-shadow:0 0 0 13px rgba(136,19,55,0)}100%{box-shadow:0 0 0 0 rgba(136,19,55,0)}}
         @keyframes pulseLive{0%{box-shadow:0 0 0 0 rgba(16,185,129,.5)}70%{box-shadow:0 0 0 17px rgba(16,185,129,0)}100%{box-shadow:0 0 0 0 rgba(16,185,129,0)}}
         .leaflet-container{background:#eef2f5!important;font-family:inherit}
@@ -135,7 +143,7 @@ export default function AlumniAtlasMap({ users }: AlumniAtlasMapProps) {
         .leaflet-control-attribution a{color:rgba(0,0,0,.5)!important}
         .marker-cluster-small,.marker-cluster-medium,.marker-cluster-large{background:rgba(136,19,55,.1)!important}
         .marker-cluster-small div,.marker-cluster-medium div,.marker-cluster-large div{background:rgba(136,19,55,.9)!important;color:#fff!important;font-weight:700!important;border:2px solid #fff}
-      `}} />
+      `}</style>
 
       <div style={{ position: 'relative', width: '100%', height: 640, borderRadius: 20, overflow: 'hidden', border: '1px solid rgba(0,0,0,0.05)' }}>
 

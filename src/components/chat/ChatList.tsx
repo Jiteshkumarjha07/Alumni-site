@@ -9,7 +9,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { CreateGroupModal } from '../modals/CreateGroupModal';
 import { useMessaging } from '@/contexts/MessagingContext';
 import { useAuth } from '@/contexts/AuthContext';
-import { EmojiRenderer } from './EmojiRenderer';
+import { EmojiRenderer } from '../ui/EmojiRenderer';
 
 interface ChatListProps {
     currentUser: User;

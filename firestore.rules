@@ -6,19 +6,20 @@ service cloud.firestore {
     function isSignedIn() {
       return request.auth != null;
     }
-    
+
     function getUserData() {
       return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
     }
-    
+
     function isAdmin() {
       return isSignedIn() && getUserData().get('isAdmin', false) == true;
     }
-    
+
     function isInsAdmin() {
       return isSignedIn() && getUserData().get('isinsadmin', false) == true;
     }
-    
+
+    // FIX VULN-05: isInsAdminFor already scopes to same institute — used consistently below.
     function isInsAdminFor(instituteId) {
       return isInsAdmin() && getUserData().get('instituteId', '') == instituteId;
     }
@@ -30,35 +31,57 @@ service cloud.firestore {
     // ── Users ─────────────────────────────────────────────────────────────────
     match /users/{userId} {
       allow read: if isSignedIn();
-      allow create: if isAdmin() || (isSignedIn() && isOwner(userId)) || isInsAdminFor(request.resource.data.get('instituteId', ''));
-      allow delete: if isAdmin() || isInsAdminFor(resource.data.get('instituteId', '')) || (isSignedIn() && isOwner(userId));
-      allow update: if isAdmin() || 
-                    isInsAdmin() || // Allow any institute admin to update users (for approvals/sync)
-                    (isSignedIn() && isOwner(userId)) ||
-                    (isSignedIn() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['connections', 'pendingRequests', 'fcmTokens', 'liveLocation']));
+      allow create: if isAdmin()
+                    || (isSignedIn() && isOwner(userId))
+                    || isInsAdminFor(request.resource.data.get('instituteId', ''));
+      allow delete: if isAdmin()
+                    || isInsAdminFor(resource.data.get('instituteId', ''))
+                    || (isSignedIn() && isOwner(userId));
+
+      // FIX VULN-05: Replaced broad isInsAdmin() with scoped isInsAdminFor().
+      // Institute admins can only update users within their own institute.
+      allow update: if isAdmin()
+                    || isInsAdminFor(resource.data.get('instituteId', ''))
+                    || (isSignedIn() && isOwner(userId))
+                    || (isSignedIn() && request.resource.data.diff(resource.data)
+                        .affectedKeys().hasOnly(['connections', 'pendingRequests', 'fcmTokens', 'liveLocation']));
     }
 
     // ── Posts ─────────────────────────────────────────────────────────────────
     match /posts/{postId} {
       allow read: if isSignedIn();
-      allow create: if isSignedIn() || isAdmin() || isInsAdminFor(request.resource.data.get('instituteId', ''));
-      allow update: if isSignedIn() || isAdmin() || isInsAdminFor(resource.data.get('instituteId', ''));
-      allow delete: if isAdmin() || 
-                    isInsAdminFor(resource.data.get('instituteId', '')) ||
-                    (isSignedIn() && resource.data.authorUid == request.auth.uid);
+
+      // FIX VULN-03: Author must set their own UID. Prevents impersonation.
+      allow create: if isSignedIn()
+                    && request.resource.data.authorUid == request.auth.uid;
+
+      // FIX VULN-03: Author can edit their own post. Any signed-in user can
+      // update ONLY the 'likes' or 'comments' fields (for interactions).
+      // Admins can edit anything.
+      allow update: if isAdmin()
+                    || isInsAdminFor(resource.data.get('instituteId', ''))
+                    || (isSignedIn() && resource.data.authorUid == request.auth.uid)
+                    || (isSignedIn() && request.resource.data.diff(resource.data)
+                        .affectedKeys().hasOnly(['likes', 'comments']));
+
+      allow delete: if isAdmin()
+                    || isInsAdminFor(resource.data.get('instituteId', ''))
+                    || (isSignedIn() && resource.data.authorUid == request.auth.uid);
     }
 
     // ── Opportunities (Jobs board) ────────────────────────────────────────────
     match /opportunities/{oppId} {
       allow read: if isSignedIn();
-      allow create: if isSignedIn() || isAdmin() || isInsAdminFor(request.resource.data.get('instituteId', ''));
-      allow update: if isAdmin() ||
-                    isInsAdminFor(resource.data.get('instituteId', '')) ||
-                    isInsAdminFor(request.resource.data.get('instituteId', '')) ||
-                    (isSignedIn() && resource.data.postedByUid == request.auth.uid);
-      allow delete: if isAdmin() ||
-                    isInsAdminFor(resource.data.get('instituteId', '')) ||
-                    (isSignedIn() && resource.data.postedByUid == request.auth.uid);
+      allow create: if isSignedIn()
+                    || isAdmin()
+                    || isInsAdminFor(request.resource.data.get('instituteId', ''));
+      allow update: if isAdmin()
+                    || isInsAdminFor(resource.data.get('instituteId', ''))
+                    || isInsAdminFor(request.resource.data.get('instituteId', ''))
+                    || (isSignedIn() && resource.data.postedByUid == request.auth.uid);
+      allow delete: if isAdmin()
+                    || isInsAdminFor(resource.data.get('instituteId', ''))
+                    || (isSignedIn() && resource.data.postedByUid == request.auth.uid);
     }
 
     // ── Notifications ─────────────────────────────────────────────────────────
@@ -70,30 +93,36 @@ service cloud.firestore {
     // ── Chats ─────────────────────────────────────────────────────────────────
     match /chats/{chatId} {
       allow list: if isSignedIn();
-      allow get: if isSignedIn() &&
-        (resource == null || request.auth.uid in resource.data.participants);
+      allow get: if isSignedIn()
+                 && (resource == null || request.auth.uid in resource.data.participants);
       allow create: if isSignedIn();
-      allow update: if isSignedIn() &&
-        request.auth.uid in resource.data.participants;
+      allow update: if isSignedIn()
+                    && request.auth.uid in resource.data.participants;
     }
 
     // ── Groups ────────────────────────────────────────────────────────────────
     match /groups/{groupId} {
       allow list: if isSignedIn();
-      allow get: if isSignedIn() &&
-        (resource == null || request.auth.uid in resource.data.members);
+      allow get: if isSignedIn()
+                 && (resource == null || request.auth.uid in resource.data.members);
       allow create: if isSignedIn();
-      allow update: if isSignedIn() &&
-        request.auth.uid in resource.data.members;
+      allow update: if isSignedIn()
+                    && request.auth.uid in resource.data.members;
     }
 
     // ── Subcollections (Messages) ─────────────────────────────────────────────
+    // FIX INFO-01: Only chat participants can read/write messages.
     match /chats/{chatId}/messages/{messageId} {
-      allow read, write: if isSignedIn();
+      allow read, write: if isSignedIn()
+                         && request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.participants;
     }
+
+    // FIX INFO-02: Only group members can read/write messages.
     match /groups/{groupId}/messages/{messageId} {
-      allow read, write: if isSignedIn();
+      allow read, write: if isSignedIn()
+                         && request.auth.uid in get(/databases/$(database)/documents/groups/$(groupId)).data.members;
     }
+
     match /communityChat/{messageId} {
       allow read, create: if isSignedIn();
     }
@@ -102,29 +131,36 @@ service cloud.firestore {
     match /events/{eventId} {
       allow read: if isSignedIn();
       allow create: if isSignedIn() || isAdmin() || isInsAdminFor(request.resource.data.get('instituteId', ''));
-      allow update, delete: if isAdmin() ||
-                            isInsAdminFor(resource.data.get('instituteId', '')) ||
-                            (isSignedIn() && resource.data.createdByUid == request.auth.uid);
+      allow update, delete: if isAdmin()
+                            || isInsAdminFor(resource.data.get('instituteId', ''))
+                            || (isSignedIn() && resource.data.createdByUid == request.auth.uid);
     }
 
     // ── Institutes ────────────────────────────────────────────────────────────
+    // FIX VULN-01: Unauthenticated users could read entire collection.
+    // 'get' (single doc) is still allowed unauthenticated for the signup approval flow.
+    // 'list' (queries) now requires a signed-in user.
     match /institutes/{instId} {
-      allow read: if true;
+      allow get: if true;
+      allow list: if isSignedIn();
       allow write: if isAdmin() || isInsAdminFor(instId);
     }
 
     // ── Lobby Posts (Cross-Institute) ─────────────────────────────────────────
     match /lobbyPosts/{postId} {
-      // Simplified: Allow all signed-in users to read and create
       allow read, create: if isSignedIn();
-      // Allow all signed-in users to update (likes); only creator can delete
       allow update: if isSignedIn();
       allow delete: if isSignedIn() && resource.data.authorUid == request.auth.uid;
     }
 
     // ── Email Approvals ───────────────────────────────────────────────────────
+    // FIX VULN-02: Unauthenticated users could read the entire email approval list.
+    // 'get' (single doc lookup) is still allowed unauthenticated for the signup flow
+    // so new users can verify their email before they have an account.
+    // 'list' (full collection scan) now requires a signed-in user.
     match /approvals/{email} {
-      allow read: if true;
+      allow get: if true;
+      allow list: if isSignedIn();
       allow write: if isAdmin() || isInsAdmin();
     }
   }

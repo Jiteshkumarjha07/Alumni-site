@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
-import EmojiPickerReact, { EmojiClickData, Theme } from 'emoji-picker-react';
+import EmojiPickerReact, { EmojiClickData, Theme, EmojiStyle } from 'emoji-picker-react';
 import { Smile } from 'lucide-react';
 import { useTheme } from '@/contexts/ThemeContext';
 
@@ -75,7 +75,6 @@ export const EmojiPicker: React.FC<EmojiPickerProps> = ({ onEmojiSelect, classNa
 
     const onEmojiClick = (emojiData: EmojiClickData) => {
         onEmojiSelect(emojiData.emoji);
-        setIsOpen(false);
     };
 
     if (!mounted) return null;
@@ -100,6 +99,7 @@ export const EmojiPicker: React.FC<EmojiPickerProps> = ({ onEmojiSelect, classNa
                 <EmojiPickerReact
                     onEmojiClick={onEmojiClick}
                     theme={theme === 'dark' ? Theme.DARK : Theme.LIGHT}
+                    emojiStyle={EmojiStyle.APPLE}
                     skinTonesDisabled
                     searchDisabled={false}
                     width="100%"

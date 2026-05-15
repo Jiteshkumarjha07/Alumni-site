@@ -24,10 +24,10 @@ const AlumniAtlasMap = dynamic(() => import('./AlumniAtlasMap'), {
           <div key={i} style={{ width: 8, height: 8, borderRadius: '50%', background: 'rgba(136,19,55,.7)', animation: `dotBounce 1.2s ${i * 0.2}s infinite` }} />
         ))}
       </div>
-      <style dangerouslySetInnerHTML={{ __html: `
+      <style>{`
         @keyframes spin { to { transform: rotate(360deg); } }
         @keyframes dotBounce { 0%,80%,100%{transform:scale(.6);opacity:.4} 40%{transform:scale(1.2);opacity:1} }
-      ` }} />
+      `}</style>
     </div>
   ),
 });

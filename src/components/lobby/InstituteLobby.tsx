@@ -11,12 +11,38 @@ import { LobbyPost, Poll, PollOption, MediaAttachment, User } from '@/types';
 import {
   Globe2, Pin, Heart, Send, Lock, Tag, Loader2,
   Image as ImageIcon, Video as VideoIcon, FileText, BarChart3,
-  Plus, Trash2, Download, Play, X, MessageSquare, Share2
+  Plus, Trash2, Download, Play, X, MessageSquare, Share2, Pencil
 } from 'lucide-react';
 import { uploadMedia, uploadVideo, uploadFile } from '@/lib/media';
 import { EmojiPicker } from '../ui/EmojiPicker';
+import { EmojiRenderer } from '../ui/EmojiRenderer';
 
 // ── Helpers ───────────────────────────────────────────────────────────────
+const CommentEditUI = ({ editText, setEditText, onCancel, onSave }: any) => (
+  <div className="mt-1 space-y-2">
+    <div className="relative group">
+      <div className="w-full min-h-[60px] p-3 bg-white/50 border border-violet-100 rounded-lg focus-within:border-violet-300 transition-all relative overflow-hidden">
+        <div className="absolute inset-0 p-3 text-xs leading-relaxed whitespace-pre-wrap break-words pointer-events-none select-none overflow-hidden" aria-hidden="true">
+          <EmojiRenderer text={editText || ' '} />
+        </div>
+        <textarea 
+          value={editText} 
+          onChange={e => setEditText(e.target.value)}
+          className="w-full bg-transparent border-none outline-none focus:ring-0 p-0 text-xs leading-relaxed resize-none relative z-10 text-transparent caret-violet-500 overflow-hidden"
+          rows={2}
+        />
+      </div>
+      <div className="absolute right-2 bottom-2 z-20">
+        <EmojiPicker onEmojiSelect={(emoji) => setEditText(prev => prev + emoji)} />
+      </div>
+    </div>
+    <div className="flex justify-end gap-2">
+      <button onClick={onCancel} className="text-[10px] font-bold text-brand-ebony/40 uppercase">Cancel</button>
+      <button onClick={onSave} className="text-[10px] font-bold text-violet-600 uppercase">Save</button>
+    </div>
+  </div>
+);
+
 function timeAgo(ts: any): string {
   try {
     const date = ts?.toDate ? ts.toDate() : new Date(ts);
@@ -43,6 +69,19 @@ function LobbyPostCard({ post, currentUid, onLike, onVote, userData }: {
   const [showComments, setShowComments] = useState(false);
   const [commentText, setCommentText] = useState('');
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
+  const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
+  const [editText, setEditText] = useState('');
+  const [replyingTo, setReplyingTo] = useState<any>(null);
+  const [currentSlide, setCurrentSlide] = useState(0);
+  const carouselRef = useRef<HTMLDivElement>(null);
+
+  const handleScroll = () => {
+    if (!carouselRef.current) return;
+    const scrollPosition = carouselRef.current.scrollLeft;
+    const width = carouselRef.current.clientWidth;
+    const newSlide = Math.round(scrollPosition / width);
+    if (newSlide !== currentSlide) setCurrentSlide(newSlide);
+  };
 
   const handleLike = () => {
     setLikeAnim(true);
@@ -60,16 +99,45 @@ function LobbyPostCard({ post, currentUid, onLike, onVote, userData }: {
         authorUid: userData.uid,
         authorName: userData.name,
         text: commentText.trim(),
-        createdAt: new Date()
+        createdAt: new Date(),
+        ...(replyingTo ? { replyToId: replyingTo.id } : {})
       };
       await updateDoc(postRef, {
         comments: arrayUnion(newComment)
       });
       setCommentText('');
+      setReplyingTo(null);
     } catch (err) {
       console.error('Error adding comment to lobby post:', err);
     } finally {
       setIsSubmittingComment(false);
+    }
+  };
+
+  const handleDeleteComment = async (commentId: string) => {
+    if (!window.confirm('Delete this comment?')) return;
+    try {
+      const postRef = doc(db, 'lobbyPosts', post.id);
+      // Filter out the comment itself AND any replies to it
+      const updatedComments = post.comments.filter((c: any) => c.id !== commentId && c.replyToId !== commentId);
+      await updateDoc(postRef, { comments: updatedComments });
+    } catch (err) {
+      console.error('Error deleting comment:', err);
+    }
+  };
+
+  const handleEditComment = async () => {
+    if (!editText.trim()) return;
+    try {
+      const postRef = doc(db, 'lobbyPosts', post.id);
+      const updatedComments = post.comments.map((c: any) => 
+        c.id === editingCommentId ? { ...c, text: editText.trim(), isEdited: true } : c
+      );
+      await updateDoc(postRef, { comments: updatedComments });
+      setEditingCommentId(null);
+      setEditText('');
+    } catch (err) {
+      console.error('Error editing comment:', err);
     }
   };
 
@@ -124,41 +192,86 @@ function LobbyPostCard({ post, currentUid, onLike, onVote, userData }: {
         </div>
 
         {/* Title */}
-        <h3 className="font-serif font-bold text-lg text-brand-ebony mb-2 leading-snug">{post.title}</h3>
+        <h3 className="font-serif font-bold text-lg text-brand-ebony mb-2 leading-snug">
+          <EmojiRenderer text={post.title} />
+        </h3>
 
         {/* Content */}
-        <p className="text-sm text-brand-ebony/70 leading-relaxed mb-4 whitespace-pre-wrap">{post.content}</p>
+        <p className="text-sm text-brand-ebony/70 leading-relaxed mb-4 whitespace-pre-wrap">
+          <EmojiRenderer text={post.content} />
+        </p>
 
         {/* Media Rendering */}
         {post.attachments && post.attachments.length > 0 ? (
-          <div className={`grid gap-2 mb-4 ${
-            post.attachments.length === 1 ? 'grid-cols-1' :
-            post.attachments.length === 2 ? 'grid-cols-2' :
-            'grid-cols-2 md:grid-cols-3'
-          }`}>
-            {post.attachments.map((attachment, idx) => (
-              <div key={idx} className="relative rounded-xl overflow-hidden border border-brand-ebony/5 bg-black/5 aspect-video flex items-center justify-center">
-                {attachment.type === 'image' ? (
-                  <img src={attachment.url} alt="" className="w-full h-full object-cover" />
-                ) : attachment.type === 'video' ? (
-                  <video controls className="w-full h-full bg-black">
-                    <source src={attachment.url} />
-                  </video>
-                ) : (
-                  <a
-                    href={attachment.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex flex-col items-center justify-center p-4 w-full h-full bg-white/50 dark:bg-white/5 hover:bg-white transition-all group text-center"
-                  >
-                    <FileText className="w-8 h-8 text-blue-500 mb-2" />
-                    <span className="text-[10px] font-bold text-brand-ebony truncate w-full px-2">
-                      {attachment.name || 'Document'}
-                    </span>
-                  </a>
-                )}
-              </div>
-            ))}
+          <div className="relative mb-4 -mx-1 group/carousel">
+            <div 
+              ref={carouselRef}
+              onScroll={handleScroll}
+              className="flex overflow-x-auto snap-x snap-mandatory scrollbar-hide rounded-2xl"
+              style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+            >
+              {post.attachments.map((attachment, idx) => (
+                <div key={idx} className="w-full shrink-0 snap-center relative border border-brand-ebony/5 bg-black/5 flex items-center justify-center">
+                  {attachment.type === 'image' ? (
+                    <img src={attachment.url} alt="" className="w-full max-h-[400px] object-contain" />
+                  ) : attachment.type === 'video' ? (
+                    <video controls className="w-full max-h-[400px] bg-black">
+                      <source src={attachment.url} />
+                    </video>
+                  ) : (
+                    <a
+                      href={attachment.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex flex-col items-center justify-center p-4 w-full h-[300px] bg-white/50 dark:bg-white/5 hover:bg-white transition-all group text-center"
+                    >
+                      <FileText className="w-8 h-8 text-blue-500 mb-2" />
+                      <span className="text-sm font-bold text-brand-ebony truncate w-full max-w-[200px] px-2">
+                        {attachment.name || 'Document'}
+                      </span>
+                    </a>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            {/* Navigation Arrows (Desktop) */}
+            {post.attachments.length > 1 && (
+              <>
+                <button 
+                  onClick={(e) => {
+                    e.preventDefault();
+                    if (carouselRef.current) {
+                      carouselRef.current.scrollBy({ left: -carouselRef.current.clientWidth, behavior: 'smooth' });
+                    }
+                  }}
+                  className={`absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white/80 backdrop-blur shadow text-brand-ebony flex items-center justify-center opacity-0 group-hover/carousel:opacity-100 transition-opacity disabled:opacity-0 ${currentSlide === 0 ? 'hidden' : ''}`}
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" /></svg>
+                </button>
+                <button 
+                  onClick={(e) => {
+                    e.preventDefault();
+                    if (carouselRef.current) {
+                      carouselRef.current.scrollBy({ left: carouselRef.current.clientWidth, behavior: 'smooth' });
+                    }
+                  }}
+                  className={`absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white/80 backdrop-blur shadow text-brand-ebony flex items-center justify-center opacity-0 group-hover/carousel:opacity-100 transition-opacity disabled:opacity-0 ${currentSlide === post.attachments.length - 1 ? 'hidden' : ''}`}
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" /></svg>
+                </button>
+                
+                {/* Dot Indicators */}
+                <div className="absolute -bottom-4 left-0 right-0 flex justify-center gap-1.5 pb-1">
+                  {post.attachments.map((_, idx) => (
+                    <div 
+                      key={idx} 
+                      className={`h-1.5 rounded-full transition-all duration-300 ${idx === currentSlide ? 'w-4 bg-violet-500' : 'w-1.5 bg-brand-ebony/20'}`}
+                    />
+                  ))}
+                </div>
+              </>
+            )}
           </div>
         ) : post.mediaUrl ? (
           <div className="relative rounded-2xl overflow-hidden mb-4 border border-brand-ebony/5 bg-black/5">
@@ -282,36 +395,130 @@ function LobbyPostCard({ post, currentUid, onLike, onVote, userData }: {
           {/* Comment Section */}
           {showComments && (
             <div className="space-y-4 animate-in slide-in-from-top-2 duration-300">
-              <div className="flex items-center gap-3">
-                <input
-                  type="text"
-                  value={commentText}
-                  onChange={(e) => setCommentText(e.target.value)}
-                  placeholder="Write a comment..."
-                  className="flex-1 bg-white/70 dark:bg-white/5 border border-brand-ebony/10 rounded-xl px-4 py-2 text-xs text-brand-ebony outline-none focus:border-violet-300"
-                  onKeyDown={(e) => e.key === 'Enter' && handleComment()}
-                />
+              {replyingTo && (
+                <div className="flex items-center justify-between px-4 py-2 bg-violet-50 dark:bg-violet-900/20 rounded-xl border border-violet-100 dark:border-violet-800/30">
+                  <p className="text-[10px] font-medium text-violet-600 dark:text-violet-400">
+                    Replying to <span className="font-bold">@{replyingTo.authorName}</span>
+                  </p>
+                  <button onClick={() => setReplyingTo(null)} className="p-1 hover:bg-violet-100 dark:hover:bg-violet-800/40 rounded-lg text-violet-400 transition-colors">
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
+              )}
+              <div className="flex items-start gap-3 w-full">
+                <div className="flex-1 relative group">
+                  <div className="w-full min-h-[40px] px-4 py-2 bg-white/70 dark:bg-white/5 border border-brand-ebony/10 rounded-xl focus-within:ring-2 focus-within:ring-violet-400/40 transition-all relative overflow-hidden">
+                    {/* Mirroring Layer */}
+                    <div 
+                      className="absolute inset-0 px-4 py-2 text-xs leading-relaxed whitespace-pre-wrap break-words pointer-events-none select-none overflow-hidden"
+                      aria-hidden="true"
+                    >
+                      <EmojiRenderer text={commentText || ' '} />
+                      {!commentText && <span className="text-brand-ebony/30">Write a comment...</span>}
+                    </div>
+                    <textarea
+                      value={commentText}
+                      onChange={(e) => {
+                        setCommentText(e.target.value);
+                        e.target.style.height = 'auto';
+                        e.target.style.height = `${e.target.scrollHeight}px`;
+                      }}
+                      rows={1}
+                      className="w-full bg-transparent border-none outline-none focus:ring-0 p-0 text-xs leading-relaxed resize-none relative z-10 text-transparent caret-violet-500 overflow-hidden"
+                      onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), handleComment())}
+                      style={{ minHeight: '24px' }}
+                    />
+                  </div>
+                  <div className="absolute right-2 bottom-1.5 z-20">
+                    <EmojiPicker onEmojiSelect={(emoji) => setCommentText(prev => prev + emoji)} />
+                  </div>
+                </div>
                 <button
                   onClick={handleComment}
                   disabled={!commentText.trim() || isSubmittingComment}
-                  className="p-2 bg-violet-500 text-white rounded-xl hover:bg-violet-600 disabled:opacity-50 transition-all"
+                  className="mt-1 p-2 bg-violet-500 text-white rounded-xl hover:bg-violet-600 disabled:opacity-50 transition-all shrink-0"
                 >
                   <Send className="w-3.5 h-3.5" />
                 </button>
-                <EmojiPicker onEmojiSelect={(emoji) => setCommentText(prev => prev + emoji)} />
               </div>
 
               {post.comments && post.comments.length > 0 && (
                 <div className="space-y-3 pl-2 border-l-2 border-brand-ebony/5">
-                  {post.comments.map((c: any) => (
-                    <div key={c.id} className="flex flex-col gap-1">
-                      <div className="flex items-center gap-2">
-                        <span className="text-[10px] font-black text-brand-ebony uppercase tracking-widest">{c.authorName}</span>
-                        <span className="text-[9px] text-brand-ebony/30">{new Date(c.createdAt?.toDate?.() || c.createdAt).toLocaleDateString()}</span>
+                  {(() => {
+                    const parentComments = (post.comments || []).filter((c: any) => !c.replyToId);
+                    const replies = (post.comments || []).filter((c: any) => c.replyToId);
+
+                    return parentComments.map((c: any) => (
+                      <div key={c.id} className="space-y-3">
+                        <div className="flex flex-col gap-1 group/comm">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <span className="text-[10px] font-black text-brand-ebony uppercase tracking-widest">{c.authorName}</span>
+                              <span className="text-[9px] text-brand-ebony/30">{timeAgo(c.createdAt)}</span>
+                              {c.isEdited && <span className="text-[8px] text-brand-ebony/20 font-bold uppercase">(Edited)</span>}
+                            </div>
+                            <div className="flex items-center gap-2 opacity-0 group-hover/comm:opacity-100 transition-opacity">
+                              <button onClick={() => setReplyingTo(c)} className="p-1 text-brand-ebony/20 hover:text-violet-500 transition-colors">
+                                <MessageSquare className="w-2.5 h-2.5" />
+                              </button>
+                              {c.authorUid === currentUid && (
+                                <>
+                                  <button onClick={() => { setEditingCommentId(c.id); setEditText(c.text); }} className="p-1 text-brand-ebony/20 hover:text-violet-500 transition-colors">
+                                    <Pencil className="w-2.5 h-2.5" />
+                                  </button>
+                                  <button onClick={() => handleDeleteComment(c.id)} className="p-1 text-brand-ebony/20 hover:text-red-500 transition-colors">
+                                    <Trash2 className="w-2.5 h-2.5" />
+                                  </button>
+                                </>
+                              )}
+                            </div>
+                          </div>
+                          
+                          {editingCommentId === c.id ? (
+                            <CommentEditUI 
+                              editText={editText} 
+                              setEditText={setEditText} 
+                              onCancel={() => setEditingCommentId(null)} 
+                              onSave={handleEditComment} 
+                            />
+                          ) : (
+                            <p className="text-xs text-brand-ebony/70 whitespace-pre-wrap">
+                              <EmojiRenderer text={c.text} />
+                            </p>
+                          )}
+                        </div>
+
+                        {/* Replies */}
+                        {replies.filter((r: any) => r.replyToId === c.id).map((r: any) => (
+                          <div key={r.id} className="ml-8 pl-4 border-l-2 border-brand-ebony/5 flex flex-col gap-1 group/reply">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-2">
+                                <span className="text-[10px] font-black text-brand-ebony uppercase tracking-widest">{r.authorName}</span>
+                                <span className="text-[9px] text-brand-ebony/30">{timeAgo(r.createdAt)}</span>
+                                {r.isEdited && <span className="text-[8px] text-brand-ebony/20 font-bold uppercase">(Edited)</span>}
+                              </div>
+                              <div className="flex items-center gap-2 opacity-0 group-hover/reply:opacity-100 transition-opacity">
+                                {r.authorUid === currentUid && (
+                                  <>
+                                    <button onClick={() => { setEditingCommentId(r.id); setEditText(r.text); }} className="p-1 text-brand-ebony/20 hover:text-violet-500 transition-colors">
+                                      <Pencil className="w-2.5 h-2.5" />
+                                    </button>
+                                    <button onClick={() => handleDeleteComment(r.id)} className="p-1 text-brand-ebony/20 hover:text-red-500 transition-colors">
+                                      <Trash2 className="w-2.5 h-2.5" />
+                                    </button>
+                                  </>
+                                )}
+                              </div>
+                            </div>
+                            <p className="text-xs text-brand-ebony/70 whitespace-pre-wrap">
+                              <span className="text-violet-500 font-bold mr-1">@{c.authorName}</span>
+                              <EmojiRenderer text={r.text} />
+                            </p>
+                          </div>
+                        ))}
                       </div>
-                      <p className="text-xs text-brand-ebony/70">{c.text}</p>
-                    </div>
-                  )).reverse()}
+                    )).reverse();
+                  })()}
                 </div>
               )}
             </div>
@@ -398,25 +605,46 @@ function CreateLobbyPost({ onSubmit }: {
         </div>
 
         <div className="relative mb-3">
-          <input
-            type="text"
-            value={title}
-            onChange={e => setTitle(e.target.value)}
-            placeholder="Post title / topic..."
-            className="w-full bg-white/70 dark:bg-white/5 border border-violet-200/40 rounded-2xl px-4 py-3 text-sm font-bold text-brand-ebony placeholder-brand-ebony/30 focus:outline-none focus:ring-2 focus:ring-violet-400/40 transition-all pr-12"
-          />
-          <div className="absolute right-4 top-1/2 -translate-y-1/2">
+          <div className="w-full bg-white/70 dark:bg-white/5 border border-violet-200/40 rounded-2xl px-4 py-3 min-h-[46px] flex items-center focus-within:ring-2 focus-within:ring-violet-400/40 transition-all relative overflow-hidden">
+            {/* Mirroring Layer */}
+            <div 
+              className="absolute inset-0 px-4 py-3 pr-12 text-sm font-bold pointer-events-none select-none overflow-hidden flex items-center"
+              aria-hidden="true"
+            >
+              <EmojiRenderer text={title || ' '} />
+              {!title && <span className="text-brand-ebony/30">Post title / topic...</span>}
+            </div>
+            <input
+              type="text"
+              value={title}
+              onChange={e => setTitle(e.target.value)}
+              className="w-full bg-transparent border-none outline-none focus:ring-0 p-0 text-sm font-bold relative z-10 text-transparent caret-violet-500"
+            />
+          </div>
+          <div className="absolute right-4 top-1/2 -translate-y-1/2 z-20">
             <EmojiPicker onEmojiSelect={(emoji) => setTitle(prev => prev + emoji)} />
           </div>
         </div>
 
-        <textarea
-          value={content}
-          onChange={e => setContent(e.target.value)}
-          placeholder="Share an update, announcement, or collaboration opportunity with all institutes..."
-          rows={3}
-          className="w-full bg-white/70 dark:bg-white/5 border border-violet-200/40 rounded-2xl px-4 py-3 text-sm text-brand-ebony placeholder-brand-ebony/30 focus:outline-none focus:ring-2 focus:ring-violet-400/40 resize-none transition-all"
-        />
+        <div className="relative mb-3">
+          <div className="w-full bg-white/70 dark:bg-white/5 border border-violet-200/40 rounded-2xl px-4 py-3 min-h-[100px] focus-within:ring-2 focus-within:ring-violet-400/40 transition-all relative overflow-hidden">
+            {/* Mirroring Layer */}
+            <div 
+              className="absolute inset-0 px-4 py-3 text-sm leading-relaxed whitespace-pre-wrap break-words pointer-events-none select-none overflow-hidden"
+              aria-hidden="true"
+            >
+              <EmojiRenderer text={content || ' '} />
+              {!content && <span className="text-brand-ebony/30">Share an update, announcement, or collaboration opportunity with all institutes...</span>}
+            </div>
+            <textarea
+              value={content}
+              onChange={e => setContent(e.target.value)}
+              rows={3}
+              className="w-full h-full bg-transparent border-none outline-none focus:ring-0 p-0 text-sm leading-relaxed resize-none relative z-10 text-transparent caret-violet-500"
+              style={{ minHeight: '80px' }}
+            />
+          </div>
+        </div>
 
         {/* Attachment Previews */}
         {mediaFiles.length > 0 && (

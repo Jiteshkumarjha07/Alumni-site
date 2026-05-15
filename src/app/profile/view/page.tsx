@@ -112,11 +112,19 @@ function PublicProfileClient() {
         }
     };
 
-    const handleAddComment = async (text: string) => {
+    const handleAddComment = async (text: string, replyToId?: string, replyToAuthor?: string) => {
         if (!userData || !commentingPost) return;
         const post = posts.find(p => p.id === commentingPost.id);
         if (!post) return;
-        await updateDoc(doc(db, 'posts', commentingPost.id), { comments: [...(post.comments || []), { authorUid: userData.uid, authorName: userData.name, text, createdAt: new Date() }] });
+        const nc = { 
+            authorUid: userData.uid, 
+            authorName: userData.name, 
+            text, 
+            createdAt: new Date(),
+            ...(replyToId ? { replyToId } : {}),
+            ...(replyToAuthor ? { replyToAuthor } : {})
+        };
+        await updateDoc(doc(db, 'posts', commentingPost.id), { comments: [...(post.comments || []), nc] });
         if (post.authorUid !== userData.uid) {
             await addDoc(collection(db, 'notifications'), {
                 userId: post.authorUid, type: 'comment', sourceUserUid: userData.uid,
@@ -130,7 +138,24 @@ function PublicProfileClient() {
 
     const handleDeleteComment = async (comment: any) => {
         if (!userData || !commentingPost) return;
-        await updateDoc(doc(db, 'posts', commentingPost.id), { comments: arrayRemove(comment) });
+        const post = posts.find(p => p.id === commentingPost.id);
+        if (!post) return;
+        const updatedComments = (post.comments || []).filter(c => {
+            const isTarget = c.id && comment.id ? c.id === comment.id : (c.text === comment.text && c.authorUid === comment.authorUid);
+            const isReplyToTarget = comment.id && c.replyToId === comment.id;
+            return !isTarget && !isReplyToTarget;
+        });
+        await updateDoc(doc(db, 'posts', commentingPost.id), { comments: updatedComments });
+    };
+
+    const handleEditComment = async (comment: AppComment, newText: string) => {
+        if (!userData || !commentingPost) return;
+        const post = posts.find(p => p.id === commentingPost.id);
+        if (!post) return;
+        const updatedComments = (post.comments || []).map(c => 
+            c.id === comment.id ? { ...c, text: newText, isEdited: true } : c
+        );
+        await updateDoc(doc(db, 'posts', commentingPost.id), { comments: updatedComments });
     };
 
     const handleAdminDeleteUser = async () => {
@@ -315,7 +340,9 @@ function PublicProfileClient() {
             {sharingPost && <SharePostModal isOpen={!!sharingPost} onClose={() => setSharingPost(null)} post={sharingPost} currentUser={userData!} />}
             {commentingPost && (
                 <CommentModal isOpen onClose={() => setCommentingPost(null)} onSubmit={handleAddComment}
-                    onDelete={handleDeleteComment} comments={posts.find(p => p.id === commentingPost.id)?.comments || []}
+                    onDelete={handleDeleteComment} 
+                    onEdit={handleEditComment}
+                    comments={posts.find(p => p.id === commentingPost.id)?.comments || []}
                     currentUserUid={userData?.uid} currentUserName={userData?.name} postAuthor={commentingPost.authorName} />
             )}
         </div>

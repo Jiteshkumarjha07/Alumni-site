@@ -5,6 +5,7 @@ import { X, Image as ImageIcon, Loader2, Send, Sparkles, Video, FileText, File a
 import { uploadMedia, uploadVideo, uploadFile } from '@/lib/media';
 import { Portal } from '../ui/Portal';
 import { EmojiPicker } from '../ui/EmojiPicker';
+import { EmojiRenderer } from '../ui/EmojiRenderer';
 
 interface CreatePostModalProps {
     isOpen: boolean;
@@ -155,14 +156,23 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
 
                         {/* Content Area */}
                         <div className="px-6 sm:px-8 pb-8">
-                            <textarea
-                                value={content}
-                                onChange={(e) => setContent(e.target.value)}
-                                placeholder="What's on your mind? Share an update, a milestone, or start a discussion..."
-                                className="w-full min-h-[160px] p-0 bg-transparent border-none focus:ring-0 outline-none resize-none text-brand-ebony placeholder-brand-ebony/20 transition-all font-sans text-xl leading-[1.6] tracking-tight"
-                                disabled={loading}
-                                autoFocus
-                            />
+                            <div className="relative w-full min-h-[160px]">
+                                {/* Mirroring Layer */}
+                                <div 
+                                    className="absolute inset-0 p-0 text-brand-ebony pointer-events-none select-none overflow-hidden font-sans text-xl leading-[1.6] tracking-tight whitespace-pre-wrap break-words"
+                                    aria-hidden="true"
+                                >
+                                    <EmojiRenderer text={content || ' '} />
+                                    {!content && <span className="text-brand-ebony/20">What's on your mind? Share an update, a milestone, or start a discussion...</span>}
+                                </div>
+                                <textarea
+                                    value={content}
+                                    onChange={(e) => setContent(e.target.value)}
+                                    className="w-full h-full p-0 bg-transparent border-none focus:ring-0 outline-none resize-none text-transparent caret-brand-burgundy transition-all font-sans text-xl leading-[1.6] tracking-tight absolute inset-0 z-10"
+                                    disabled={loading}
+                                    autoFocus
+                                />
+                            </div>
 
                             {/* Media Preview Area */}
                             {selectedFiles.length > 0 && (

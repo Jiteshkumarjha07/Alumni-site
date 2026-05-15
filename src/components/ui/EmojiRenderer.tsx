@@ -19,17 +19,6 @@ export function EmojiRenderer({ text, className }: EmojiRendererProps) {
     let matchIndex = 0;
     const result = [];
 
-    // Reconstruct the string with image tags for emojis
-    for (let i = 0; i < parts.length; i++) {
-        if (parts[i] !== undefined && parts[i] !== '') {
-            // Check if this part is an emoji by checking against our matches
-            if (matchIndex < matches.length && text.indexOf(matches[matchIndex], text.indexOf(parts[i]) + parts[i].length - 1) !== -1 && matches[matchIndex] === parts[i]) {
-                // This is a bit tricky with split, let's use a simpler approach below
-            }
-            result.push(<span key={`text-${i}`}>{parts[i]}</span>);
-        }
-    }
-
     // Actually, a better way is to iterate through the string and find matches
     const finalResult: React.ReactNode[] = [];
     let lastIndex = 0;

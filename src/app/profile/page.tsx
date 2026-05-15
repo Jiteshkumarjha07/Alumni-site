@@ -270,16 +270,42 @@ export default function ProfilePage() {
         await updateDoc(doc(db, 'posts', postId), { likes: isLiked ? likes.filter(u => u !== userData.uid) : [...likes, userData.uid] });
     };
 
-    const handleAddComment = async (text: string) => {
+    const handleAddComment = async (text: string, replyToId?: string, replyToAuthor?: string) => {
         if (!userData || !commentingPost) return;
         const post = posts.find(p => p.id === commentingPost.id); if (!post) return;
-        const nc = { id: Math.random().toString(36).substring(2, 9), authorUid: userData.uid, authorName: userData.name, text, createdAt: new Date(), reactions: {} };
+        const nc = { 
+            id: Math.random().toString(36).substring(2, 9), 
+            authorUid: userData.uid, 
+            authorName: userData.name, 
+            text, 
+            createdAt: new Date(), 
+            reactions: {},
+            ...(replyToId ? { replyToId } : {}),
+            ...(replyToAuthor ? { replyToAuthor } : {})
+        };
         await updateDoc(doc(db, 'posts', commentingPost.id), { comments: [...(post.comments || []), nc] });
     };
 
     const handleDeleteComment = async (comment: AppComment) => {
         if (!userData || !commentingPost) return;
-        await updateDoc(doc(db, 'posts', commentingPost.id), { comments: arrayRemove(comment) });
+        const post = posts.find(p => p.id === commentingPost.id);
+        if (!post) return;
+        const updatedComments = (post.comments || []).filter(c => {
+            const isTarget = c.id && comment.id ? c.id === comment.id : (c.text === comment.text && c.authorUid === comment.authorUid);
+            const isReplyToTarget = comment.id && c.replyToId === comment.id;
+            return !isTarget && !isReplyToTarget;
+        });
+        await updateDoc(doc(db, 'posts', commentingPost.id), { comments: updatedComments });
+    };
+
+    const handleEditComment = async (comment: AppComment, newText: string) => {
+        if (!userData || !commentingPost) return;
+        const post = posts.find(p => p.id === commentingPost.id);
+        if (!post) return;
+        const updatedComments = (post.comments || []).map(c => 
+            c.id === comment.id ? { ...c, text: newText, isEdited: true } : c
+        );
+        await updateDoc(doc(db, 'posts', commentingPost.id), { comments: updatedComments });
     };
 
     const handleReactComment = async (comment: AppComment, emoji: string) => {
@@ -652,6 +678,7 @@ export default function ProfilePage() {
                     onClose={() => setCommentingPost(null)}
                     onSubmit={handleAddComment}
                     onDelete={handleDeleteComment}
+                    onEdit={handleEditComment}
                     onReact={handleReactComment}
                     comments={posts.find(p => p.id === commentingPost.id)?.comments || []}
                     currentUserUid={userData.uid}

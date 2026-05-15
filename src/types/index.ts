@@ -115,6 +115,8 @@ export interface Comment {
   text: string;
   createdAt: Date | Timestamp;
   replyToId?: string;
+  replyToAuthor?: string;
+  isEdited?: boolean;
   reactions?: Record<string, string[]>; // emoji -> array of user uids
 }
 

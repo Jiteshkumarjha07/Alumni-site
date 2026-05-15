@@ -7,6 +7,7 @@ import { collection, query, where, getDocs, addDoc, serverTimestamp, doc, setDoc
 import { db } from '@/lib/firebase';
 import Image from 'next/image';
 import { Portal } from '@/components/ui/Portal';
+import { EmojiRenderer } from '../ui/EmojiRenderer';
 
 interface SharePostModalProps {
     isOpen: boolean;
@@ -217,7 +218,9 @@ export function SharePostModal({ isOpen, onClose, post, currentUser }: SharePost
                                     <Sparkles className="w-3 h-3" />
                                     By {post.authorName}
                                 </p>
-                                <p className="text-xs text-brand-ebony/70 dark:text-brand-ebony/80 line-clamp-2 font-medium italic font-serif leading-relaxed">&ldquo;{post.content.substring(0, 100)}{post.content.length > 100 ? '...' : ''}&rdquo;</p>
+                                <p className="text-xs text-brand-ebony/70 dark:text-brand-ebony/80 line-clamp-2 font-medium italic font-serif leading-relaxed">
+                                    &ldquo;<EmojiRenderer text={post.content.substring(0, 100) + (post.content.length > 100 ? '...' : '')} />&rdquo;
+                                </p>
                             </div>
                         </div>
                     </div>

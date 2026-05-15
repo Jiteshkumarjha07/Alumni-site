@@ -235,7 +235,7 @@ export default function HomePage() {
     }
   };
 
-  const handleAddComment = async (text: string, replyToId?: string) => {
+  const handleAddComment = async (text: string, replyToId?: string, replyToAuthor?: string) => {
     if (!userData || !commentingPost) return;
 
     const post = posts.find((p) => p.id === commentingPost.id);
@@ -248,7 +248,8 @@ export default function HomePage() {
       text,
       createdAt: new Date(),
       reactions: {},
-      ...(replyToId ? { replyToId } : {})
+      ...(replyToId ? { replyToId } : {}),
+      ...(replyToAuthor ? { replyToAuthor } : {})
     };
 
     const updatedComments = [...(post.comments || []), newComment];
@@ -317,12 +318,54 @@ export default function HomePage() {
     updateDoc(postRef, { comments: updatedComments }).catch(console.error);
   };
 
+  const handleEditComment = async (comment: AppComment, newText: string) => {
+    if (!userData || !commentingPost) return;
+
+    const post = posts.find((p) => p.id === commentingPost.id);
+    if (!post) return;
+
+    const updatedComments = (post.comments || []).map(c => 
+      c.id === comment.id ? { ...c, text: newText, isEdited: true } : c
+    );
+
+    // Optimistic UI updates
+    setPosts(currentPosts => currentPosts.map(p => 
+      p.id === commentingPost.id ? { ...p, comments: updatedComments } : p
+    ));
+    setCommentingPost(prev => prev ? { ...prev, comments: updatedComments } : prev);
+
+    // Background network request
+    const postRef = doc(db, 'posts', commentingPost.id);
+    updateDoc(postRef, { comments: updatedComments }).catch(console.error);
+  };
+
   const handleDeleteComment = async (comment: AppComment) => {
     if (!userData || !commentingPost) return;
 
+    const post = posts.find((p) => p.id === commentingPost.id);
+    if (!post) return;
+
+    // Robust filter: match by ID, or fallback to content/author/time for legacy comments
+    const updatedComments = (post.comments || []).filter(c => {
+      const isTarget = c.id && comment.id 
+        ? c.id === comment.id 
+        : (c.text === comment.text && c.authorUid === comment.authorUid);
+      
+      const isReplyToTarget = comment.id && c.replyToId === comment.id;
+      
+      return !isTarget && !isReplyToTarget;
+    });
+
+    // Optimistic UI updates: update feed and modal state instantly
+    setPosts(currentPosts => currentPosts.map(p => 
+      p.id === commentingPost.id ? { ...p, comments: updatedComments } : p
+    ));
+    setCommentingPost(prev => prev ? { ...prev, comments: updatedComments } : prev);
+
+    // Background network request
     const postRef = doc(db, 'posts', commentingPost.id);
     await updateDoc(postRef, {
-      comments: arrayRemove(comment)
+      comments: updatedComments
     });
   };
 
@@ -538,6 +581,7 @@ export default function HomePage() {
           onClose={() => setCommentingPost(null)}
           onSubmit={handleAddComment}
           onDelete={handleDeleteComment}
+          onEdit={handleEditComment}
           onReact={handleReactComment}
           comments={posts.find(p => p.id === commentingPost.id)?.comments || []}
           postAuthor={commentingPost.authorName}

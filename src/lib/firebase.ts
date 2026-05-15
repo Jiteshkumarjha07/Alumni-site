@@ -26,6 +26,6 @@ export const messaging = async () => {
     return supported ? getMessaging(app) : null;
 };
 
-console.log("Firebase initialized successfully with project:", firebaseConfig.projectId);
+
 
 export default app;

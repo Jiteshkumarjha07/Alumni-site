@@ -8,7 +8,7 @@ import { decryptMessage } from '@/lib/encryption';
 
 const REACTION_EMOJIS = ['❤️', '👍', '😂', '🎉', '😮', '😢', '🔥', '✨', '🤔', '😎', '👏', '💡', '🚀', '💯', '✅', '❌', '⭐', '🌈'];
 import Link from 'next/link';
-import { EmojiRenderer } from './EmojiRenderer';
+import { EmojiRenderer } from '../ui/EmojiRenderer';
 
 interface MessageBubbleProps {
     message: Message;
