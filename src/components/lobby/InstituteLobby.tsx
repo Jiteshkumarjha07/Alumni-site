@@ -33,7 +33,7 @@ const CommentEditUI = ({ editText, setEditText, onCancel, onSave }: any) => (
         />
       </div>
       <div className="absolute right-2 bottom-2 z-20">
-        <EmojiPicker onEmojiSelect={(emoji) => setEditText(prev => prev + emoji)} />
+        <EmojiPicker onEmojiSelect={(emoji) => setEditText((prev: string) => prev + emoji)} />
       </div>
     </div>
     <div className="flex justify-end gap-2">
@@ -119,7 +119,7 @@ function LobbyPostCard({ post, currentUid, onLike, onVote, userData }: {
     try {
       const postRef = doc(db, 'lobbyPosts', post.id);
       // Filter out the comment itself AND any replies to it
-      const updatedComments = post.comments.filter((c: any) => c.id !== commentId && c.replyToId !== commentId);
+      const updatedComments = (post.comments || []).filter((c: any) => c.id !== commentId && c.replyToId !== commentId);
       await updateDoc(postRef, { comments: updatedComments });
     } catch (err) {
       console.error('Error deleting comment:', err);
@@ -130,7 +130,7 @@ function LobbyPostCard({ post, currentUid, onLike, onVote, userData }: {
     if (!editText.trim()) return;
     try {
       const postRef = doc(db, 'lobbyPosts', post.id);
-      const updatedComments = post.comments.map((c: any) => 
+      const updatedComments = (post.comments || []).map((c: any) => 
         c.id === editingCommentId ? { ...c, text: editText.trim(), isEdited: true } : c
       );
       await updateDoc(postRef, { comments: updatedComments });

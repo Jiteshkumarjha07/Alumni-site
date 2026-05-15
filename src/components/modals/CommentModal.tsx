@@ -45,7 +45,7 @@ const CommentEditUI = ({ editText, setEditText, onCancel, onSave }: any) => (
                       />
                     </div>
                     <div className="absolute right-2 bottom-2 z-20">
-                      <EmojiPicker onEmojiSelect={(emoji) => setEditText(prev => prev + emoji)} />
+                      <EmojiPicker onEmojiSelect={(emoji) => setEditText((prev: string) => prev + emoji)} />
                     </div>
                  </div>
                  <div className="flex justify-end gap-2">
@@ -72,8 +72,8 @@ interface CommentItemProps {
     isReply: boolean;
     onReply: () => void;
     onReact: (emoji: string) => void;
-    onDelete: () => void;
-    onEdit: (newText: string) => void;
+    onDelete?: () => void;
+    onEdit?: (newText: string) => void;
     currentUserUid?: string;
     showEmojiPicker: boolean;
     setShowEmojiPicker: (show: boolean) => void;
@@ -95,7 +95,7 @@ const CommentItem: React.FC<CommentItemProps> = ({
 
     const handleSave = () => {
         if (!editText.trim()) return;
-        onEdit(editText.trim());
+        onEdit?.(editText.trim());
         setIsEditing(false);
     };
 
