@@ -25,27 +25,6 @@ export const EmojiPicker: React.FC<EmojiPickerProps> = ({ onEmojiSelect, classNa
         width: number 
     }>({ top: 0, left: 0, width: 320 });
 
-    useEffect(() => {
-        setMounted(true);
-        const handleClickOutside = (event: MouseEvent) => {
-            if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
-                const portalElement = document.getElementById('emoji-picker-portal');
-                if (portalElement && portalElement.contains(event.target as Node)) return;
-                setIsOpen(false);
-            }
-        };
-
-        if (isOpen) {
-            document.addEventListener('mousedown', handleClickOutside);
-            window.addEventListener('resize', updatePosition);
-        }
-
-        return () => {
-            document.removeEventListener('mousedown', handleClickOutside);
-            window.removeEventListener('resize', updatePosition);
-        };
-    }, [isOpen]);
-
     function updatePosition() {
         if (containerRef.current) {
             const rect = containerRef.current.getBoundingClientRect();
@@ -75,6 +54,27 @@ export const EmojiPicker: React.FC<EmojiPickerProps> = ({ onEmojiSelect, classNa
             });
         }
     }
+
+    useEffect(() => {
+        setMounted(true);
+        const handleClickOutside = (event: MouseEvent) => {
+            if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+                const portalElement = document.getElementById('emoji-picker-portal');
+                if (portalElement && portalElement.contains(event.target as Node)) return;
+                setIsOpen(false);
+            }
+        };
+
+        if (isOpen) {
+            document.addEventListener('mousedown', handleClickOutside);
+            window.addEventListener('resize', updatePosition);
+        }
+
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+            window.removeEventListener('resize', updatePosition);
+        };
+    }, [isOpen]);
 
     useEffect(() => {
         if (isOpen) updatePosition();

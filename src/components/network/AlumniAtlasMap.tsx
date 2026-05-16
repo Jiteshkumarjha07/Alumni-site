@@ -114,10 +114,10 @@ export default function AlumniAtlasMap({ users }: AlumniAtlasMapProps) {
       return geo ? { user: u, ...geo } : null;
     }).filter(Boolean) as { user: User; lat: number; lng: number; isLive: boolean }[];
 
-    return raw.map((m, _, arr) => {
+    return raw.map((m, i, arr) => {
       const dupes = arr.filter(x => x.lat === m.lat && x.lng === m.lng);
       return dupes.length > 1
-        ? { ...m, lat: m.lat + (Math.random() - 0.5) * 0.005, lng: m.lng + (Math.random() - 0.5) * 0.005 }
+        ? { ...m, lat: m.lat + (((i * 13) % 10) - 5) * 0.0005, lng: m.lng + (((i * 17) % 10) - 5) * 0.0005 }
         : m;
     });
   }, [users, allCities]);

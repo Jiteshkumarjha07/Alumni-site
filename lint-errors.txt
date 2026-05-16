@@ -1,0 +1,61 @@
+
+C:\Users\rajni\Desktop\Alumni-site\src\components\network\AlumniAtlasMap.tsx
+  120:33  error  Error: Cannot call impure function during render
+
+`Math.random` is an impure function. Calling an impure function can produce unstable results that update unpredictably when the component happens to re-render. (https://react.dev/reference/rules/components-and-hooks-must-be-pure#components-and-hooks-must-be-idempotent).
+
+C:\Users\rajni\Desktop\Alumni-site\src\components\network\AlumniAtlasMap.tsx:120:33
+  118 |       const dupes = arr.filter(x => x.lat === m.lat && x.lng === m.lng);
+  119 |       return dupes.length > 1
+> 120 |         ? { ...m, lat: m.lat + (Math.random() - 0.5) * 0.005, lng: m.lng + (Math.random() - 0.5) * 0.005 }
+      |                                 ^^^^^^^^^^^^^ Cannot call impure function
+  121 |         : m;
+  122 |     });
+  123 |   }, [users, allCities]);                                              react-hooks/purity
+  120:77  error  Error: Cannot call impure function during render
+
+`Math.random` is an impure function. Calling an impure function can produce unstable results that update unpredictably when the component happens to re-render. (https://react.dev/reference/rules/components-and-hooks-must-be-pure#components-and-hooks-must-be-idempotent).
+
+C:\Users\rajni\Desktop\Alumni-site\src\components\network\AlumniAtlasMap.tsx:120:77
+  118 |       const dupes = arr.filter(x => x.lat === m.lat && x.lng === m.lng);
+  119 |       return dupes.length > 1
+> 120 |         ? { ...m, lat: m.lat + (Math.random() - 0.5) * 0.005, lng: m.lng + (Math.random() - 0.5) * 0.005 }
+      |                                                                             ^^^^^^^^^^^^^ Cannot call impure function
+  121 |         : m;
+  122 |     });
+  123 |   }, [users, allCities]);  react-hooks/purity
+
+C:\Users\rajni\Desktop\Alumni-site\src\components\ui\EmojiPicker.tsx
+  40:47  error  Error: Cannot access variable before it is declared
+
+`updatePosition` is accessed before it is declared, which prevents the earlier access from updating when this value changes over time.
+
+C:\Users\rajni\Desktop\Alumni-site\src\components\ui\EmojiPicker.tsx:40:47
+  38 |         if (isOpen) {
+  39 |             document.addEventListener('mousedown', handleClickOutside);
+> 40 |             window.addEventListener('resize', updatePosition);
+     |                                               ^^^^^^^^^^^^^^ `updatePosition` accessed before it is declared
+  41 |         }
+  42 |
+  43 |         return () => {
+
+C:\Users\rajni\Desktop\Alumni-site\src\components\ui\EmojiPicker.tsx:49:5
+  47 |     }, [isOpen]);
+  48 |
+> 49 |     function updatePosition() {
+     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 50 |         if (containerRef.current) {
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 51 |             const rect = containerRef.current.getBoundingClientRect();
+     …
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 76 |         }
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 77 |     }
+     | ^^^^^^ `updatePosition` is declared here
+  78 |
+  79 |     useEffect(() => {
+  80 |         if (isOpen) updatePosition();  react-hooks/immutability
+
+✖ 3 problems (3 errors, 0 warnings)
+
