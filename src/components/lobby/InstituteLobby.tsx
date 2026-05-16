@@ -74,6 +74,9 @@ function LobbyPostCard({ post, currentUid, onLike, onVote, userData }: {
   const [replyingTo, setReplyingTo] = useState<any>(null);
   const [currentSlide, setCurrentSlide] = useState(0);
   const carouselRef = useRef<HTMLDivElement>(null);
+  const commentMediaInputRef = useRef<HTMLInputElement>(null);
+  const [commentMedia, setCommentMedia] = useState<{ file: File; type: string }[]>([]);
+  const [uploadingMedia, setUploadingMedia] = useState(false);
 
   const handleScroll = () => {
     if (!carouselRef.current) return;
@@ -89,10 +92,42 @@ function LobbyPostCard({ post, currentUid, onLike, onVote, userData }: {
     setTimeout(() => setLikeAnim(false), 400);
   };
 
+  const handleCommentMediaSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    const newMedia = files.map(file => {
+      let type: 'image' | 'video' | 'file' = 'file';
+      if (file.type.startsWith('image/')) type = 'image';
+      else if (file.type.startsWith('video/')) type = 'video';
+      return { file, type };
+    });
+    setCommentMedia(prev => [...prev, ...newMedia]);
+    if (e.target) e.target.value = '';
+  };
+
+  const removeCommentMedia = (index: number) => {
+    setCommentMedia(prev => prev.filter((_, i) => i !== index));
+  };
+
   const handleComment = async () => {
-    if (!commentText.trim() || isSubmittingComment) return;
+    if ((!commentText.trim() && commentMedia.length === 0) || isSubmittingComment) return;
     setIsSubmittingComment(true);
+    setUploadingMedia(true);
     try {
+      const attachments: MediaAttachment[] = [];
+      
+      for (const m of commentMedia) {
+        let url = '';
+        if (m.type === 'image') url = await uploadMedia(m.file);
+        else if (m.type === 'video') url = await uploadVideo(m.file);
+        else url = await uploadFile(m.file);
+        
+        attachments.push({
+          url,
+          type: m.type as 'image' | 'video' | 'file',
+          name: m.file.name
+        });
+      }
+
       const postRef = doc(db, 'lobbyPosts', post.id);
       const newComment = {
         id: Math.random().toString(36).substring(7),
@@ -100,17 +135,20 @@ function LobbyPostCard({ post, currentUid, onLike, onVote, userData }: {
         authorName: userData.name,
         text: commentText.trim(),
         createdAt: new Date(),
-        ...(replyingTo ? { replyToId: replyingTo.id } : {})
+        attachments,
+        ...(replyingTo ? { replyToId: replyingTo.id, replyToAuthor: replyingTo.authorName } : {})
       };
       await updateDoc(postRef, {
         comments: arrayUnion(newComment)
       });
       setCommentText('');
+      setCommentMedia([]);
       setReplyingTo(null);
     } catch (err) {
       console.error('Error adding comment to lobby post:', err);
     } finally {
       setIsSubmittingComment(false);
+      setUploadingMedia(false);
     }
   };
 
@@ -429,18 +467,55 @@ function LobbyPostCard({ post, currentUid, onLike, onVote, userData }: {
                       style={{ minHeight: '26px' }}
                     />
                   </div>
-                  <div className="absolute right-2 bottom-1.5 z-20">
+                  <div className="absolute right-2 bottom-1.5 z-20 flex items-center gap-1">
+                    <input
+                      type="file"
+                      ref={commentMediaInputRef}
+                      className="hidden"
+                      onChange={handleCommentMediaSelect}
+                      multiple
+                    />
+                    <button
+                      onClick={() => commentMediaInputRef.current?.click()}
+                      className="p-1.5 hover:bg-violet-50 dark:hover:bg-violet-900/40 text-brand-ebony/30 hover:text-violet-500 rounded-lg transition-all"
+                      title="Add Media"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                    </button>
                     <EmojiPicker onEmojiSelect={(emoji) => setCommentText(prev => prev + emoji)} />
                   </div>
                 </div>
                 <button
                   onClick={handleComment}
-                  disabled={!commentText.trim() || isSubmittingComment}
+                  disabled={(!commentText.trim() && commentMedia.length === 0) || isSubmittingComment}
                   className="mt-0.5 w-11 h-11 bg-violet-500 text-white rounded-xl hover:bg-violet-600 disabled:opacity-50 transition-all shrink-0 flex items-center justify-center shadow-lg shadow-violet-500/20"
                 >
-                  <Send className="w-4 h-4" />
+                  {uploadingMedia ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
                 </button>
               </div>
+
+              {/* Comment Media Previews */}
+              {commentMedia.length > 0 && (
+                <div className="flex flex-wrap gap-2 px-2">
+                  {commentMedia.map((m, idx) => (
+                    <div key={idx} className="relative group w-12 h-12 rounded-lg overflow-hidden border border-violet-200 dark:border-violet-800/40 bg-white dark:bg-white/5">
+                      {m.type === 'image' ? (
+                        <img src={URL.createObjectURL(m.file)} className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                          {m.type === 'video' ? <VideoIcon className="w-4 h-4 text-violet-500" /> : <FileText className="w-4 h-4 text-violet-500" />}
+                        </div>
+                      )}
+                      <button
+                        onClick={() => removeCommentMedia(idx)}
+                        className="absolute inset-0 bg-red-500/80 text-white opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
 
               {post.comments && post.comments.length > 0 && (
                 <div className="space-y-3 pl-2 border-l-2 border-brand-ebony/5">
@@ -482,9 +557,27 @@ function LobbyPostCard({ post, currentUid, onLike, onVote, userData }: {
                               onSave={handleEditComment} 
                             />
                           ) : (
-                            <p className="text-xs text-brand-ebony/70 whitespace-pre-wrap">
-                              <EmojiRenderer text={c.text} />
-                            </p>
+                            <div className="space-y-2">
+                              <p className="text-xs text-brand-ebony/70 whitespace-pre-wrap">
+                                <EmojiRenderer text={c.text} />
+                              </p>
+                              {c.attachments && c.attachments.length > 0 && (
+                                <div className="flex flex-wrap gap-2">
+                                  {c.attachments.map((at: any, idx: number) => (
+                                    <div key={idx} className="max-w-[200px]">
+                                      {at.type === 'image' ? (
+                                        <img src={at.url} className="rounded-lg border border-brand-ebony/5 max-h-32 object-contain bg-black/5" />
+                                      ) : (
+                                        <a href={at.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 px-3 py-1.5 bg-brand-ebony/5 rounded-lg text-[10px] font-bold text-brand-ebony/60 hover:text-violet-500 transition-colors">
+                                          {at.type === 'video' ? <VideoIcon className="w-3 h-3" /> : <FileText className="w-3 h-3" />}
+                                          <span className="truncate max-w-[100px]">{at.name || 'File'}</span>
+                                        </a>
+                                      )}
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
                           )}
                         </div>
 
@@ -510,10 +603,28 @@ function LobbyPostCard({ post, currentUid, onLike, onVote, userData }: {
                                 )}
                               </div>
                             </div>
-                            <p className="text-xs text-brand-ebony/70 whitespace-pre-wrap">
-                              <span className="text-violet-500 font-bold mr-1">@{c.authorName}</span>
-                              <EmojiRenderer text={r.text} />
-                            </p>
+                            <div className="space-y-2">
+                              <p className="text-xs text-brand-ebony/70 whitespace-pre-wrap">
+                                <span className="text-violet-500 font-bold mr-1">@{c.authorName}</span>
+                                <EmojiRenderer text={r.text} />
+                              </p>
+                              {r.attachments && r.attachments.length > 0 && (
+                                <div className="flex flex-wrap gap-2">
+                                  {r.attachments.map((at: any, idx: number) => (
+                                    <div key={idx} className="max-w-[150px]">
+                                      {at.type === 'image' ? (
+                                        <img src={at.url} className="rounded-lg border border-brand-ebony/5 max-h-24 object-contain bg-black/5" />
+                                      ) : (
+                                        <a href={at.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 px-2.5 py-1 bg-brand-ebony/5 rounded-lg text-[9px] font-bold text-brand-ebony/60 hover:text-violet-500 transition-colors">
+                                          {at.type === 'video' ? <VideoIcon className="w-2.5 h-2.5" /> : <FileText className="w-2.5 h-2.5" />}
+                                          <span className="truncate max-w-[80px]">{at.name || 'File'}</span>
+                                        </a>
+                                      )}
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
                           </div>
                         ))}
                       </div>
@@ -736,7 +847,7 @@ function CreateLobbyPost({ onSubmit }: {
           </div>
 
           <div className="flex items-center gap-2">
-            <div className="flex items-center bg-white/60 rounded-xl border border-violet-100 p-1">
+            <div className="flex items-center bg-white/60 dark:bg-white/5 rounded-xl border border-violet-100 dark:border-white/10 p-1">
               <input
                 type="file"
                 ref={mediaInputRef}
@@ -776,22 +887,22 @@ function CreateLobbyPost({ onSubmit }: {
                     mediaInputRef.current.click();
                   }
                 }}
-                className="p-2 hover:bg-violet-50 text-brand-ebony/40 hover:text-violet-500 rounded-lg transition-all"
+                className="p-2 hover:bg-violet-50 dark:hover:bg-white/10 text-brand-ebony/40 hover:text-violet-500 rounded-lg transition-all"
                 title="Add Documents"
               >
                 <FileText className="w-4 h-4" />
               </button>
-              <div className="w-px h-4 bg-violet-100 mx-1" />
+              <div className="w-px h-4 bg-violet-100 dark:bg-white/10 mx-1" />
               <button
                 onClick={() => setShowPollBuilder(true)}
                 className={`p-2 rounded-lg transition-all ${
-                  showPollBuilder ? 'bg-violet-500 text-white shadow-sm' : 'hover:bg-violet-50 text-brand-ebony/40 hover:text-violet-500'
+                  showPollBuilder ? 'bg-violet-500 text-white shadow-sm' : 'hover:bg-violet-50 dark:hover:bg-white/10 text-brand-ebony/40 hover:text-violet-500'
                 }`}
                 title="Create Poll"
               >
                 <BarChart3 className="w-4 h-4" />
               </button>
-              <div className="w-px h-4 bg-violet-100 mx-1" />
+              <div className="w-px h-4 bg-violet-100 dark:bg-white/10 mx-1" />
               <EmojiPicker onEmojiSelect={(emoji) => setContent(prev => prev + emoji)} />
             </div>
 

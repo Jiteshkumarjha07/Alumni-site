@@ -9,6 +9,7 @@ import { GlobalMessaging } from '@/components/chat/GlobalMessaging';
 import { MessagingProvider } from '@/contexts/MessagingContext';
 import { Sidebar } from './Sidebar';
 import { MobileNav } from './MobileNav';
+import { MobileHeader } from './MobileHeader';
 import { BrandHeader } from './BrandHeader';
 import { SocialRibbon } from './SocialRibbon';
 import { useUI } from '@/contexts/UIContext';
@@ -109,6 +110,7 @@ export function LayoutClient({ children }: { children: React.ReactNode }) {
             {userData && <GlobalMessaging />}
             <MessagingProvider>
                 <div className="flex flex-col min-h-screen">
+                    <MobileHeader />
                     {showRibbon && (
                         <>
                             <BrandHeader />
@@ -116,7 +118,7 @@ export function LayoutClient({ children }: { children: React.ReactNode }) {
                         </>
                     )}
                     {showSidebar && <Sidebar />}
-                    <main className={`min-h-screen ${showSidebar ? 'md:pl-80' : ''} ${showRibbon ? 'md:pt-28' : ''} md:pr-12 ${isMobile && !(isGlobalAdminPage || isInstituteAdminPage) && showMobileNav ? (pathname.startsWith('/messages') ? 'pb-[60px]' : 'pb-20') : 'pb-8'} relative z-0 transition-all duration-500`}>
+                    <main className={`min-h-screen ${showSidebar ? 'md:pl-80' : ''} ${showRibbon ? 'md:pt-28' : ''} pt-16 md:pt-0 md:pr-12 ${isMobile && !(isGlobalAdminPage || isInstituteAdminPage) && showMobileNav ? (pathname.startsWith('/messages') ? 'pb-[60px]' : 'pb-20') : 'pb-8'} relative z-0 transition-all duration-500`}>
                 <div className="mx-auto w-full overflow-x-hidden">
                     {isMobile ? (
                         <AnimatePresence initial={false} custom={direction}>

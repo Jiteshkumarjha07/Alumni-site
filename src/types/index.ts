@@ -117,6 +117,7 @@ export interface Comment {
   replyToId?: string;
   replyToAuthor?: string;
   isEdited?: boolean;
+  attachments?: MediaAttachment[];
   reactions?: Record<string, string[]>; // emoji -> array of user uids
 }
 

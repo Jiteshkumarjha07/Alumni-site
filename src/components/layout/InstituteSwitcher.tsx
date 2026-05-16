@@ -6,7 +6,11 @@ import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firesto
 import { db } from '@/lib/firebase';
 import { ChevronDown, Building2, Check, RefreshCw } from 'lucide-react';
 
-export function InstituteSwitcher() {
+interface InstituteSwitcherProps {
+    compact?: boolean;
+}
+
+export function InstituteSwitcher({ compact = false }: InstituteSwitcherProps) {
     const { userData, switchInstitute } = useAuth();
     const [institutes, setInstitutes] = useState<{ id: string, name: string }[]>([]);
     const [isOpen, setIsOpen] = useState(false);
@@ -49,25 +53,25 @@ export function InstituteSwitcher() {
     };
 
     return (
-        <div className="relative mb-6">
+        <div className={`relative ${compact ? '' : 'mb-6'}`}>
             <button
                 onClick={() => setIsOpen(!isOpen)}
                 className="w-full flex items-center justify-between px-3 py-3 bg-white dark:bg-white/10 border border-brand-ebony/5 dark:border-white/10 rounded-[1.5rem] hover:shadow-premium hover:border-brand-burgundy/20 dark:hover:border-brand-burgundy/40 transition-all duration-300 group"
             >
                 <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-brand-burgundy to-[#4a1c1f] flex items-center justify-center text-white shadow-lg shadow-brand-burgundy/20 shrink-0 group-hover:scale-105 transition-transform">
-                        <Building2 className="w-4 h-4" />
+                    <div className={`${compact ? 'w-8 h-8 rounded-lg' : 'w-10 h-10 rounded-xl'} bg-gradient-to-br from-brand-burgundy to-[#4a1c1f] flex items-center justify-center text-white shadow-lg shadow-brand-burgundy/20 shrink-0 group-hover:scale-105 transition-transform`}>
+                        <Building2 className={compact ? "w-3 h-3" : "w-4 h-4"} />
                     </div>
                     <div className="text-left overflow-hidden">
-                        <p className="text-[8px] font-black text-brand-burgundy/70 dark:text-brand-burgundy uppercase tracking-[0.2em] mb-0.5">Active Network</p>
-                        <p className="text-[11px] font-extrabold text-brand-ebony dark:text-white truncate max-w-[90px] md:max-w-[120px]">{userData.instituteName}</p>
+                        {!compact && <p className="text-[8px] font-black text-brand-burgundy/70 dark:text-brand-burgundy uppercase tracking-[0.2em] mb-0.5">Active Network</p>}
+                        <p className={`${compact ? 'text-[10px]' : 'text-[11px]'} font-extrabold text-brand-ebony dark:text-white truncate max-w-[70px] xs:max-w-[90px] md:max-w-[120px]`}>{userData.instituteName}</p>
                     </div>
                 </div>
-                <ChevronDown className={`w-4 h-4 text-brand-ebony/40 dark:text-white/50 group-hover:text-brand-burgundy transition-all duration-300 ${isOpen ? 'rotate-180' : ''}`} />
+                <ChevronDown className={`w-3 h-3 text-brand-ebony/40 dark:text-white/50 group-hover:text-brand-burgundy transition-all duration-300 ${isOpen ? 'rotate-180' : ''}`} />
             </button>
 
             {isOpen && (
-                <div className="absolute top-full left-0 right-0 mt-3 bg-white dark:bg-gray-900 backdrop-blur-2xl rounded-2xl shadow-premium border border-white dark:border-white/10 overflow-hidden z-[60] animate-in fade-in zoom-in-95 slide-in-from-top-2 duration-300 ring-1 ring-brand-ebony/5 dark:ring-white/5">
+                <div className={`absolute top-full ${compact ? 'right-0 w-64' : 'left-0 right-0'} mt-3 bg-white dark:bg-gray-900 backdrop-blur-2xl rounded-2xl shadow-premium border border-white dark:border-white/10 overflow-hidden z-[60] animate-in fade-in zoom-in-95 slide-in-from-top-2 duration-300 ring-1 ring-brand-ebony/5 dark:ring-white/5`}>
                     <div className="p-2 space-y-1 max-h-60 overflow-y-auto custom-scrollbar">
                         <p className="px-3 py-2 text-[9px] font-black text-brand-ebony/40 dark:text-white/50 uppercase tracking-[0.2em] border-b border-brand-ebony/5 dark:border-white/10 mb-2">
                             Select Network
