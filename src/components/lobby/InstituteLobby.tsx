@@ -407,10 +407,10 @@ function LobbyPostCard({ post, currentUid, onLike, onVote, userData }: {
               )}
               <div className="flex items-start gap-3 w-full">
                 <div className="flex-1 relative group">
-                  <div className="w-full min-h-[40px] px-4 py-2 bg-white/70 dark:bg-white/5 border border-brand-ebony/10 rounded-xl focus-within:ring-2 focus-within:ring-violet-400/40 transition-all relative overflow-hidden">
+                  <div className="w-full min-h-[44px] px-4 py-2.5 bg-white/70 dark:bg-white/5 border border-brand-ebony/10 rounded-xl focus-within:ring-2 focus-within:ring-violet-400/40 transition-all relative overflow-hidden">
                     {/* Mirroring Layer */}
                     <div 
-                      className="absolute inset-0 px-4 py-2 text-xs leading-relaxed whitespace-pre-wrap break-words pointer-events-none select-none overflow-hidden"
+                      className="absolute inset-0 px-4 py-2.5 text-[13px] leading-relaxed whitespace-pre-wrap break-words pointer-events-none select-none overflow-hidden"
                       aria-hidden="true"
                     >
                       <EmojiRenderer text={commentText || ' '} />
@@ -424,9 +424,9 @@ function LobbyPostCard({ post, currentUid, onLike, onVote, userData }: {
                         e.target.style.height = `${e.target.scrollHeight}px`;
                       }}
                       rows={1}
-                      className="w-full bg-transparent border-none outline-none focus:ring-0 p-0 text-xs leading-relaxed resize-none relative z-10 text-transparent caret-violet-500 overflow-hidden"
+                      className="w-full bg-transparent border-none outline-none focus:ring-0 p-0 text-[13px] leading-relaxed resize-none relative z-10 text-transparent caret-violet-500 overflow-hidden"
                       onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), handleComment())}
-                      style={{ minHeight: '24px' }}
+                      style={{ minHeight: '26px' }}
                     />
                   </div>
                   <div className="absolute right-2 bottom-1.5 z-20">
@@ -436,9 +436,9 @@ function LobbyPostCard({ post, currentUid, onLike, onVote, userData }: {
                 <button
                   onClick={handleComment}
                   disabled={!commentText.trim() || isSubmittingComment}
-                  className="mt-1 p-2 bg-violet-500 text-white rounded-xl hover:bg-violet-600 disabled:opacity-50 transition-all shrink-0"
+                  className="mt-0.5 w-11 h-11 bg-violet-500 text-white rounded-xl hover:bg-violet-600 disabled:opacity-50 transition-all shrink-0 flex items-center justify-center shadow-lg shadow-violet-500/20"
                 >
-                  <Send className="w-3.5 h-3.5" />
+                  <Send className="w-4 h-4" />
                 </button>
               </div>
 

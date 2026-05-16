@@ -2,27 +2,33 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import EmojiPickerReact, { EmojiClickData, Theme, EmojiStyle } from 'emoji-picker-react';
-import { Smile } from 'lucide-react';
+import { Smile, X } from 'lucide-react';
 import { useTheme } from '@/contexts/ThemeContext';
+import { createPortal } from 'react-dom';
 
 interface EmojiPickerProps {
     onEmojiSelect: (emoji: string) => void;
     className?: string;
 }
 
-import { createPortal } from 'react-dom';
-
 export const EmojiPicker: React.FC<EmojiPickerProps> = ({ onEmojiSelect, className = '' }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [mounted, setMounted] = useState(false);
     const { theme } = useTheme();
     const containerRef = useRef<HTMLDivElement>(null);
+    const [position, setPosition] = useState<{ 
+        top: number; 
+        left: number; 
+        alignRight?: boolean; 
+        openUpwards?: boolean; 
+        isMobile?: boolean; 
+        width: number 
+    }>({ top: 0, left: 0, width: 320 });
 
     useEffect(() => {
         setMounted(true);
         const handleClickOutside = (event: MouseEvent) => {
             if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
-                // If we're using a portal, we also need to check if the click was inside the portal
                 const portalElement = document.getElementById('emoji-picker-portal');
                 if (portalElement && portalElement.contains(event.target as Node)) return;
                 setIsOpen(false);
@@ -31,33 +37,31 @@ export const EmojiPicker: React.FC<EmojiPickerProps> = ({ onEmojiSelect, classNa
 
         if (isOpen) {
             document.addEventListener('mousedown', handleClickOutside);
-        } else {
-            document.removeEventListener('mousedown', handleClickOutside);
+            window.addEventListener('resize', updatePosition);
         }
 
-        return () => document.removeEventListener('mousedown', handleClickOutside);
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+            window.removeEventListener('resize', updatePosition);
+        };
     }, [isOpen]);
 
-    const [position, setPosition] = useState<{ top: number; left: number; alignRight?: boolean; openUpwards?: boolean; isMobile?: boolean; width: number }>({ top: 0, left: 0, width: 320 });
-
-    useEffect(() => {
-        if (isOpen && containerRef.current) {
+    const updatePosition = () => {
+        if (containerRef.current) {
             const rect = containerRef.current.getBoundingClientRect();
             const viewportWidth = window.innerWidth;
             const viewportHeight = window.innerHeight;
-            const pickerWidth = Math.min(320, viewportWidth - 32);
-            const pickerHeight = viewportWidth < 640 ? 320 : 400;
+            const isMobile = viewportWidth < 640;
+            const pickerWidth = isMobile ? viewportWidth : 320;
+            const pickerHeight = isMobile ? 350 : 400;
 
             let alignRight = false;
             let openUpwards = true;
-            const isMobile = viewportWidth < 640;
 
-            // Horizontal check
-            if (rect.left + pickerWidth > viewportWidth - 20) {
+            if (rect.left + 320 > viewportWidth - 20) {
                 alignRight = true;
             }
 
-            // Vertical check
             if (rect.top - pickerHeight < 20) {
                 openUpwards = false;
             }
@@ -71,10 +75,17 @@ export const EmojiPicker: React.FC<EmojiPickerProps> = ({ onEmojiSelect, classNa
                 width: pickerWidth
             });
         }
+    };
+
+    useEffect(() => {
+        if (isOpen) updatePosition();
     }, [isOpen]);
 
-    const onEmojiClick = (emojiData: EmojiClickData) => {
+    const onEmojiClick = (emojiData: EmojiClickData, event: MouseEvent) => {
+        // Stop propagation to prevent any parent listeners from closing the picker
+        event.stopPropagation();
         onEmojiSelect(emojiData.emoji);
+        // We DO NOT set isOpen(false) here to allow multiple selections
     };
 
     if (!mounted) return null;
@@ -83,17 +94,35 @@ export const EmojiPicker: React.FC<EmojiPickerProps> = ({ onEmojiSelect, classNa
         <div 
             id="emoji-picker-portal"
             className={`fixed z-[9999] animate-in fade-in zoom-in-95 duration-200 ${
-                position.openUpwards ? 'slide-in-from-bottom-2' : 'slide-in-from-top-2'
+                position.isMobile 
+                    ? 'inset-x-0 bottom-0 slide-in-from-bottom-full' 
+                    : position.openUpwards ? 'slide-in-from-bottom-2' : 'slide-in-from-top-2'
             }`}
-            style={{ 
+            style={!position.isMobile ? { 
                 width: `${position.width}px`,
                 left: position.alignRight ? `${position.left - position.width}px` : `${position.left}px`,
-                top: position.openUpwards ? `${position.top - (position.isMobile ? 360 : 440)}px` : `${position.top + 10}px`,
-            }}
+                top: position.openUpwards ? `${position.top - 420}px` : `${position.top + 10}px`,
+            } : {}}
+            onMouseDown={(e) => e.stopPropagation()}
+            onClick={(e) => e.stopPropagation()}
         >
-            <div className="relative p-1 bg-white/95 dark:bg-[#12111a]/95 backdrop-blur-2xl rounded-[1.75rem] shadow-[0_20px_70px_-10px_rgba(0,0,0,0.3)] border border-brand-ebony/10 dark:border-white/10 ring-1 ring-white/20 overflow-hidden">
+            <div className={`relative bg-white/95 dark:bg-[#12111a]/95 backdrop-blur-2xl shadow-[0_20px_70px_-10px_rgba(0,0,0,0.3)] border-t border-x border-brand-ebony/10 dark:border-white/10 ring-1 ring-white/20 overflow-hidden ${
+                position.isMobile ? 'rounded-t-[2rem] pb-safe' : 'rounded-[1.75rem] border-b'
+            }`}>
+                {position.isMobile && (
+                    <div className="flex items-center justify-between px-6 py-4 border-b border-brand-ebony/5">
+                        <span className="text-xs font-black text-brand-ebony/40 uppercase tracking-widest">Select Emojis</span>
+                        <button 
+                            onClick={() => setIsOpen(false)}
+                            className="p-2 hover:bg-brand-ebony/5 rounded-full transition-colors"
+                        >
+                            <X className="w-5 h-5 text-brand-ebony/40" />
+                        </button>
+                    </div>
+                )}
+
                 <div className={`absolute left-0 right-0 h-1 bg-gradient-to-r from-brand-burgundy/40 via-indigo-500/40 to-brand-burgundy/40 ${
-                    position.openUpwards ? 'bottom-0' : 'top-0'
+                    position.openUpwards && !position.isMobile ? 'bottom-0' : 'top-0'
                 }`} />
                 
                 <EmojiPickerReact
@@ -103,7 +132,7 @@ export const EmojiPicker: React.FC<EmojiPickerProps> = ({ onEmojiSelect, classNa
                     skinTonesDisabled
                     searchDisabled={false}
                     width="100%"
-                    height={position.isMobile ? 320 : 400}
+                    height={position.isMobile ? 350 : 400}
                     lazyLoadEmojis={true}
                     previewConfig={{ showPreview: false }}
                     style={{
@@ -124,7 +153,10 @@ export const EmojiPicker: React.FC<EmojiPickerProps> = ({ onEmojiSelect, classNa
         <div className={`relative inline-block ${className}`} ref={containerRef}>
             <button
                 type="button"
-                onClick={() => setIsOpen(!isOpen)}
+                onClick={(e) => {
+                    e.stopPropagation();
+                    setIsOpen(!isOpen);
+                }}
                 className={`p-2 rounded-xl transition-all duration-300 relative group ${
                     isOpen 
                         ? 'text-brand-burgundy bg-brand-burgundy/10 shadow-inner' 
@@ -141,3 +173,4 @@ export const EmojiPicker: React.FC<EmojiPickerProps> = ({ onEmojiSelect, classNa
         </div>
     );
 };
+

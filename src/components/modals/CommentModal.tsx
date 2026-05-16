@@ -365,26 +365,26 @@ export const CommentModal: React.FC<CommentModalProps> = ({
                 }}
             >
                 <div
-                    className={`bg-white dark:bg-brand-parchment/10 sm:rounded-[2.5rem] max-w-2xl w-full h-full sm:h-auto sm:max-h-[85vh] flex flex-col border border-brand-ebony/5 shadow-2xl ${
+                    className={`bg-white dark:bg-brand-parchment/10 sm:rounded-[2.5rem] max-w-2xl w-full h-[90vh] sm:h-auto sm:max-h-[85vh] mt-auto sm:mt-0 flex flex-col border border-brand-ebony/5 shadow-2xl ${
                         touchTranslate > 0 ? '' : 'transition-transform duration-300'
-                    } slide-up-animation`}
+                    } slide-up-animation rounded-t-[2rem] sm:rounded-t-[2.5rem]`}
                     style={{ transform: `translateY(${touchTranslate}px)` }}
                     onTouchStart={handleTouchStart}
                     onTouchMove={handleTouchMove}
                     onTouchEnd={handleTouchEnd}
                 >
                     {/* ── Header ── */}
-                    <div className="flex items-center justify-between p-8 border-b border-brand-ebony/5 bg-white/50 dark:bg-brand-parchment/5 backdrop-blur-xl">
-                        <div className="flex items-center gap-4">
-                            <div className="w-12 h-12 bg-gradient-indigo rounded-2xl flex items-center justify-center text-white shadow-lg">
-                                <MessageCircle className="w-6 h-6" />
+                    <div className="flex items-center justify-between p-6 sm:p-8 border-b border-brand-ebony/5 bg-white/50 dark:bg-brand-parchment/5 backdrop-blur-xl shrink-0">
+                        <div className="flex items-center gap-3 sm:gap-4">
+                            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-indigo rounded-xl sm:rounded-2xl flex items-center justify-center text-white shadow-lg">
+                                <MessageCircle className="w-5 h-5 sm:w-6 sm:h-6" />
                             </div>
                             <div>
-                                <h2 className="text-2xl font-serif font-extrabold text-brand-ebony flex items-center gap-2">
+                                <h2 className="text-xl sm:text-2xl font-serif font-extrabold text-brand-ebony flex items-center gap-2">
                                     Dialogue
                                     <Sparkles className="w-4 h-4 text-brand-gold" />
                                 </h2>
-                                <p className="text-[10px] font-extrabold text-brand-ebony/30 uppercase tracking-[0.2em] mt-1">
+                                <p className="text-[9px] sm:text-[10px] font-extrabold text-brand-ebony/30 uppercase tracking-[0.2em] mt-0.5 sm:mt-1">
                                     Shared perspectives • Insights
                                 </p>
                             </div>
@@ -392,16 +392,16 @@ export const CommentModal: React.FC<CommentModalProps> = ({
                         <button
                             type="button"
                             onClick={onClose}
-                            className="p-3 hover:bg-brand-ebony/5 text-brand-ebony/30 rounded-full transition-all"
+                            className="p-2 sm:p-3 hover:bg-brand-ebony/5 text-brand-ebony/30 rounded-full transition-all"
                         >
-                            <X className="w-6 h-6" />
+                            <X className="w-5 h-5 sm:w-6 sm:h-6" />
                         </button>
                     </div>
 
                     {/* ── Comments List ── */}
                     <div
                         id="comments-scroll-container"
-                        className="flex-1 overflow-y-auto p-8 space-y-8 scrollbar-hide"
+                        className="flex-1 overflow-y-auto p-6 sm:p-8 space-y-6 sm:space-y-8 scrollbar-hide"
                     >
                         {displayComments.length > 0 ? (
                             displayComments
@@ -459,32 +459,32 @@ export const CommentModal: React.FC<CommentModalProps> = ({
                     </div>
 
                     {/* ── Input Footer ── */}
-                    <div className="p-8 border-t border-brand-ebony/5 bg-white/50 dark:bg-brand-parchment/10 backdrop-blur-3xl">
+                    <div className="p-4 sm:p-8 border-t border-brand-ebony/5 bg-white/50 dark:bg-brand-parchment/10 backdrop-blur-3xl shrink-0 pb-safe">
                         {replyingTo && (
-                            <div className="mb-4 px-5 py-3 bg-indigo-500/5 flex items-center justify-between rounded-xl border border-indigo-500/10 animate-in slide-in-from-bottom-2">
-                                <p className="text-[10px] font-extrabold text-indigo-600 uppercase tracking-widest flex items-center gap-2">
-                                    <Reply className="w-3 h-3" /> Responding to {replyingTo.authorName}
+                            <div className="mb-3 px-4 py-2 bg-indigo-500/5 flex items-center justify-between rounded-xl border border-indigo-500/10 animate-in slide-in-from-bottom-2">
+                                <p className="text-[9px] font-extrabold text-indigo-600 uppercase tracking-widest flex items-center gap-2">
+                                    <Reply className="w-2.5 h-2.5" /> Responding to {replyingTo.authorName}
                                 </p>
                                 <button
                                     type="button"
                                     onClick={() => handleSetReplyingTo(null)}
-                                    className="text-[9px] font-extrabold text-indigo-600/40 hover:text-indigo-600 uppercase"
+                                    className="text-[8px] font-extrabold text-indigo-600/40 hover:text-indigo-600 uppercase"
                                 >
                                     Cancel
                                 </button>
                             </div>
                         )}
 
-                        <div className="flex gap-4 relative w-full items-end">
+                        <div className="flex gap-2 sm:gap-4 relative w-full items-end">
                             <div className="flex-1 relative group">
-                                <div className="w-full px-6 py-4 pr-12 bg-brand-ebony/5 border border-brand-ebony/5 rounded-2xl focus-within:ring-4 focus-within:ring-indigo-500/10 focus-within:border-indigo-500 transition-all relative overflow-hidden shadow-inner min-h-[54px] flex items-center">
+                                <div className="w-full px-4 sm:px-6 py-3 sm:py-4 pr-10 sm:pr-12 bg-brand-ebony/5 border border-brand-ebony/5 rounded-2xl focus-within:ring-4 focus-within:ring-indigo-500/10 focus-within:border-indigo-500 transition-all relative overflow-hidden shadow-inner min-h-[48px] sm:min-h-[54px] flex items-center">
                                     {/* Mirroring Layer */}
                                     <div 
-                                        className="absolute inset-0 px-6 py-4 pr-12 text-sm font-bold leading-normal whitespace-pre-wrap break-words pointer-events-none select-none overflow-hidden flex items-center"
+                                        className="absolute inset-0 px-4 sm:px-6 py-3 sm:py-4 pr-10 sm:pr-12 text-sm font-bold leading-normal whitespace-pre-wrap break-words pointer-events-none select-none overflow-hidden flex items-center"
                                         aria-hidden="true"
                                     >
                                         <EmojiRenderer text={commentText || ' '} />
-                                        {!commentText && <span className="text-brand-ebony/25">{replyingTo ? `Reply to ${replyingTo.authorName}...` : 'Express your perspective...'}</span>}
+                                        {!commentText && <span className="text-brand-ebony/25 text-xs sm:text-sm">{replyingTo ? `Reply to ${replyingTo.authorName}...` : 'Express your perspective...'}</span>}
                                     </div>
 
                                     <textarea
@@ -502,7 +502,7 @@ export const CommentModal: React.FC<CommentModalProps> = ({
                                         rows={1}
                                     />
                                 </div>
-                                <div className="absolute right-4 bottom-4 z-20">
+                                <div className="absolute right-3 sm:right-4 bottom-2.5 sm:bottom-4 z-20">
                                     <EmojiPicker onEmojiSelect={(emoji) => setCommentText(prev => prev + emoji)} />
                                 </div>
                             </div>
@@ -510,12 +510,12 @@ export const CommentModal: React.FC<CommentModalProps> = ({
                                 type="button"
                                 onClick={handleSubmit}
                                 disabled={!commentText.trim() || loading || !currentUserUid}
-                                className="w-14 h-14 bg-gradient-indigo text-white rounded-2xl hover:brightness-110 active:scale-95 transition-all shadow-xl shadow-indigo-500/20 disabled:opacity-30 flex items-center justify-center shrink-0 mb-0.5"
+                                className="w-12 h-12 sm:w-14 sm:h-14 bg-gradient-indigo text-white rounded-xl sm:rounded-2xl hover:brightness-110 active:scale-95 transition-all shadow-xl shadow-indigo-500/20 disabled:opacity-30 flex items-center justify-center shrink-0 mb-0.5"
                             >
                                 {loading ? (
-                                    <Loader2 className="w-6 h-6 animate-spin" />
+                                    <Loader2 className="w-5 h-5 sm:w-6 sm:h-6 animate-spin" />
                                 ) : (
-                                    <Send className="w-6 h-6" />
+                                    <Send className="w-5 h-5 sm:w-6 sm:h-6" />
                                 )}
                             </button>
                         </div>
