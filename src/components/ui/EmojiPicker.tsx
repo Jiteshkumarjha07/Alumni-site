@@ -46,11 +46,10 @@ export const EmojiPicker: React.FC<EmojiPickerProps> = ({ onEmojiSelect, classNa
         };
     }, [isOpen]);
 
-    const updatePosition = () => {
+    function updatePosition() {
         if (containerRef.current) {
             const rect = containerRef.current.getBoundingClientRect();
             const viewportWidth = window.innerWidth;
-            const viewportHeight = window.innerHeight;
             const isMobile = viewportWidth < 640;
             const pickerWidth = isMobile ? viewportWidth : 320;
             const pickerHeight = isMobile ? 350 : 400;
@@ -75,7 +74,7 @@ export const EmojiPicker: React.FC<EmojiPickerProps> = ({ onEmojiSelect, classNa
                 width: pickerWidth
             });
         }
-    };
+    }
 
     useEffect(() => {
         if (isOpen) updatePosition();
