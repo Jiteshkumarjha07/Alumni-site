@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Home, Users, User, MessageSquare, Briefcase, Calendar, Store, Globe2 } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { useMessaging } from '@/contexts/MessagingContext';
 import { ComingSoonModal } from '../modals/ComingSoonModal';
@@ -45,16 +46,21 @@ export function MobileNav() {
                     } : {}}
                 >
                     {navItems.map((item) => {
-                        const isActive = pathname === item.href.split('?')[0];
+                        const isActive = item.href === '/' 
+                            ? (pathname === '/' || pathname.startsWith('/posts'))
+                            : (item.href !== '#' && pathname.startsWith(item.href));
                         
                         const content = (
                             <div className="relative flex-shrink-0 flex flex-col items-center justify-center gap-0 px-1.5 py-1.5 rounded-xl transition-all duration-200 min-w-[42px]">
-                                <div className={`relative flex items-center justify-center w-8 h-8 rounded-xl transition-all duration-200 ${
-                                    isActive
-                                        ? 'bg-brand-burgundy shadow-[0_4px_12px_rgba(99,102,241,0.40)]'
-                                        : 'hover:bg-brand-parchment dark:hover:bg-white/8'
-                                }`}>
-                                    <item.icon className={`h-4 w-4 transition-colors ${isActive ? 'text-white' : 'text-brand-ebony/50'}`} />
+                                <div className="relative flex items-center justify-center w-8 h-8 rounded-xl transition-all duration-300">
+                                    {isActive && (
+                                        <motion.div
+                                            layoutId="mobile-nav-pill"
+                                            className="absolute inset-0 bg-brand-burgundy rounded-xl shadow-[0_4px_12px_rgba(139,21,56,0.4)]"
+                                            transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                                        />
+                                    )}
+                                    <item.icon className={`h-4 w-4 relative z-10 transition-colors duration-300 ${isActive ? 'text-white' : 'text-brand-ebony/50'}`} />
                                     
                                     {item.name === 'Messages' && totalUnreadCount > 0 && (
                                         <span className="absolute -top-1.5 -right-1.5 flex items-center justify-center h-[18px] w-[18px] rounded-full bg-red-500 text-white border-2 border-white dark:border-[var(--brand-surface)] text-[9px] font-black shadow-[0_0_12px_3px_rgba(239,68,68,0.9)] animate-pulse will-change-transform z-10">
