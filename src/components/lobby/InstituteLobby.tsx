@@ -117,15 +117,17 @@ function LobbyPostCard({ post, currentUid, onLike, onVote, userData }: {
       
       for (const m of commentMedia) {
         let url = '';
-        if (m.type === 'image') url = await uploadMedia(m.file);
-        else if (m.type === 'video') url = await uploadVideo(m.file);
-        else url = await uploadFile(m.file);
+        if (m.type === 'image') url = await uploadMedia(m.file) || '';
+        else if (m.type === 'video') url = await uploadVideo(m.file) || '';
+        else url = await uploadFile(m.file) || '';
         
-        attachments.push({
-          url,
-          type: m.type as 'image' | 'video' | 'file',
-          name: m.file.name
-        });
+        if (url) {
+          attachments.push({
+            url,
+            type: m.type as 'image' | 'video' | 'file',
+            name: m.file.name
+          });
+        }
       }
 
       const postRef = doc(db, 'lobbyPosts', post.id);
