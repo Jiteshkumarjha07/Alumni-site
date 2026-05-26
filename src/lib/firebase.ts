@@ -3,28 +3,10 @@ import { getAuth } from 'firebase/auth';
 import { initializeFirestore } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 import { getMessaging, isSupported as isMessagingSupported } from 'firebase/messaging';
-import { initializeAppCheck, ReCaptchaEnterpriseProvider } from 'firebase/app-check';
 import { firebaseConfig } from './firebase-config';
 
 // Initialize Firebase
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
-
-if (typeof window !== 'undefined') {
-    const siteKey = process.env.NEXT_PUBLIC_RECAPTCHA_ENTERPRISE_SITE_KEY;
-    const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-
-    if (isLocalhost) {
-        // 1. Force the App Check Debug Provider on localhost.
-        // This will print an App Check debug token in the browser's developer tools console.
-        (self as any).FIREBASE_APPCHECK_DEBUG_TOKEN = true;
-    }
-
-    // Initialize App Check (uses debug provider on localhost, and reCAPTCHA Enterprise in production)
-    initializeAppCheck(app, {
-        provider: new ReCaptchaEnterpriseProvider(siteKey || 'dummy-key-for-localhost-appcheck'),
-        isTokenAutoRefreshEnabled: true
-    });
-}
 
 // Initialize Firebase services
 export const auth = getAuth(app);
@@ -44,4 +26,3 @@ export const messaging = async () => {
 };
 
 export default app;
-
