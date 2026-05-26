@@ -3,17 +3,20 @@
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
-import { getDoc, doc, updateDoc } from 'firebase/firestore';
+import { getDoc, doc, updateDoc, collection, query, where, getDocs } from 'firebase/firestore';
 import { signOut } from 'firebase/auth';
 import { db, auth } from '@/lib/firebase';
-import { Eye, EyeOff, Loader2, ArrowLeft } from 'lucide-react';
+import { Eye, EyeOff, Loader2, ArrowLeft, Mail, Phone } from 'lucide-react';
 import Link from 'next/link';
 import { BrandLogo } from '@/components/brand/BrandLogo';
+import { isValidPhoneNumber, normalizePhone } from '@/lib/validation';
 
 export default function LoginPage() {
     const { signIn, resetPassword } = useAuth();
     const router = useRouter();
+    const [loginMode, setLoginMode] = useState<'email' | 'phone'>('email');
     const [email, setEmail] = useState('');
+    const [phone, setPhone] = useState('');
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
     const [loading, setLoading] = useState(false);
@@ -25,14 +28,18 @@ export default function LoginPage() {
         setError('');
         setResetSuccess('');
         
-        if (!email.trim()) {
-            setError('Please enter your email address to reset password');
+        const resetEmail = loginMode === 'email' ? email.trim() : '';
+        if (!resetEmail) {
+            setError(loginMode === 'email' 
+                ? 'Please enter your email address to reset password'
+                : 'Please switch to email mode to reset your password'
+            );
             return;
         }
 
         setIsResetting(true);
         try {
-            await resetPassword(email.trim());
+            await resetPassword(resetEmail);
             setResetSuccess('Password reset link sent! Check your email.');
         } catch (err: unknown) {
             console.error('Password reset error:', err);
@@ -47,19 +54,62 @@ export default function LoginPage() {
         e.preventDefault();
         setError('');
 
-        if (!email.trim() || !password.trim()) {
-            setError('Please fill in all fields');
-            return;
+        let loginEmail = '';
+
+        if (loginMode === 'email') {
+            if (!email.trim() || !password.trim()) {
+                setError('Please fill in all fields');
+                return;
+            }
+            loginEmail = email.trim();
+        } else {
+            // Phone mode: look up the email associated with this phone
+            if (!phone.trim() || !password.trim()) {
+                setError('Please fill in all fields');
+                return;
+            }
+
+            const phoneClean = normalizePhone(phone.trim());
+            if (!isValidPhoneNumber(phoneClean)) {
+                setError('Invalid mobile number. Please use international format (e.g. +919876543210).');
+                return;
+            }
+
+            setLoading(true);
+            try {
+                // Query users collection for this phone number
+                const usersRef = collection(db, 'users');
+                const phoneQuery = query(usersRef, where('phone', '==', phoneClean));
+                const phoneSnap = await getDocs(phoneQuery);
+
+                if (phoneSnap.empty) {
+                    setError('No account found with this mobile number. Please sign up first.');
+                    setLoading(false);
+                    return;
+                }
+
+                const userData = phoneSnap.docs[0].data();
+                loginEmail = userData.email;
+
+                if (!loginEmail) {
+                    setError('Account issue: no email linked to this number. Please contact support.');
+                    setLoading(false);
+                    return;
+                }
+            } catch (err) {
+                console.error('Phone lookup error:', err);
+                setError('Failed to look up account. Please try again.');
+                setLoading(false);
+                return;
+            }
         }
 
-        setLoading(true);
+        if (!loading) setLoading(true);
+
         try {
-            await signIn(email, password);
+            await signIn(loginEmail, password);
 
             // ── Suspension & Approvals Gate ──────────────────────────────
-            // After auth succeeds, verify the account is not suspended before
-            // allowing entry. We read the user doc directly (auth.currentUser is
-            // set synchronously by Firebase after signIn resolves).
             const currentUser = auth.currentUser;
             if (currentUser) {
                 const userSnap = await getDoc(doc(db, 'users', currentUser.uid));
@@ -76,17 +126,32 @@ export default function LoginPage() {
                     }
                     
                     // 2. Retroactive fix: Check if email is missing from approvals
-                    // This catches users who were removed before the automatic isSuspended
-                    // logic was implemented.
                     if (userData.email) {
                         const approvalSnap = await getDoc(doc(db, 'approvals', userData.email.toLowerCase()));
                         if (!approvalSnap.exists()) {
-                            // Self-heal: update their doc to suspended instantly 
-                            await updateDoc(doc(db, 'users', currentUser.uid), { isSuspended: true });
-                            await signOut(auth);
-                            setError('Your account has been suspended. Please contact your administrator.');
-                            setLoading(false);
-                            return;
+                            // Also check by phone if available
+                            let approvedByPhone = false;
+                            if (userData.phone) {
+                                const phoneApprovalSnap = await getDoc(doc(db, 'approvals', userData.phone));
+                                if (phoneApprovalSnap.exists()) {
+                                    approvedByPhone = true;
+                                } else {
+                                    // Query for phone field
+                                    const phoneQuery = query(collection(db, 'approvals'), where('phone', '==', userData.phone));
+                                    const phoneQuerySnap = await getDocs(phoneQuery);
+                                    if (!phoneQuerySnap.empty) {
+                                        approvedByPhone = true;
+                                    }
+                                }
+                            }
+
+                            if (!approvedByPhone) {
+                                await updateDoc(doc(db, 'users', currentUser.uid), { isSuspended: true });
+                                await signOut(auth);
+                                setError('Your account has been suspended. Please contact your administrator.');
+                                setLoading(false);
+                                return;
+                            }
                         }
                     }
                 }
@@ -142,35 +207,82 @@ export default function LoginPage() {
                         </div>
                     )}
 
+                    {/* Login Mode Toggle */}
+                    <div className="flex p-1.5 bg-brand-ebony/[0.03] rounded-xl shadow-inner ring-1 ring-inset ring-brand-ebony/5 mb-6">
+                        <button
+                            type="button"
+                            onClick={() => { setLoginMode('email'); setError(''); setResetSuccess(''); }}
+                            className={`flex-1 flex items-center justify-center gap-2 py-3 text-[11px] font-extrabold uppercase tracking-[0.1em] rounded-lg transition-all ${
+                                loginMode === 'email'
+                                    ? 'bg-white dark:bg-brand-parchment text-brand-burgundy shadow-sm ring-1 ring-brand-ebony/5'
+                                    : 'text-brand-ebony/40 hover:text-brand-ebony/60 hover:bg-black/5'
+                            }`}
+                        >
+                            <Mail className="w-4 h-4" />
+                            Email
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => { setLoginMode('phone'); setError(''); setResetSuccess(''); }}
+                            className={`flex-1 flex items-center justify-center gap-2 py-3 text-[11px] font-extrabold uppercase tracking-[0.1em] rounded-lg transition-all ${
+                                loginMode === 'phone'
+                                    ? 'bg-white dark:bg-brand-parchment text-brand-burgundy shadow-sm ring-1 ring-brand-ebony/5'
+                                    : 'text-brand-ebony/40 hover:text-brand-ebony/60 hover:bg-black/5'
+                            }`}
+                        >
+                            <Phone className="w-4 h-4" />
+                            Mobile
+                        </button>
+                    </div>
+
                     {/* Form */}
                     <form onSubmit={handleSubmit} className="space-y-5">
-                        <div>
-                            <label className="block text-[11px] font-bold text-brand-ebony/60 mb-2 uppercase tracking-[0.15em]">
-                                Email Address
-                            </label>
-                            <input
-                                type="email"
-                                value={email}
-                                onChange={(e) => setEmail(e.target.value)}
-                                placeholder="your.email@example.com"
-                                className="w-full px-4 py-3.5 bg-slate-100 border-2 border-slate-300 dark:bg-white/5 dark:border-white/10 text-brand-ebony placeholder:text-brand-ebony/40 rounded-xl text-sm font-medium focus:border-brand-burgundy focus:ring-2 focus:ring-brand-burgundy/20 outline-none transition-all"
-                                disabled={loading}
-                            />
-                        </div>
+                        {loginMode === 'email' ? (
+                            <div>
+                                <label className="block text-[11px] font-bold text-brand-ebony/60 mb-2 uppercase tracking-[0.15em]">
+                                    Email Address
+                                </label>
+                                <input
+                                    type="email"
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
+                                    placeholder="your.email@example.com"
+                                    className="w-full px-4 py-3.5 bg-slate-100 border-2 border-slate-300 dark:bg-white/5 dark:border-white/10 text-brand-ebony placeholder:text-brand-ebony/40 rounded-xl text-sm font-medium focus:border-brand-burgundy focus:ring-2 focus:ring-brand-burgundy/20 outline-none transition-all"
+                                    disabled={loading}
+                                />
+                            </div>
+                        ) : (
+                            <div>
+                                <label className="block text-[11px] font-bold text-brand-ebony/60 mb-2 uppercase tracking-[0.15em]">
+                                    Mobile Number
+                                </label>
+                                <input
+                                    type="tel"
+                                    value={phone}
+                                    onChange={(e) => setPhone(e.target.value)}
+                                    placeholder="+919876543210"
+                                    className="w-full px-4 py-3.5 bg-slate-100 border-2 border-slate-300 dark:bg-white/5 dark:border-white/10 text-brand-ebony placeholder:text-brand-ebony/40 rounded-xl text-sm font-medium focus:border-brand-burgundy focus:ring-2 focus:ring-brand-burgundy/20 outline-none transition-all"
+                                    disabled={loading}
+                                />
+                                <p className="text-[9px] text-brand-ebony/30 mt-1.5 px-1 font-bold uppercase tracking-wider">Include country code (e.g. +91)</p>
+                            </div>
+                        )}
 
                         <div>
                             <div className="flex justify-between items-center mb-2">
                                 <label className="block text-[11px] font-bold text-brand-ebony/60 uppercase tracking-[0.15em]">
                                     Password
                                 </label>
-                                <button
-                                    type="button"
-                                    onClick={handleResetPassword}
-                                    disabled={isResetting || loading}
-                                    className="text-[11px] font-bold text-brand-burgundy hover:text-indigo-500 transition-colors"
-                                >
-                                    {isResetting ? 'Sending...' : 'Forgot Password?'}
-                                </button>
+                                {loginMode === 'email' && (
+                                    <button
+                                        type="button"
+                                        onClick={handleResetPassword}
+                                        disabled={isResetting || loading}
+                                        className="text-[11px] font-bold text-brand-burgundy hover:text-indigo-500 transition-colors"
+                                    >
+                                        {isResetting ? 'Sending...' : 'Forgot Password?'}
+                                    </button>
+                                )}
                             </div>
                             <div className="relative">
                                 <input

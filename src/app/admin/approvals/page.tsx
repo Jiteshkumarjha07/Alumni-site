@@ -3,16 +3,17 @@
 import { useState, useEffect } from 'react';
 import { collection, onSnapshot, deleteDoc, doc, serverTimestamp, setDoc, query, where, getDocs, updateDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import { ShieldCheck, Plus, Loader2, Trash2, Mail, Building2, Sparkles, ChevronLeft } from 'lucide-react';
+import { ShieldCheck, Plus, Loader2, Trash2, Mail, Building2, Sparkles, ChevronLeft, Phone } from 'lucide-react';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
-import { isAuthenticEmailDomain } from '@/lib/validation';
+import { isAuthenticEmailDomain, isValidPhoneNumber, normalizePhone } from '@/lib/validation';
 
 import { Institute } from '@/types';
 
 interface Approval {
-    email: string;
+    email: string; // document ID (email or phone)
+    phone?: string;
     instituteIds: string[];
 }
 
@@ -27,6 +28,7 @@ export default function AdminApprovalsPage() {
     }, [userData, authLoading, router]);
 
     const [email, setEmail] = useState('');
+    const [phone, setPhone] = useState('');
     const [selectedInstitutes, setSelectedInstitutes] = useState<string[]>([]);
     const [institutes, setInstitutes] = useState<Institute[]>([]);
     const [approvals, setApprovals] = useState<Approval[]>([]);
@@ -114,9 +116,23 @@ export default function AdminApprovalsPage() {
         }
 
         const emailClean = email.trim().toLowerCase();
-        
-        if (!isAuthenticEmailDomain(emailClean)) {
+        const phoneClean = phone.trim() ? normalizePhone(phone.trim()) : '';
+
+        // At least one identifier is required
+        if (!emailClean && !phoneClean) {
+            setError("Please enter at least an email address or a mobile number.");
+            return;
+        }
+
+        // Validate email if provided
+        if (emailClean && !isAuthenticEmailDomain(emailClean)) {
             setError("Invalid email domain. Please use an authentic provider.");
+            return;
+        }
+
+        // Validate phone if provided
+        if (phoneClean && !isValidPhoneNumber(phoneClean)) {
+            setError("Invalid mobile number. Please use international format (e.g. +919876543210).");
             return;
         }
 
@@ -125,22 +141,47 @@ export default function AdminApprovalsPage() {
         setSuccess(null);
 
         try {
-            // 1. Write the approval entry using merge to preserve other institutes
-            await setDoc(doc(db, 'approvals', emailClean), {
-                email: emailClean,
+            // Use email as document ID if provided, otherwise use phone
+            const docId = emailClean || phoneClean;
+
+            const approvalData: any = {
                 instituteIds: arrayUnion(...selectedInstitutes),
                 updatedAt: serverTimestamp(),
-            }, { merge: true });
+            };
+            if (emailClean) approvalData.email = emailClean;
+            if (phoneClean) approvalData.phone = phoneClean;
+
+            // 1. Write the approval entry using merge to preserve other institutes
+            await setDoc(doc(db, 'approvals', docId), approvalData, { merge: true });
 
             // 2. Update existing user doc if it exists (add institute IDs and restore if suspended)
-            const usersQuery = query(collection(db, 'users'), where('email', '==', emailClean));
-            const userSnap = await getDocs(usersQuery);
+            // Search by email or phone
+            const usersRef = collection(db, 'users');
+            const queries: Promise<any>[] = [];
+            if (emailClean) {
+                queries.push(getDocs(query(usersRef, where('email', '==', emailClean))));
+            }
+            if (phoneClean) {
+                queries.push(getDocs(query(usersRef, where('phone', '==', phoneClean))));
+            }
+
+            const snapshots = await Promise.all(queries);
+            const allUserDocs = new Map<string, any>();
+            snapshots.forEach(snap => {
+                snap.docs.forEach((userDoc: any) => {
+                    allUserDocs.set(userDoc.id, userDoc);
+                });
+            });
+
             let restoredCount = 0;
-            const updatePromises = userSnap.docs.map(userDoc => {
+            const updatePromises = Array.from(allUserDocs.values()).map(userDoc => {
                 const data = userDoc.data();
                 const updates: any = {
                     instituteIds: arrayUnion(...selectedInstitutes)
                 };
+                if (phoneClean && !data.phone) {
+                    updates.phone = phoneClean;
+                }
                 if (data.isSuspended) {
                     updates.isSuspended = false;
                     restoredCount++;
@@ -149,8 +190,10 @@ export default function AdminApprovalsPage() {
             });
             await Promise.all(updatePromises);
 
-            setSuccess(`Access granted to ${emailClean}${restoredCount > 0 ? ' — account restored.' : '.'}`);
+            const identifier = emailClean || phoneClean;
+            setSuccess(`Access granted to ${identifier}${restoredCount > 0 ? ' — account restored.' : '.'}`);
             setEmail('');
+            setPhone('');
             setSelectedInstitutes([]);
         } catch (err: any) {
             setError(err.message || 'An unexpected error occurred.');
@@ -173,9 +216,13 @@ export default function AdminApprovalsPage() {
 
             // 2. Find the matching user and suspend them (scoped if institute admin)
             const usersRef = collection(db, 'users');
+            // Search by email or phone since the key could be either
+            const isPhone = emailToDelete.startsWith('+');
+            const field = isPhone ? 'phone' : 'email';
+
             const q = userData?.isAdmin 
-                ? query(usersRef, where('email', '==', emailToDelete))
-                : query(usersRef, where('email', '==', emailToDelete), where('instituteId', '==', userData?.instituteId));
+                ? query(usersRef, where(field, '==', emailToDelete))
+                : query(usersRef, where(field, '==', emailToDelete), where('instituteId', '==', userData?.instituteId));
             
             const userSnap = await getDocs(q);
             const updatePromises = userSnap.docs.map(userDoc =>
@@ -228,7 +275,7 @@ export default function AdminApprovalsPage() {
                         <div className="absolute top-0 right-0 w-32 h-32 bg-brand-burgundy/5 rounded-full -translate-y-1/2 translate-x-1/2 blur-2xl z-0 pointer-events-none"></div>
                         
                         <h2 className="text-xl font-serif font-extrabold text-brand-ebony mb-6 relative z-10 flex items-center gap-2">
-                             Whitelist Email
+                             Whitelist Member
                         </h2>
                         
                         {error && (
@@ -242,7 +289,8 @@ export default function AdminApprovalsPage() {
                             </div>
                         )}
 
-                        <form onSubmit={handleSubmit} className="space-y-6 relative z-10">
+                        <form onSubmit={handleSubmit} className="space-y-5 relative z-10">
+                            {/* Email */}
                             <div>
                                 <label className="block text-[10px] font-bold text-brand-ebony/40 dark:text-white/40 mb-2 uppercase tracking-[0.2em]">Email Address</label>
                                 <div className="relative">
@@ -253,11 +301,33 @@ export default function AdminApprovalsPage() {
                                         value={email}
                                         onChange={(e) => setEmail(e.target.value)}
                                         className="w-full pl-12 pr-5 py-4 bg-brand-ebony/5 dark:bg-white/5 border border-brand-ebony/10 dark:border-white/10 rounded-2xl focus:ring-4 focus:ring-brand-burgundy/10 hover:border-brand-burgundy/30 transition-all outline-none text-brand-ebony dark:text-white font-medium"
-                                        required
                                     />
                                 </div>
                             </div>
 
+                            {/* Phone */}
+                            <div>
+                                <label className="block text-[10px] font-bold text-brand-ebony/40 dark:text-white/40 mb-2 uppercase tracking-[0.2em]">Mobile Number</label>
+                                <div className="relative">
+                                    <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-brand-ebony/30 dark:text-white/30" />
+                                    <input
+                                        type="tel"
+                                        placeholder="+919876543210"
+                                        value={phone}
+                                        onChange={(e) => setPhone(e.target.value)}
+                                        className="w-full pl-12 pr-5 py-4 bg-brand-ebony/5 dark:bg-white/5 border border-brand-ebony/10 dark:border-white/10 rounded-2xl focus:ring-4 focus:ring-brand-burgundy/10 hover:border-brand-burgundy/30 transition-all outline-none text-brand-ebony dark:text-white font-medium"
+                                    />
+                                </div>
+                                <p className="text-[9px] text-brand-ebony/30 dark:text-white/30 mt-1.5 px-1 font-bold uppercase tracking-wider">Include country code (e.g. +91)</p>
+                            </div>
+
+                            <div className="flex items-center gap-2 px-1">
+                                <div className="flex-1 h-px bg-brand-ebony/5"></div>
+                                <span className="text-[9px] font-bold text-brand-ebony/20 uppercase tracking-[0.3em]">At least one required</span>
+                                <div className="flex-1 h-px bg-brand-ebony/5"></div>
+                            </div>
+
+                            {/* Institutes */}
                             <div>
                                 <label className="block text-[10px] font-bold text-brand-ebony/40 dark:text-white/40 mb-2 uppercase tracking-[0.2em]">Select Authorized Institutes</label>
                                 <div className="space-y-2 max-h-[220px] overflow-y-auto p-3 border border-brand-ebony/5 dark:border-white/5 rounded-2xl bg-brand-ebony/5 dark:bg-white/5 scrollbar-hide">
@@ -325,10 +395,16 @@ export default function AdminApprovalsPage() {
                                             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                                                 <div className="flex items-center gap-5 min-w-0 flex-1">
                                                     <div className="w-12 h-12 rounded-2xl bg-brand-burgundy/5 flex items-center justify-center text-brand-burgundy border border-brand-burgundy/10 group-hover:bg-gradient-indigo group-hover:text-white transition-all shadow-sm shrink-0">
-                                                        <Mail className="w-6 h-6" />
+                                                        {app.email.startsWith('+') ? <Phone className="w-6 h-6" /> : <Mail className="w-6 h-6" />}
                                                     </div>
                                                     <div className="min-w-0 shrink-1">
-                                                        <p className="font-extrabold text-brand-ebony dark:text-white truncate leading-tight mb-2 group-hover:text-brand-burgundy transition-colors">{app.email}</p>
+                                                        <p className="font-extrabold text-brand-ebony dark:text-white truncate leading-tight mb-1 group-hover:text-brand-burgundy transition-colors">{app.email}</p>
+                                                        {/* Show secondary identifier if both exist */}
+                                                        {app.phone && !app.email.startsWith('+') && (
+                                                            <p className="text-[10px] text-brand-ebony/40 font-bold flex items-center gap-1.5 mb-1.5">
+                                                                <Phone className="w-3 h-3" /> {app.phone}
+                                                            </p>
+                                                        )}
                                                         <div className="flex flex-wrap gap-2">
                                                             {app.instituteIds.map(id => {
                                                                 const inst = institutes.find(i => i.id === id);

@@ -85,6 +85,7 @@ export interface User {
   savedPosts?: string[];
   mutedUsers?: string[];
   blockedUsers?: string[];
+  phone?: string;
   bgTheme?: string;
   fcmTokens?: string[];
 }

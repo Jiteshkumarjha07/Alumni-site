@@ -1,17 +1,17 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { collection, getDocs, getDoc, doc } from 'firebase/firestore';
+import { collection, getDocs, getDoc, doc, query, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { uploadMedia } from '@/lib/media';
-import { Eye, EyeOff, Loader2, Camera, ArrowLeft, CheckCircle2, Building2 } from 'lucide-react';
+import { Eye, EyeOff, Loader2, Camera, ArrowLeft, CheckCircle2, Building2, Mail, Phone } from 'lucide-react';
 import Link from 'next/link';
 import { LocationAutocomplete } from '@/components/ui/LocationAutocomplete';
 
 import { BrandLogo } from '@/components/brand/BrandLogo';
-import { isAuthenticEmailDomain } from '@/lib/validation';
+import { isAuthenticEmailDomain, isValidPhoneNumber, normalizePhone } from '@/lib/validation';
 
 export default function SignUpPage() {
     const { signUp, error, clearError } = useAuth();
@@ -23,9 +23,12 @@ export default function SignUpPage() {
     const [checkLoading, setCheckLoading] = useState(false);
     const [isApproved, setIsApproved] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
+    const [signupMode, setSignupMode] = useState<'email' | 'phone'>('email');
+    const [approvedPhone, setApprovedPhone] = useState<string>('');
     const [formData, setFormData] = useState({
         name: '',
         email: '',
+        phone: '',
         password: '',
         batch: new Date().getFullYear(),
         profession: '',
@@ -37,9 +40,16 @@ export default function SignUpPage() {
     useEffect(() => {}, []);
 
     const checkApproval = async () => {
-        if (!formData.email) {
-            setLocalError("Please enter your email address first.");
-            return;
+        if (signupMode === 'email') {
+            if (!formData.email) {
+                setLocalError("Please enter your email address first.");
+                return;
+            }
+        } else {
+            if (!formData.phone) {
+                setLocalError("Please enter your mobile number first.");
+                return;
+            }
         }
 
         setCheckLoading(true);
@@ -47,53 +57,123 @@ export default function SignUpPage() {
         clearError();
 
         try {
-            const emailClean = formData.email.trim().toLowerCase();
-            
-            if (!isAuthenticEmailDomain(emailClean)) {
-                setLocalError("Please use an authentic email domain. Disposable or unverified domains are not allowed.");
-                setIsApproved(false);
-                setCheckLoading(false);
-                return;
+            if (signupMode === 'email') {
+                const emailClean = formData.email.trim().toLowerCase();
+                
+                if (!isAuthenticEmailDomain(emailClean)) {
+                    setLocalError("Please use an authentic email domain. Disposable or unverified domains are not allowed.");
+                    setIsApproved(false);
+                    setCheckLoading(false);
+                    return;
+                }
+
+                const checkPromise = getDoc(doc(db, 'approvals', emailClean));
+                const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error("Network timeout")), 15000));
+                const approvalDoc = (await Promise.race([checkPromise, timeoutPromise])) as any;
+                
+                if (!approvalDoc.exists()) {
+                    setLocalError("This email is not approved. Please contact your administrator.");
+                    setIsApproved(false);
+                    return;
+                }
+
+                const data = approvalDoc.data();
+                const instituteIds = data.instituteIds || [];
+
+                if (instituteIds.length === 0) {
+                    setLocalError("No institutes associated with this email.");
+                    setIsApproved(false);
+                    return;
+                }
+
+                const instPromises = instituteIds.map((id: string) => getDoc(doc(db, 'institutes', id)));
+                const instPromiseAll = Promise.all(instPromises);
+                const instDocs = (await Promise.race([instPromiseAll, timeoutPromise])) as any[];
+                const approvedInsts = instDocs
+                    .filter(instDoc => instDoc.exists())
+                    .map(instDoc => ({ id: instDoc.id, ...instDoc.data() }));
+
+                if (approvedInsts.length === 0) {
+                    setLocalError("Associated institutes no longer exist.");
+                    setIsApproved(false);
+                    return;
+                }
+
+                // Also capture the phone from approval doc if available
+                if (data.phone) setApprovedPhone(data.phone);
+
+                setInstitutes(approvedInsts);
+                setSelectedInstituteId(approvedInsts[0].id);
+                setIsApproved(true);
+            } else {
+                // Phone-based approval check
+                const phoneClean = normalizePhone(formData.phone.trim());
+
+                if (!isValidPhoneNumber(phoneClean)) {
+                    setLocalError("Invalid mobile number. Please use international format (e.g. +919876543210).");
+                    setIsApproved(false);
+                    setCheckLoading(false);
+                    return;
+                }
+
+                // First try direct lookup (phone is document ID)
+                const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error("Network timeout")), 15000));
+                const directDoc = (await Promise.race([getDoc(doc(db, 'approvals', phoneClean)), timeoutPromise])) as any;
+
+                let approvalData: any = null;
+
+                if (directDoc.exists()) {
+                    approvalData = directDoc.data();
+                } else {
+                    // Fallback: query for phone field (phone was added alongside an email-keyed doc)
+                    const phoneQuery = query(collection(db, 'approvals'), where('phone', '==', phoneClean));
+                    const phoneSnap = (await Promise.race([getDocs(phoneQuery), timeoutPromise])) as any;
+
+                    if (!phoneSnap.empty) {
+                        approvalData = phoneSnap.docs[0].data();
+                    }
+                }
+
+                if (!approvalData) {
+                    setLocalError("This mobile number is not approved. Please contact your administrator.");
+                    setIsApproved(false);
+                    return;
+                }
+
+                const instituteIds = approvalData.instituteIds || [];
+
+                if (instituteIds.length === 0) {
+                    setLocalError("No institutes associated with this number.");
+                    setIsApproved(false);
+                    return;
+                }
+
+                const instPromises = instituteIds.map((id: string) => getDoc(doc(db, 'institutes', id)));
+                const instPromiseAll = Promise.all(instPromises);
+                const instDocs = (await Promise.race([instPromiseAll, timeoutPromise])) as any[];
+                const approvedInsts = instDocs
+                    .filter(instDoc => instDoc.exists())
+                    .map(instDoc => ({ id: instDoc.id, ...instDoc.data() }));
+
+                if (approvedInsts.length === 0) {
+                    setLocalError("Associated institutes no longer exist.");
+                    setIsApproved(false);
+                    return;
+                }
+
+                // Store approved phone and email from approval doc
+                setApprovedPhone(phoneClean);
+                if (approvalData.email) {
+                    setFormData(prev => ({ ...prev, email: approvalData.email }));
+                }
+
+                setInstitutes(approvedInsts);
+                setSelectedInstituteId(approvedInsts[0].id);
+                setIsApproved(true);
             }
-
-            const checkPromise = getDoc(doc(db, 'approvals', emailClean));
-            const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error("Network timeout")), 15000));
-            const approvalDoc = (await Promise.race([checkPromise, timeoutPromise])) as any;
-            
-            if (!approvalDoc.exists()) {
-                setLocalError("This email is not approved. Please contact your administrator.");
-                setIsApproved(false);
-                return;
-            }
-
-            const data = approvalDoc.data();
-            const instituteIds = data.instituteIds || [];
-
-            if (instituteIds.length === 0) {
-                setLocalError("No institutes associated with this email.");
-                setIsApproved(false);
-                return;
-            }
-
-            const instPromises = instituteIds.map((id: string) => getDoc(doc(db, 'institutes', id)));
-            const instPromiseAll = Promise.all(instPromises);
-            const instDocs = (await Promise.race([instPromiseAll, timeoutPromise])) as any[];
-            const approvedInsts = instDocs
-                .filter(instDoc => instDoc.exists())
-                .map(instDoc => ({ id: instDoc.id, ...instDoc.data() }));
-
-            if (approvedInsts.length === 0) {
-                setLocalError("Associated institutes no longer exist.");
-                setIsApproved(false);
-                return;
-            }
-
-            setInstitutes(approvedInsts);
-            setSelectedInstituteId(approvedInsts[0].id);
-            setIsApproved(true);
         } catch (err: any) {
             console.error("DEBUG: Approval check error raw:", err);
-            setLocalError("Failed to verify email approval.");
+            setLocalError("Failed to verify approval.");
         } finally {
             setCheckLoading(false);
         }
@@ -120,6 +200,13 @@ export default function SignUpPage() {
         setLoading(true);
         clearError();
 
+        // When signing up via phone, we still need email + password for Firebase Auth
+        if (signupMode === 'phone' && !formData.email) {
+            setLocalError("Please enter your email address to create your account.");
+            setLoading(false);
+            return;
+        }
+
         const selectedInst = institutes.find(i => i.id === selectedInstituteId);
         if (!selectedInst) {
             setLocalError("Please select an institute.");
@@ -139,6 +226,10 @@ export default function SignUpPage() {
                 profilePicUrl = await uploadMedia(profilePicFile) || '';
             }
 
+            const phoneToStore = signupMode === 'phone' 
+                ? normalizePhone(formData.phone.trim()) 
+                : (approvedPhone || (formData.phone.trim() ? normalizePhone(formData.phone.trim()) : ''));
+
             await signUp(formData.email, formData.password, {
                 name: formData.name,
                 batch: formData.batch,
@@ -147,6 +238,7 @@ export default function SignUpPage() {
                 instituteId: selectedInst.id,
                 instituteName: selectedInst.name,
                 instituteIds: institutes.map(i => i.id),
+                phone: phoneToStore || undefined,
                 profilePic: profilePicUrl || `https://placehold.co/100x100/4f46e5/ffffff?text=${formData.name.substring(0, 2).toUpperCase()}`,
             });
 
@@ -195,24 +287,69 @@ export default function SignUpPage() {
 
                     {/* Form */}
                     <form onSubmit={handleSubmit} className="space-y-6">
-                        {/* Phase 1: Email Verification */}
+                        {/* Signup Mode Toggle */}
+                        {!isApproved && (
+                            <div className="flex p-1.5 bg-brand-ebony/[0.03] rounded-xl shadow-inner ring-1 ring-inset ring-brand-ebony/5">
+                                <button
+                                    type="button"
+                                    onClick={() => { setSignupMode('email'); setLocalError(null); clearError(); }}
+                                    className={`flex-1 flex items-center justify-center gap-2 py-3 text-[11px] font-extrabold uppercase tracking-[0.1em] rounded-lg transition-all ${
+                                        signupMode === 'email'
+                                            ? 'bg-white dark:bg-brand-parchment text-brand-burgundy shadow-sm ring-1 ring-brand-ebony/5'
+                                            : 'text-brand-ebony/40 hover:text-brand-ebony/60 hover:bg-black/5'
+                                    }`}
+                                >
+                                    <Mail className="w-4 h-4" />
+                                    Email
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => { setSignupMode('phone'); setLocalError(null); clearError(); }}
+                                    className={`flex-1 flex items-center justify-center gap-2 py-3 text-[11px] font-extrabold uppercase tracking-[0.1em] rounded-lg transition-all ${
+                                        signupMode === 'phone'
+                                            ? 'bg-white dark:bg-brand-parchment text-brand-burgundy shadow-sm ring-1 ring-brand-ebony/5'
+                                            : 'text-brand-ebony/40 hover:text-brand-ebony/60 hover:bg-black/5'
+                                    }`}
+                                >
+                                    <Phone className="w-4 h-4" />
+                                    Mobile
+                                </button>
+                            </div>
+                        )}
+
+                        {/* Phase 1: Verification */}
                         <div className="space-y-2">
                             <label className="block text-[11px] font-bold text-brand-ebony/60 uppercase tracking-[0.15em]">
-                                Email Address <span className="text-brand-burgundy">*</span>
+                                {signupMode === 'email' ? 'Email Address' : 'Mobile Number'} <span className="text-brand-burgundy">*</span>
                             </label>
                             <div className="flex flex-col sm:flex-row gap-3">
-                                <input
-                                    type="email"
-                                    placeholder="your.email@example.com"
-                                    value={formData.email}
-                                    onChange={(e) => {
-                                        setFormData({ ...formData, email: e.target.value });
-                                        setIsApproved(false);
-                                    }}
-                                    className="flex-1 px-4 py-3.5 bg-slate-100 border-2 border-slate-300 dark:bg-white/5 dark:border-white/10 text-brand-ebony placeholder:text-brand-ebony/40 focus:border-brand-burgundy focus:ring-2 focus:ring-brand-burgundy/20 outline-none transition-all rounded-xl font-medium text-sm disabled:opacity-50"
-                                    required
-                                    disabled={isApproved || checkLoading}
-                                />
+                                {signupMode === 'email' ? (
+                                    <input
+                                        type="email"
+                                        placeholder="your.email@example.com"
+                                        value={formData.email}
+                                        onChange={(e) => {
+                                            setFormData({ ...formData, email: e.target.value });
+                                            setIsApproved(false);
+                                        }}
+                                        className="flex-1 px-4 py-3.5 bg-slate-100 border-2 border-slate-300 dark:bg-white/5 dark:border-white/10 text-brand-ebony placeholder:text-brand-ebony/40 focus:border-brand-burgundy focus:ring-2 focus:ring-brand-burgundy/20 outline-none transition-all rounded-xl font-medium text-sm disabled:opacity-50"
+                                        required
+                                        disabled={isApproved || checkLoading}
+                                    />
+                                ) : (
+                                    <input
+                                        type="tel"
+                                        placeholder="+919876543210"
+                                        value={formData.phone}
+                                        onChange={(e) => {
+                                            setFormData({ ...formData, phone: e.target.value });
+                                            setIsApproved(false);
+                                        }}
+                                        className="flex-1 px-4 py-3.5 bg-slate-100 border-2 border-slate-300 dark:bg-white/5 dark:border-white/10 text-brand-ebony placeholder:text-brand-ebony/40 focus:border-brand-burgundy focus:ring-2 focus:ring-brand-burgundy/20 outline-none transition-all rounded-xl font-medium text-sm disabled:opacity-50"
+                                        required
+                                        disabled={isApproved || checkLoading}
+                                    />
+                                )}
                                 {!isApproved ? (
                                     <button
                                         type="button"
@@ -225,7 +362,7 @@ export default function SignUpPage() {
                                 ) : (
                                     <button
                                         type="button"
-                                        onClick={() => { setIsApproved(false); setInstitutes([]); }}
+                                        onClick={() => { setIsApproved(false); setInstitutes([]); setApprovedPhone(''); }}
                                         className="px-6 py-3.5 bg-white/5 border border-brand-ebony/10 text-brand-ebony/60 rounded-xl font-bold hover:bg-white/10 transition-all text-xs uppercase tracking-widest whitespace-nowrap min-w-[140px]"
                                     >
                                         Change
@@ -235,7 +372,7 @@ export default function SignUpPage() {
                             {isApproved && (
                                 <p className="mt-2 text-xs text-brand-burgundy font-bold flex items-center gap-1.5 px-1 animate-fade-up">
                                     <CheckCircle2 className="w-4 h-4" />
-                                    Email verified. Approved for {institutes.length} institute(s).
+                                    {signupMode === 'email' ? 'Email' : 'Mobile number'} verified. Approved for {institutes.length} institute(s).
                                 </p>
                             )}
                         </div>
@@ -323,6 +460,41 @@ export default function SignUpPage() {
                                         required
                                     />
                                 </div>
+
+                                {/* Email (shown when signing up via phone) */}
+                                {signupMode === 'phone' && (
+                                    <div>
+                                        <label className="block text-[11px] font-bold text-brand-ebony/60 mb-2 uppercase tracking-[0.15em]">
+                                            Email Address <span className="text-brand-burgundy">*</span>
+                                            <span className="text-brand-ebony/30 normal-case tracking-normal ml-2 font-medium">(required for account login)</span>
+                                        </label>
+                                        <input
+                                            type="email"
+                                            placeholder="your.email@example.com"
+                                            value={formData.email}
+                                            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                                            className="w-full px-4 py-3.5 bg-slate-100 border-2 border-slate-300 dark:bg-white/5 dark:border-white/10 text-brand-ebony placeholder:text-brand-ebony/40 focus:border-brand-burgundy focus:ring-2 focus:ring-brand-burgundy/20 outline-none transition-all rounded-xl font-medium text-sm"
+                                            required
+                                        />
+                                    </div>
+                                )}
+
+                                {/* Phone (shown when signing up via email, optional) */}
+                                {signupMode === 'email' && (
+                                    <div>
+                                        <label className="block text-[11px] font-bold text-brand-ebony/60 mb-2 uppercase tracking-[0.15em]">
+                                            Mobile Number
+                                            <span className="text-brand-ebony/30 normal-case tracking-normal ml-2 font-medium">(optional)</span>
+                                        </label>
+                                        <input
+                                            type="tel"
+                                            placeholder="+919876543210"
+                                            value={formData.phone}
+                                            onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                                            className="w-full px-4 py-3.5 bg-slate-100 border-2 border-slate-300 dark:bg-white/5 dark:border-white/10 text-brand-ebony placeholder:text-brand-ebony/40 focus:border-brand-burgundy focus:ring-2 focus:ring-brand-burgundy/20 outline-none transition-all rounded-xl font-medium text-sm"
+                                        />
+                                    </div>
+                                )}
 
                                 <div>
                                     <label className="block text-[11px] font-bold text-brand-ebony/60 mb-2 uppercase tracking-[0.15em]">
