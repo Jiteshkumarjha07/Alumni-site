@@ -67,9 +67,9 @@ export function Sidebar() {
                             <p className="px-1 text-[10px] font-black text-brand-ebony/30 uppercase tracking-[0.2em] mb-2">Governance</p>
                             <div className="space-y-2">
                                 <InstituteSwitcher />
-                                {userData.isAdmin && (
+                                {(userData.isAdmin || userData.isinsadmin) && (
                                     <Link 
-                                        href="/admin/approvals"
+                                        href={userData.isAdmin ? "/admin" : "/institute-admin"}
                                         className="w-full flex items-center justify-center gap-2 py-2.5 bg-brand-burgundy/10 hover:bg-brand-burgundy/20 rounded-xl transition-all text-brand-burgundy dark:text-brand-burgundy active:scale-95 text-[10px] font-black uppercase tracking-[0.2em] animate-fade-in"
                                     >
                                         <Shield className="w-3 h-3" />
