@@ -13,11 +13,28 @@ const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
 if (typeof window !== 'undefined') {
     // Initialize App Check only on the client
     const siteKey = process.env.NEXT_PUBLIC_RECAPTCHA_ENTERPRISE_SITE_KEY;
+    const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    const useDebug = process.env.NEXT_PUBLIC_APP_CHECK_DEBUG === 'true';
+
     if (siteKey) {
-        initializeAppCheck(app, {
-            provider: new ReCaptchaEnterpriseProvider(siteKey),
-            isTokenAutoRefreshEnabled: true
-        });
+        if (isLocalhost) {
+            if (useDebug) {
+                // Enable the App Check Debug Provider. It will print a debug token in the browser console.
+                (self as any).FIREBASE_APPCHECK_DEBUG_TOKEN = true;
+                initializeAppCheck(app, {
+                    provider: new ReCaptchaEnterpriseProvider(siteKey),
+                    isTokenAutoRefreshEnabled: true
+                });
+                console.log('Firebase App Check: Running in DEBUG mode on localhost.');
+            } else {
+                console.log('Firebase App Check: Bypassed on localhost to prevent invalid token errors.');
+            }
+        } else {
+            initializeAppCheck(app, {
+                provider: new ReCaptchaEnterpriseProvider(siteKey),
+                isTokenAutoRefreshEnabled: true
+            });
+        }
     } else {
         console.warn('Firebase App Check is skipped: NEXT_PUBLIC_RECAPTCHA_ENTERPRISE_SITE_KEY is missing.');
     }
