@@ -1,0 +1,20 @@
+﻿src/components/layout/RightSidebar.tsx(18,40): error TS2339: Property 'id' does not exist on type 'User'.
+src/components/layout/RightSidebar.tsx(21,54): error TS2339: Property 'avatar' does not exist on type 'User'.
+src/components/layout/RightSidebar.tsx(28,47): error TS2339: Property 'headline' does not exist on type 'User'.
+src/components/modals/CreatePostModal.tsx(65,17): error TS2322: Type 'string | null' is not assignable to type 'string'.
+  Type 'null' is not assignable to type 'string'.
+src/components/profile/ProfileHeader.tsx(20,39): error TS2339: Property 'avatar' does not exist on type 'User'.
+src/components/profile/ProfileHeader.tsx(38,73): error TS2339: Property 'headline' does not exist on type 'User'.
+src/lib/data.ts(10,9): error TS2322: Type 'number' is not assignable to type 'string[]'.
+src/lib/data.ts(18,9): error TS2322: Type 'number' is not assignable to type 'string[]'.
+src/lib/data.ts(26,9): error TS2322: Type 'number' is not assignable to type 'string[]'.
+src/lib/data.ts(36,9): error TS2322: Type 'number' is not assignable to type 'string[]'.
+src/lib/data.ts(37,9): error TS2322: Type 'number' is not assignable to type 'Comment[]'.
+src/lib/data.ts(44,9): error TS2322: Type 'number' is not assignable to type 'string[]'.
+src/lib/data.ts(45,9): error TS2322: Type 'number' is not assignable to type 'Comment[]'.
+src/lib/data.ts(58,9): error TS2353: Object literal may only specify known properties, and 'postedAt' does not exist in type 'Job'.
+src/lib/data.ts(64,9): error TS2322: Type '"Contract"' is not assignable to type '"Full-time" | "Part-time" | "Freelance/Contract" | "Internship"'.
+src/lib/encryption.ts(1,22): error TS7016: Could not find a declaration file for module 'crypto-js'. 'C:/Python/Laa prototype/alumni-site/node_modules/crypto-js/index.js' implicitly has an 'any' type.
+  Try `npm i --save-dev @types/crypto-js` if it exists or add a new declaration (.d.ts) file containing `declare module 'crypto-js';`
+src/lib/imageUpload.ts(6,25): error TS2367: This comparison appears to be unintentional because the types '"63493d1b3fcd73b7cfc9d5770c892935"' and '"YOUR_IMGBB_API_KEY"' have no overlap.
+

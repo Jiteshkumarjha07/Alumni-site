@@ -1,6 +1,6 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
-  "productName": " Alumnest",
+  "productName": "Alumnest",
   "version": "0.1.0",
   "identifier": "com.alumnest.app",
   "build": {
@@ -22,6 +22,15 @@
     ],
     "security": {
       "csp": null
+    }
+  },
+  "plugins": {
+    "updater": {
+      "active": true,
+      "endpoints": [
+        "https://github.com/Jiteshkumarjha07/Alumni-site/releases/latest/download/latest.json"
+      ],
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEQwNkVDNDA4RDE0Njg0NDMKUldSRGhFYlJDTVJ1MExtakoxMmdyK3RUY044THZtZWdVTklXZXJ6MmdKc2kzS0ZxMEJoMG5ZRWkK"
     }
   },
   "bundle": {

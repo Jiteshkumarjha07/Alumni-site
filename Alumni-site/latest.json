@@ -1,0 +1,11 @@
+{
+  "version": "0.1.1",
+  "notes": "Added mobile navigation, emoji fixes, and institute switcher improvements.",
+  "pub_date": "2026-05-16T00:00:00Z",
+  "platforms": {
+    "windows-x86_64": {
+      "signature": "PASTE_SIGNATURE_HERE",
+      "url": "https://github.com/Jiteshkumarjha07/Alumni-site/releases/download/v0.1.1/Alumnest_0.1.1_x64_en-US.msi.zip"
+    }
+  }
+}

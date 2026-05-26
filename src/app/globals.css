@@ -381,4 +381,23 @@
   .EmojiPickerReact .epr-body {
     scrollbar-width: none !important;
   }
+
+  /* ── Shadow Premium ── */
+  .shadow-premium {
+    box-shadow:
+      0 1px 3px rgba(0, 0, 0, 0.04),
+      0 4px 12px rgba(0, 0, 0, 0.03);
+  }
+  .dark .shadow-premium {
+    box-shadow:
+      0 1px 3px rgba(0, 0, 0, 0.2),
+      0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+
+  /* ── Fade In ── */
+  @keyframes fade-in {
+    0%   { opacity: 0; }
+    100% { opacity: 1; }
+  }
+  .animate-fade-in { animation: fade-in 0.4s ease-out forwards; }
 }

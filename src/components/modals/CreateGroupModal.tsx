@@ -42,6 +42,7 @@ export function CreateGroupModal({ isOpen, onClose, currentUser, onGroupCreated 
                     const user = { ...docSnap.data(), uid: docSnap.id } as User;
                     if (
                         user.uid !== currentUser.uid &&
+                        currentUser.connections?.includes(user.uid) &&
                         (user.name?.toLowerCase().includes(term) ||
                          user.profession?.toLowerCase().includes(term))
                     ) {

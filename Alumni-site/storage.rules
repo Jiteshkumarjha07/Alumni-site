@@ -1,0 +1,80 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    // Whitelist of safe content types — VULN-04 fix
+    function isAllowedContentType() {
+      return request.resource.contentType.matches('image/.*')
+          || request.resource.contentType.matches('video/.*')
+          || request.resource.contentType.matches('audio/.*')
+          || request.resource.contentType in [
+               'application/pdf',
+               'application/msword',
+               'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+               'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+               'application/vnd.ms-powerpoint',
+               'text/plain'
+             ];
+    }
+
+    // ── Profile Pictures: 5 MB limit ─────────────────────────────────────────
+    match /profilePics/{fileName} {
+      allow read: if isSignedIn();
+      allow write: if isSignedIn()
+                   && request.resource.contentType.matches('image/.*')
+                   && request.resource.size < 5 * 1024 * 1024;
+    }
+
+    // ── Post / Lobby Images: 10 MB limit ─────────────────────────────────────
+    match /images/{fileName} {
+      allow read: if isSignedIn();
+      allow write: if isSignedIn()
+                   && request.resource.contentType.matches('image/.*')
+                   && request.resource.size < 10 * 1024 * 1024;
+    }
+
+    // ── Videos: 200 MB limit ─────────────────────────────────────────────────
+    match /videos/{fileName} {
+      allow read: if isSignedIn();
+      allow write: if isSignedIn()
+                   && request.resource.contentType.matches('video/.*')
+                   && request.resource.size < 200 * 1024 * 1024;
+    }
+
+    // ── Documents / Files: 20 MB limit ───────────────────────────────────────
+    match /files/{fileName} {
+      allow read: if isSignedIn();
+      allow write: if isSignedIn()
+                   && isAllowedContentType()
+                   && request.resource.size < 20 * 1024 * 1024;
+    }
+
+    // ── Audio / Voice Notes: 50 MB limit ─────────────────────────────────────
+    match /audio/{fileName} {
+      allow read: if isSignedIn();
+      allow write: if isSignedIn()
+                   && request.resource.contentType.matches('audio/.*')
+                   && request.resource.size < 50 * 1024 * 1024;
+    }
+
+    // ── Chat Media: sub-paths for chats ──────────────────────────────────────
+    match /chats/{allPaths=**} {
+      allow read: if isSignedIn();
+      allow write: if isSignedIn()
+                   && isAllowedContentType()
+                   && request.resource.size < 200 * 1024 * 1024;
+    }
+
+    // ── Deny everything not explicitly matched ────────────────────────────────
+    // This is the security backstop — no uploads to unknown paths.
+    match /{allPaths=**} {
+      allow read: if isSignedIn();
+      allow write: if false;
+    }
+  }
+}

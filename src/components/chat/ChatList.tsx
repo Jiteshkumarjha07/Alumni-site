@@ -95,6 +95,7 @@ export function ChatList({ currentUser, chats, onSelectChat, onStartChat, onSele
                     if (
                         user.uid !== currentUser.uid &&
                         !suspendedUids.has(user.uid) &&
+                        currentUser.connections?.includes(user.uid) &&
                         (user.name?.toLowerCase().includes(term) ||
                          user.profession?.toLowerCase().includes(term))
                     ) {
