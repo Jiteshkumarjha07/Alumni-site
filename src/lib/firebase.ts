@@ -14,21 +14,17 @@ if (typeof window !== 'undefined') {
     const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
 
     if (isLocalhost) {
-        // Enable App Check Debug Provider.
-        // It can be set to true to generate a new debug token, or a persistent UUID from environment variables.
-        (self as any).FIREBASE_APPCHECK_DEBUG_TOKEN = process.env.NEXT_PUBLIC_APP_CHECK_DEBUG_TOKEN || true;
+        // 1. Force the App Check Debug Provider on localhost.
+        // This will print an App Check debug token in the browser's developer tools console.
+        (self as any).FIREBASE_APPCHECK_DEBUG_TOKEN = true;
     }
 
-    if (siteKey) {
-        initializeAppCheck(app, {
-            provider: new ReCaptchaEnterpriseProvider(siteKey),
-            isTokenAutoRefreshEnabled: true
-        });
-    } else {
-        console.warn('Firebase App Check is skipped: NEXT_PUBLIC_RECAPTCHA_ENTERPRISE_SITE_KEY is missing.');
-    }
+    // Initialize App Check (uses debug provider on localhost, and reCAPTCHA Enterprise in production)
+    initializeAppCheck(app, {
+        provider: new ReCaptchaEnterpriseProvider(siteKey || 'dummy-key-for-localhost-appcheck'),
+        isTokenAutoRefreshEnabled: true
+    });
 }
-
 
 // Initialize Firebase services
 export const auth = getAuth(app);
