@@ -11,10 +11,10 @@ import { uploadMedia } from '@/lib/media';
 import {
     Loader2, Camera, Users, FileText, Briefcase, Globe,
     LayoutDashboard, Search, Trash2, UserX, UserCheck,
-    Mail, ShieldCheck, Plus, ChevronUp, ChevronDown
+    Mail, ShieldCheck, Plus, ChevronUp, ChevronDown, Phone
 } from 'lucide-react';
 import { User, Post, Job } from '@/types';
-import { isAuthenticEmailDomain } from '@/lib/validation';
+import { isAuthenticEmailDomain, isValidPhoneNumber, normalizePhone } from '@/lib/validation';
 import { serverTimestamp, setDoc, arrayUnion, arrayRemove, getDocs } from 'firebase/firestore';
 
 type Tab = 'overview' | 'members' | 'posts' | 'jobs' | 'approvals' | 'suspended';
@@ -43,9 +43,10 @@ export default function InstituteAdminPage() {
     const [loadingJobs, setLoadingJobs] = useState(false);
 
     // Approvals tab
-    const [approvals, setApprovals] = useState<{ email: string; instituteIds: string[] }[]>([]);
+    const [approvals, setApprovals] = useState<{ email: string; phone?: string; instituteIds: string[] }[]>([]);
     const [loadingApprovals, setLoadingApprovals] = useState(false);
     const [newApprovalEmail, setNewApprovalEmail] = useState('');
+    const [newApprovalPhone, setNewApprovalPhone] = useState('');
     const [approving, setApproving] = useState(false);
 
     const [error, setError] = useState<string | null>(null);
@@ -187,11 +188,18 @@ export default function InstituteAdminPage() {
 
     const handleAddApproval = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!newApprovalEmail.trim() || !userData?.instituteId) return;
+        if ((!newApprovalEmail.trim() && !newApprovalPhone.trim()) || !userData?.instituteId) return;
         
         const email = newApprovalEmail.trim().toLowerCase();
-        if (!isAuthenticEmailDomain(email)) {
+        const phone = newApprovalPhone.trim() ? normalizePhone(newApprovalPhone.trim()) : '';
+
+        if (email && !isAuthenticEmailDomain(email)) {
             setError('Invalid email domain.');
+            return;
+        }
+
+        if (phone && !isValidPhoneNumber(phone)) {
+            setError('Invalid mobile number.');
             return;
         }
 
@@ -200,25 +208,46 @@ export default function InstituteAdminPage() {
         setSuccess(null);
 
         try {
-            // 1. Add to approvals
-            await setDoc(doc(db, 'approvals', email), {
-                email,
+            const docId = email || phone;
+            const approvalData: any = {
                 instituteIds: arrayUnion(userData.instituteId),
                 updatedAt: serverTimestamp()
-            }, { merge: true });
+            };
+            if (email) approvalData.email = email;
+            if (phone) approvalData.phone = phone;
+
+            // 1. Add to approvals
+            await setDoc(doc(db, 'approvals', docId), approvalData, { merge: true });
 
             // 2. Restore account if previously suspended
-            const usersQuery = query(collection(db, 'users'), where('email', '==', email));
-            const userSnap = await getDocs(usersQuery);
-            const restorePromises = userSnap.docs
+            const usersRef = collection(db, 'users');
+            const queries: Promise<any>[] = [];
+            if (email) {
+                queries.push(getDocs(query(usersRef, where('email', '==', email))));
+            }
+            if (phone) {
+                queries.push(getDocs(query(usersRef, where('phone', '==', phone))));
+            }
+
+            const snapshots = await Promise.all(queries);
+            const allUserDocs = new Map<string, any>();
+            snapshots.forEach(snap => {
+                snap.docs.forEach((userDoc: any) => {
+                    allUserDocs.set(userDoc.id, userDoc);
+                });
+            });
+
+            const restorePromises = Array.from(allUserDocs.values())
                 .filter(userDoc => userDoc.data().isSuspended)
                 .map(userDoc =>
                     updateDoc(doc(db, 'users', userDoc.id), { isSuspended: false })
                 );
             await Promise.all(restorePromises);
 
-            setSuccess(`Granted access to ${email}`);
+            const identifier = email || phone;
+            setSuccess(`Granted access to ${identifier}`);
             setNewApprovalEmail('');
+            setNewApprovalPhone('');
         } catch (err: any) {
             setError(err.message || 'Failed to add approval');
         } finally {
@@ -235,9 +264,12 @@ export default function InstituteAdminPage() {
             });
 
             // 2. Suspend user if they belong to this institute
+            const isPhone = emailToDelete.startsWith('+');
+            const field = isPhone ? 'phone' : 'email';
+
             const usersQuery = query(
                 collection(db, 'users'), 
-                where('email', '==', emailToDelete),
+                where(field, '==', emailToDelete),
                 where('instituteId', '==', userData!.instituteId)
             );
             const userSnap = await getDocs(usersQuery);
@@ -668,7 +700,17 @@ export default function InstituteAdminPage() {
                     {/* Form */}
                     <div className="lg:col-span-4">
                         <div className="card-premium p-6">
-                            <h2 className="text-lg font-serif font-bold text-brand-ebony dark:text-white mb-4">Authorize Email</h2>
+                            <h2 className="text-lg font-serif font-bold text-brand-ebony dark:text-white mb-4">Authorize Member</h2>
+                            {error && (
+                                <div className="mb-4 p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-red-600 text-[10px] font-bold uppercase tracking-wider">
+                                    {error}
+                                </div>
+                            )}
+                            {success && (
+                                <div className="mb-4 p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-lg text-emerald-600 text-[10px] font-bold uppercase tracking-wider">
+                                    {success}
+                                </div>
+                            )}
                             <form onSubmit={handleAddApproval} className="space-y-4">
                                 <div>
                                     <label className="block text-[10px] font-black text-brand-ebony/40 dark:text-white/40 mb-1.5 uppercase tracking-widest">Alumni Email</label>
@@ -680,9 +722,27 @@ export default function InstituteAdminPage() {
                                             value={newApprovalEmail}
                                             onChange={e => setNewApprovalEmail(e.target.value)}
                                             className="w-full pl-9 pr-4 py-3 bg-brand-ebony/5 dark:bg-white/5 border border-brand-ebony/10 dark:border-white/10 rounded-xl text-sm outline-none focus:ring-2 focus:ring-brand-burgundy/20"
-                                            required
                                         />
                                     </div>
+                                </div>
+                                <div>
+                                    <label className="block text-[10px] font-black text-brand-ebony/40 dark:text-white/40 mb-1.5 uppercase tracking-widest">Mobile Number</label>
+                                    <div className="relative">
+                                        <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-brand-ebony/30" />
+                                        <input
+                                            type="tel"
+                                            placeholder="+919876543210"
+                                            value={newApprovalPhone}
+                                            onChange={e => setNewApprovalPhone(e.target.value)}
+                                            className="w-full pl-9 pr-4 py-3 bg-brand-ebony/5 dark:bg-white/5 border border-brand-ebony/10 dark:border-white/10 rounded-xl text-sm outline-none focus:ring-2 focus:ring-brand-burgundy/20"
+                                        />
+                                    </div>
+                                    <p className="text-[9px] text-brand-ebony/30 dark:text-white/30 mt-1 px-1 font-bold uppercase tracking-wider">Include country code (e.g. +91)</p>
+                                </div>
+                                <div className="flex items-center gap-2 px-1 py-1">
+                                    <div className="flex-1 h-px bg-brand-ebony/5"></div>
+                                    <span className="text-[9px] font-bold text-brand-ebony/20 uppercase tracking-[0.3em]">At least one required</span>
+                                    <div className="flex-1 h-px bg-brand-ebony/5"></div>
                                 </div>
                                 <button
                                     type="submit"
@@ -704,16 +764,23 @@ export default function InstituteAdminPage() {
                             {loadingApprovals ? (
                                 <div className="p-12 text-center"><Loader2 className="w-8 h-8 animate-spin mx-auto text-brand-burgundy/30" /></div>
                             ) : approvals.length === 0 ? (
-                                <div className="p-12 text-center text-brand-ebony/40 dark:text-white/30 text-xs font-bold uppercase tracking-widest">No authorized emails yet</div>
+                                <div className="p-12 text-center text-brand-ebony/40 dark:text-white/30 text-xs font-bold uppercase tracking-widest">No authorized accounts yet</div>
                             ) : (
                                 <div className="divide-y divide-brand-ebony/5 dark:divide-white/5">
                                     {approvals.map(app => (
                                         <div key={app.email} className="p-4 flex items-center justify-between group hover:bg-brand-ebony/[0.02] transition">
                                             <div className="flex items-center gap-3">
                                                 <div className="w-8 h-8 rounded-lg bg-brand-burgundy/5 flex items-center justify-center text-brand-burgundy border border-brand-burgundy/10">
-                                                    <Mail className="w-4 h-4" />
+                                                    {app.email.startsWith('+') ? <Phone className="w-4 h-4" /> : <Mail className="w-4 h-4" />}
                                                 </div>
-                                                <span className="text-sm font-bold text-brand-ebony dark:text-white">{app.email}</span>
+                                                <div>
+                                                    <span className="text-sm font-bold text-brand-ebony dark:text-white block leading-tight">{app.email}</span>
+                                                    {app.phone && !app.email.startsWith('+') && (
+                                                        <span className="text-[10px] text-brand-ebony/40 font-bold flex items-center gap-1 mt-0.5">
+                                                            <Phone className="w-2.5 h-2.5" /> {app.phone}
+                                                        </span>
+                                                    )}
+                                                </div>
                                             </div>
                                             <button
                                                 onClick={() => handleDeleteApproval(app.email)}

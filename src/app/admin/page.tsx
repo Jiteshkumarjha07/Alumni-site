@@ -10,11 +10,11 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
     Users, FileText, Building2, ShieldX, Search, Trash2, UserX, UserCheck,
-    Loader2, Shield, LayoutDashboard, ChevronRight, ShieldCheck
+    Loader2, Shield, LayoutDashboard, ChevronRight, ShieldCheck, Briefcase, ChevronUp, ChevronDown
 } from 'lucide-react';
-import { User, Post, Institute } from '@/types';
+import { User, Post, Job, Institute } from '@/types';
 
-type Tab = 'overview' | 'users' | 'posts' | 'suspended';
+type Tab = 'overview' | 'users' | 'posts' | 'jobs' | 'suspended';
 
 export default function AdminDashboard() {
     const { userData, loading: authLoading } = useAuth();
@@ -23,12 +23,19 @@ export default function AdminDashboard() {
 
     const [allUsers, setAllUsers] = useState<User[]>([]);
     const [allPosts, setAllPosts] = useState<Post[]>([]);
+    const [allJobs, setAllJobs] = useState<Job[]>([]);
     const [institutes, setInstitutes] = useState<Institute[]>([]);
+    
     const [loadingUsers, setLoadingUsers] = useState(false);
     const [loadingPosts, setLoadingPosts] = useState(false);
+    const [loadingJobs, setLoadingJobs] = useState(false);
+    
     const [userSearch, setUserSearch] = useState('');
     const [postSearch, setPostSearch] = useState('');
+    const [jobSearch, setJobSearch] = useState('');
+    
     const [error, setError] = useState<string | null>(null);
+    const [isBannerCollapsed, setIsBannerCollapsed] = useState(false);
 
     // Redirect institute-only admins away from this page
     useEffect(() => {
@@ -57,7 +64,6 @@ export default function AdminDashboard() {
     // Subscribe to posts only when on posts or overview tab
     useEffect(() => {
         if ((activeTab !== 'posts' && activeTab !== 'overview') || !userData?.isAdmin) {
-            // Bug #2 fix: always return a no-op so previous subscriptions are properly cleaned up
             return () => {};
         }
         setLoadingPosts(true);
@@ -68,6 +74,21 @@ export default function AdminDashboard() {
         }, (err) => { console.error(err); setLoadingPosts(false); });
         return () => unsub();
     }, [activeTab, userData?.isAdmin]);
+
+    // Subscribe to jobs only when on jobs or overview tab
+    useEffect(() => {
+        if ((activeTab !== 'jobs' && activeTab !== 'overview') || !userData?.isAdmin) {
+            return () => {};
+        }
+        setLoadingJobs(true);
+        const q = query(collection(db, 'opportunities'), orderBy('createdAt', 'desc'));
+        const unsub = onSnapshot(q, snap => {
+            setAllJobs(snap.docs.map(d => ({ id: d.id, ...d.data() } as Job)));
+            setLoadingJobs(false);
+        }, (err) => { console.error(err); setLoadingJobs(false); });
+        return () => unsub();
+    }, [activeTab, userData?.isAdmin]);
+
 
     const suspendedUsers = useMemo(() => allUsers.filter(u => u.isSuspended), [allUsers]);
 
@@ -91,9 +112,17 @@ export default function AdminDashboard() {
         );
     }, [allPosts, postSearch]);
 
+    const filteredJobs = useMemo(() => {
+        const q = jobSearch.toLowerCase().trim();
+        if (!q) return allJobs;
+        return allJobs.filter(j =>
+            j.title?.toLowerCase().includes(q) ||
+            j.company?.toLowerCase().includes(q) ||
+            j.location?.toLowerCase().includes(q)
+        );
+    }, [allJobs, jobSearch]);
+
     const getInstituteName = (id: string) => {
-        // Bug #8 fix: return empty string while institutes haven't loaded yet
-        // to avoid misleading "Unknown Institute" flash on first render
         if (institutes.length === 0) return '';
         return institutes.find(i => i.id === id)?.name || 'Unknown Institute';
     };
@@ -115,6 +144,9 @@ export default function AdminDashboard() {
             if (userToDelete?.email) {
                 await deleteDoc(doc(db, 'approvals', userToDelete.email.toLowerCase().trim()));
             }
+            if (userToDelete?.phone) {
+                await deleteDoc(doc(db, 'approvals', userToDelete.phone.trim()));
+            }
             await deleteDoc(doc(db, 'users', uid));
         } catch (err: unknown) {
             setError((err as { message?: string }).message || 'Failed to delete user.');
@@ -130,6 +162,15 @@ export default function AdminDashboard() {
         }
     };
 
+    const handleDeleteJob = async (jobId: string) => {
+        if (!confirm('Delete this job listing permanently?')) return;
+        try {
+            await deleteDoc(doc(db, 'opportunities', jobId));
+        } catch (err: unknown) {
+            setError((err as { message?: string }).message || 'Failed to delete job.');
+        }
+    };
+
     if (authLoading) {
         return (
             <div className="flex h-[calc(100vh-100px)] items-center justify-center">
@@ -140,94 +181,132 @@ export default function AdminDashboard() {
 
     if (!userData?.isAdmin) return null;
 
-    const tabs: { id: Tab; label: string; icon: React.ReactNode; count?: number }[] = [
+    const tabs: { id: Tab; label: string; icon: React.ReactNode; badge?: number }[] = [
         { id: 'overview', label: 'Overview', icon: <LayoutDashboard className="w-4 h-4" /> },
-        { id: 'users', label: 'Users', icon: <Users className="w-4 h-4" />, count: allUsers.length },
-        { id: 'posts', label: 'Posts', icon: <FileText className="w-4 h-4" />, count: allPosts.length },
-        { id: 'suspended', label: 'Suspended', icon: <ShieldX className="w-4 h-4" />, count: suspendedUsers.length },
+        { id: 'users', label: 'Global Users', icon: <Users className="w-4 h-4" />, badge: allUsers.length },
+        { id: 'posts', label: 'Global Posts', icon: <FileText className="w-4 h-4" />, badge: allPosts.length },
+        { id: 'jobs', label: 'Global Jobs', icon: <Briefcase className="w-4 h-4" />, badge: allJobs.length },
+        { id: 'suspended', label: 'Suspended', icon: <ShieldX className="w-4 h-4" />, badge: suspendedUsers.length },
     ];
 
     return (
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-10 animate-fade-up">
-            {/* Header */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 sm:mb-8">
-                <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 sm:w-14 sm:h-14 bg-gradient-indigo rounded-2xl flex items-center justify-center shadow-lg shadow-brand-burgundy/20 flex-shrink-0">
-                        <Shield className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
+            {/* Dynamic Togglable Ribbon */}
+            <div className={`relative overflow-hidden rounded-3xl mb-8 transition-all duration-500 ease-in-out border border-brand-ebony/5 shadow-xl ${isBannerCollapsed ? 'h-24' : 'h-48 sm:h-64'}`}>
+                {/* Background Gradient */}
+                <div className="absolute inset-0 z-0 bg-gradient-to-br from-brand-ebony to-brand-burgundy dark:from-brand-ebony dark:to-[#3a1a1c]" />
+                <div className="absolute inset-0 bg-[url('/noise.png')] opacity-10 mix-blend-overlay pointer-events-none" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent z-0" />
+
+                {/* Content */}
+                <div className="relative z-10 h-full flex flex-col justify-end p-6 sm:p-8">
+                    <div className="flex items-end justify-between gap-4">
+                        <div className="flex-1 min-w-0">
+                            <div className={`flex items-center gap-3 mb-2 flex-wrap transition-all duration-500 ${isBannerCollapsed ? 'opacity-0 h-0 overflow-hidden' : 'opacity-100'}`}>
+                                <span className="px-3 py-1 bg-brand-gold text-brand-ebony text-[9px] font-black uppercase tracking-widest rounded-full shadow-lg shadow-brand-gold/20">
+                                    Global Super Admin
+                                </span>
+                                <span className="px-3 py-1 bg-indigo-500 text-white text-[9px] font-black uppercase tracking-widest rounded-full shadow-lg shadow-indigo-500/20 animate-pulse">
+                                    System Pulse Live
+                                </span>
+                            </div>
+                            <h1 className={`font-serif font-black text-white leading-tight transition-all duration-500 ${isBannerCollapsed ? 'text-xl' : 'text-3xl sm:text-5xl'}`}>
+                                Alumnest Core Center
+                            </h1>
+                            {!isBannerCollapsed && (
+                                <p className="text-white/70 text-sm sm:text-base mt-2 font-medium max-w-2xl line-clamp-2 animate-in fade-in slide-in-from-left-4 duration-700">
+                                    Welcome back, admin. You have full oversight of all institutes, users, and network activity across the entire platform.
+                                </p>
+                            )}
+                        </div>
+
+                        {/* Toggle Button */}
+                        <button
+                            onClick={() => setIsBannerCollapsed(!isBannerCollapsed)}
+                            className="p-3 bg-white/10 backdrop-blur-md hover:bg-white/20 rounded-2xl transition-all shadow-xl border border-white/20 group mb-1"
+                            title={isBannerCollapsed ? 'Expand Header' : 'Collapse Header'}
+                        >
+                            {isBannerCollapsed ? (
+                                <ChevronDown className="w-5 h-5 text-white group-hover:translate-y-0.5 transition-transform" />
+                            ) : (
+                                <ChevronUp className="w-5 h-5 text-white group-hover:-translate-y-0.5 transition-transform" />
+                            )}
+                        </button>
                     </div>
-                    <div>
-                        <h1 className="text-2xl sm:text-3xl font-serif font-bold text-brand-ebony">Admin Console</h1>
-                        <p className="text-[10px] text-brand-ebony/40 uppercase tracking-[0.2em] font-bold mt-0.5">Global Administration</p>
-                    </div>
-                </div>
-                <div className="flex gap-2 flex-wrap">
-                    <Link
-                        href="/admin/institutes"
-                        className="flex items-center gap-1.5 px-4 py-2 bg-brand-ebony/5 hover:bg-brand-ebony/10 dark:bg-white/5 dark:hover:bg-white/10 rounded-xl text-xs font-bold uppercase tracking-wider text-brand-ebony/60 dark:text-white/60 hover:text-brand-ebony dark:hover:text-white transition-all"
-                    >
-                        <Building2 className="w-3.5 h-3.5" /> Institutes
-                    </Link>
-                    <Link
-                        href="/admin/approvals"
-                        className="flex items-center gap-1.5 px-4 py-2 bg-brand-ebony/5 hover:bg-brand-ebony/10 dark:bg-white/5 dark:hover:bg-white/10 rounded-xl text-xs font-bold uppercase tracking-wider text-brand-ebony/60 dark:text-white/60 hover:text-brand-ebony dark:hover:text-white transition-all"
-                    >
-                        <ShieldCheck className="w-3.5 h-3.5" /> Approvals
-                    </Link>
                 </div>
             </div>
 
             {error && (
-                <div className="mb-4 p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-red-600 text-sm font-medium flex items-center justify-between">
+                <div className="mb-4 p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-red-600 text-sm font-medium flex items-center justify-between animate-in fade-in">
                     <span>{error}</span>
                     <button onClick={() => setError(null)} className="font-bold ml-3 text-red-400 hover:text-red-600">✕</button>
                 </div>
             )}
 
-            {/* Tab Switcher */}
-            <div className="flex gap-1 p-1 bg-brand-ebony/5 dark:bg-white/5 rounded-2xl mb-6 overflow-x-auto scrollbar-hide">
-                {tabs.map(tab => (
-                    <button
-                        key={tab.id}
-                        onClick={() => setActiveTab(tab.id)}
-                        className={`flex items-center gap-1.5 px-3 sm:px-4 py-2.5 rounded-xl text-xs font-bold uppercase tracking-widest transition-all whitespace-nowrap flex-1 justify-center ${
-                            activeTab === tab.id
-                                ? 'bg-white dark:bg-white/10 shadow-sm text-brand-burgundy'
-                                : 'text-brand-ebony/50 dark:text-white/40 hover:text-brand-ebony/70 dark:hover:text-white/60'
-                        }`}
-                    >
-                        {tab.icon}
-                        <span className="hidden xs:inline">{tab.label}</span>
-                        {tab.count !== undefined && tab.count > 0 && (
-                            <span className={`px-1.5 py-0.5 rounded-full text-[9px] font-black ${
-                                activeTab === tab.id ? 'bg-brand-burgundy/10 text-brand-burgundy' : 'bg-brand-ebony/10 dark:bg-white/10 text-brand-ebony/50 dark:text-white/40'
-                            }`}>
-                                {tab.count}
-                            </span>
-                        )}
-                    </button>
-                ))}
+            {/* Dynamic Expanding Navigation Ribbon */}
+            <div className="flex justify-center mb-10 sticky top-4 z-50 px-2">
+                <div className="flex gap-4 p-2 bg-white/60 dark:bg-brand-ebony/40 backdrop-blur-xl rounded-full shadow-2xl border border-white dark:border-white/5 ring-1 ring-brand-ebony/5 transition-all hover:ring-brand-burgundy/20 max-w-full overflow-x-auto scrollbar-hide">
+                    {tabs.map(tab => {
+                        const isActive = activeTab === tab.id;
+                        return (
+                            <button
+                                key={tab.id}
+                                onClick={() => setActiveTab(tab.id)}
+                                className={`flex items-center px-8 py-3 rounded-full text-[10px] font-black uppercase tracking-[0.15em] transition-all duration-700 relative group/tab flex-shrink-0 ${
+                                    isActive 
+                                        ? 'bg-brand-ebony dark:bg-white text-white dark:text-brand-ebony shadow-lg' 
+                                        : 'text-brand-ebony/40 dark:text-white/40 hover:text-brand-ebony/80 hover:bg-brand-ebony/5 dark:hover:bg-white/5'
+                                }`}
+                            >
+                                <div className={`transition-all duration-500 ${isActive ? 'scale-110' : 'group-hover/tab:scale-110 group-hover/tab:text-brand-ebony dark:group-hover/tab:text-white'}`}>
+                                    {tab.icon}
+                                </div>
+                                <span className={`transition-all duration-700 overflow-hidden whitespace-nowrap font-sans ${
+                                    isActive 
+                                        ? 'max-w-[200px] ml-4 opacity-100' 
+                                        : 'max-w-0 opacity-0 group-hover/tab:max-w-[200px] group-hover/tab:ml-4 group-hover/tab:opacity-100'
+                                }`}>
+                                    {tab.label}
+                                </span>
+                                {tab.badge !== undefined && tab.badge > 0 && (
+                                    <span className={`absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 flex items-center justify-center rounded-full text-[8px] font-black border-2 transition-all duration-500 ${
+                                        isActive 
+                                            ? 'bg-brand-burgundy text-white border-brand-burgundy scale-110' 
+                                            : 'bg-brand-ebony/10 dark:bg-white/10 text-brand-ebony dark:text-white border-white dark:border-brand-ebony group-hover/tab:scale-110'
+                                    }`}>
+                                        {tab.badge}
+                                    </span>
+                                )}
+                                {isActive && (
+                                    <div className="absolute bottom-1.5 left-1/2 -translate-x-1/2 w-1 h-1 bg-brand-burgundy rounded-full animate-pulse" />
+                                )}
+                            </button>
+                        );
+                    })}
+                </div>
             </div>
 
             {/* ── OVERVIEW TAB ────────────────────────────────────── */}
             {activeTab === 'overview' && (
                 <div className="space-y-6">
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                    <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
                         {[
-                            { label: 'Total Users', value: allUsers.length, icon: <Users className="w-5 h-5 text-brand-burgundy" />, tab: 'users' as Tab },
-                            { label: 'Suspended', value: suspendedUsers.length, icon: <ShieldX className="w-5 h-5 text-red-500" />, tab: 'suspended' as Tab, alert: suspendedUsers.length > 0 },
-                            { label: 'Total Posts', value: allPosts.length, icon: <FileText className="w-5 h-5 text-indigo-500" />, tab: 'posts' as Tab },
-                            { label: 'Institutes', value: institutes.length, icon: <Building2 className="w-5 h-5 text-amber-600" />, tab: null },
+                            { label: 'Total Users', value: allUsers.length, icon: <Users className="w-5 h-5 text-indigo-500" />, tab: 'users' as Tab, color: 'bg-indigo-50 dark:bg-indigo-900/20' },
+                            { label: 'Suspended', value: suspendedUsers.length, icon: <ShieldX className="w-5 h-5 text-red-600" />, tab: 'suspended' as Tab, color: 'bg-red-50 dark:bg-red-900/20', alert: suspendedUsers.length > 0 },
+                            { label: 'Total Posts', value: allPosts.length, icon: <FileText className="w-5 h-5 text-brand-ebony/70" />, tab: 'posts' as Tab, color: 'bg-brand-ebony/5' },
+                            { label: 'Total Jobs', value: allJobs.length, icon: <Briefcase className="w-5 h-5 text-amber-700" />, tab: 'jobs' as Tab, color: 'bg-amber-50 dark:bg-amber-900/20' },
+                            { label: 'Institutes', value: institutes.length, icon: <Building2 className="w-5 h-5 text-emerald-600" />, tab: null, color: 'bg-emerald-50 dark:bg-emerald-900/20' },
                         ].map(stat => (
                             <button
                                 key={stat.label}
                                 onClick={() => stat.tab && setActiveTab(stat.tab)}
-                                className={`card-premium p-4 sm:p-5 flex flex-col items-center text-center transition-all ${stat.tab ? 'cursor-pointer group hover:shadow-lg' : 'cursor-default'} ${stat.alert ? 'border-red-300/40' : ''}`}
+                                className={`card-premium p-4 sm:p-5 flex flex-col items-center text-center transition-all ${stat.tab ? 'cursor-pointer group hover:shadow-lg' : 'cursor-default'} ${stat.alert ? 'border-red-300/40 shadow-sm shadow-red-500/5' : ''}`}
                             >
-                                <div className={`w-10 h-10 rounded-full flex items-center justify-center mb-2 group-hover:scale-110 transition-transform ${stat.alert ? 'bg-red-500/10' : 'bg-brand-ebony/5'}`}>
+                                <div className={`w-10 h-10 rounded-full flex items-center justify-center mb-2 group-hover:scale-110 transition-transform ${stat.color}`}>
                                     {stat.icon}
                                 </div>
-                                <p className="text-2xl font-serif font-bold text-brand-ebony dark:text-white">
-                                    {loadingUsers ? '—' : stat.value}
+                                <p className={`text-2xl font-serif font-bold ${stat.alert ? 'text-red-600' : 'text-brand-ebony dark:text-white'}`}>
+                                    {loadingUsers || loadingPosts || loadingJobs ? <Loader2 className="w-4 h-4 animate-spin text-brand-ebony/20 mx-auto" /> : stat.value}
                                 </p>
                                 <p className="text-[9px] font-black uppercase tracking-wider text-brand-ebony/40 dark:text-white/40 mt-0.5">{stat.label}</p>
                                 {stat.tab && <p className="text-[9px] text-brand-burgundy/50 font-bold uppercase tracking-wider mt-1.5 opacity-0 group-hover:opacity-100 transition-opacity">View →</p>}
@@ -238,24 +317,24 @@ export default function AdminDashboard() {
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <Link href="/admin/institutes" className="card-premium p-5 flex items-center justify-between group hover:shadow-md transition-all">
                             <div className="flex items-center gap-4">
-                                <div className="w-10 h-10 rounded-xl bg-gradient-indigo flex items-center justify-center flex-shrink-0">
-                                    <Building2 className="w-5 h-5 text-white" />
+                                <div className="w-12 h-12 rounded-xl bg-gradient-indigo flex items-center justify-center flex-shrink-0 shadow-sm">
+                                    <Building2 className="w-6 h-6 text-white" />
                                 </div>
                                 <div>
-                                    <p className="font-bold text-brand-ebony dark:text-white text-sm">Manage Institutes</p>
-                                    <p className="text-xs text-brand-ebony/50 dark:text-white/40">Add, rename, delete organizations</p>
+                                    <p className="font-bold text-brand-ebony dark:text-white text-sm group-hover:text-indigo-500 transition-colors">Manage Institutes</p>
+                                    <p className="text-xs text-brand-ebony/50 dark:text-white/40 mt-0.5">Add, rename, delete organizations globally</p>
                                 </div>
                             </div>
-                            <ChevronRight className="w-4 h-4 text-brand-ebony/30 group-hover:text-brand-burgundy group-hover:translate-x-1 transition-all flex-shrink-0" />
+                            <ChevronRight className="w-4 h-4 text-brand-ebony/30 group-hover:text-indigo-500 group-hover:translate-x-1 transition-all flex-shrink-0" />
                         </Link>
                         <Link href="/admin/approvals" className="card-premium p-5 flex items-center justify-between group hover:shadow-md transition-all">
                             <div className="flex items-center gap-4">
-                                <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center flex-shrink-0">
-                                    <ShieldCheck className="w-5 h-5 text-emerald-600" />
+                                <div className="w-12 h-12 rounded-xl bg-brand-burgundy flex items-center justify-center flex-shrink-0 shadow-sm">
+                                    <ShieldCheck className="w-6 h-6 text-white" />
                                 </div>
                                 <div>
-                                    <p className="font-bold text-brand-ebony dark:text-white text-sm">Access Control</p>
-                                    <p className="text-xs text-brand-ebony/50 dark:text-white/40">Whitelist emails for signup</p>
+                                    <p className="font-bold text-brand-ebony dark:text-white text-sm group-hover:text-brand-burgundy transition-colors">Access Control (Whitelisting)</p>
+                                    <p className="text-xs text-brand-ebony/50 dark:text-white/40 mt-0.5">Pre-approve emails and mobile numbers</p>
                                 </div>
                             </div>
                             <ChevronRight className="w-4 h-4 text-brand-ebony/30 group-hover:text-brand-burgundy group-hover:translate-x-1 transition-all flex-shrink-0" />
@@ -269,8 +348,8 @@ export default function AdminDashboard() {
                 <div className="card-premium overflow-hidden">
                     <div className="p-4 sm:p-6 border-b border-brand-ebony/10 dark:border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                         <div>
-                            <h2 className="text-lg font-serif font-bold text-brand-ebony dark:text-white">All Users</h2>
-                            <p className="text-xs text-brand-ebony/50 dark:text-white/40 mt-0.5">{allUsers.length} registered accounts</p>
+                            <h2 className="text-lg font-serif font-bold text-brand-ebony dark:text-white">Global User Directory</h2>
+                            <p className="text-xs text-brand-ebony/50 dark:text-white/40 mt-0.5">{allUsers.length} total registered accounts</p>
                         </div>
                         <div className="relative">
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-brand-ebony/30 dark:text-white/30" />
@@ -310,15 +389,17 @@ export default function AdminDashboard() {
                                                     <span className="px-2 py-0.5 bg-red-500/10 text-red-600 text-[9px] font-black uppercase tracking-wider rounded-full border border-red-500/20">Suspended</span>
                                                 )}
                                                 {u.isAdmin && (
-                                                    <span className="px-2 py-0.5 bg-purple-500/10 text-purple-600 text-[9px] font-black uppercase tracking-wider rounded-full border border-purple-500/20">Admin</span>
+                                                    <span className="px-2 py-0.5 bg-brand-gold/10 text-brand-gold text-[9px] font-black uppercase tracking-wider rounded-full border border-brand-gold/20">Super Admin</span>
                                                 )}
-                                                {u.isinsadmin && (
+                                                {u.isinsadmin && !u.isAdmin && (
                                                     <span className="px-2 py-0.5 bg-indigo-500/10 text-indigo-600 text-[9px] font-black uppercase tracking-wider rounded-full border border-indigo-500/20">Inst. Admin</span>
                                                 )}
                                             </div>
                                             <p className="text-xs text-brand-ebony/50 dark:text-white/40 truncate">{u.email}</p>
                                             <p className="text-[10px] font-mono text-brand-ebony/30 dark:text-white/30 mt-0.5">UID: {u.uid}</p>
-                                            <p className="text-[10px] text-brand-ebony/40 dark:text-white/30">{u.instituteName || getInstituteName(u.instituteId)} • Class of {u.batch}</p>
+                                            <p className="text-[10px] text-brand-ebony/40 dark:text-white/30 mt-1">
+                                                <span className="font-bold">{u.instituteName || getInstituteName(u.instituteId)}</span> • Class of {u.batch}
+                                            </p>
                                         </div>
                                     </div>
                                     <div className="flex gap-2 flex-shrink-0 self-end sm:self-center flex-wrap">
@@ -351,7 +432,7 @@ export default function AdminDashboard() {
                 <div className="card-premium overflow-hidden">
                     <div className="p-4 sm:p-6 border-b border-brand-ebony/10 dark:border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                         <div>
-                            <h2 className="text-lg font-serif font-bold text-brand-ebony dark:text-white">All Posts</h2>
+                            <h2 className="text-lg font-serif font-bold text-brand-ebony dark:text-white">Global Posts</h2>
                             <p className="text-xs text-brand-ebony/50 dark:text-white/40 mt-0.5">{allPosts.length} posts across all institutes</p>
                         </div>
                         <div className="relative">
@@ -388,13 +469,72 @@ export default function AdminDashboard() {
                                         </div>
                                         <p className="text-sm text-brand-ebony/70 dark:text-white/60 line-clamp-2">{post.content}</p>
                                         {post.mediaUrl && (
-                                            <span className="inline-block mt-1.5 text-[10px] font-bold text-brand-burgundy/60 uppercase tracking-wider">📎 Has attachment</span>
+                                            <span className="inline-block mt-1.5 text-[10px] font-bold text-indigo-500/80 uppercase tracking-wider">📎 Has attachment</span>
                                         )}
-                                        <p className="text-[10px] font-mono text-brand-ebony/20 dark:text-white/20 mt-1 truncate">ID: {post.id}</p>
+                                        <p className="text-[10px] font-mono text-brand-ebony/20 dark:text-white/20 mt-1.5 truncate">ID: {post.id}</p>
                                     </div>
                                     <button
                                         onClick={() => handleDeletePost(post.id)}
-                                        className="flex items-center gap-1.5 px-3 py-2 bg-red-500/10 text-red-500 hover:bg-red-500/20 rounded-xl text-xs font-bold uppercase tracking-wider transition-all flex-shrink-0 border border-red-500/20"
+                                        className="flex items-center gap-1.5 px-3 py-2 bg-red-500/10 text-red-500 hover:bg-red-500/20 rounded-xl text-xs font-bold uppercase tracking-wider transition-all flex-shrink-0 border border-red-500/20 sm:opacity-0 sm:group-hover:opacity-100"
+                                    >
+                                        <Trash2 className="w-3.5 h-3.5" /> Delete
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            )}
+
+            {/* ── JOBS TAB ────────────────────────────────────────── */}
+            {activeTab === 'jobs' && (
+                <div className="card-premium overflow-hidden">
+                    <div className="p-4 sm:p-6 border-b border-brand-ebony/10 dark:border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div>
+                            <h2 className="text-lg font-serif font-bold text-brand-ebony dark:text-white">Global Job Listings</h2>
+                            <p className="text-xs text-brand-ebony/50 dark:text-white/40 mt-0.5">{allJobs.length} listings across all institutes</p>
+                        </div>
+                        <div className="relative">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-brand-ebony/30 dark:text-white/30" />
+                            <input
+                                type="text"
+                                placeholder="Search jobs…"
+                                value={jobSearch}
+                                onChange={e => setJobSearch(e.target.value)}
+                                className="pl-9 pr-4 py-2.5 bg-brand-ebony/5 dark:bg-white/5 border border-brand-ebony/10 dark:border-white/10 rounded-xl text-sm outline-none focus:ring-2 focus:ring-brand-burgundy/20 w-full sm:w-64 text-brand-ebony dark:text-white"
+                            />
+                        </div>
+                    </div>
+
+                    {loadingJobs ? (
+                        <div className="p-12 text-center"><Loader2 className="w-8 h-8 animate-spin mx-auto text-brand-burgundy/30" /></div>
+                    ) : filteredJobs.length === 0 ? (
+                        <div className="p-12 text-center text-brand-ebony/40 dark:text-white/30 text-sm font-bold uppercase tracking-widest">
+                            {jobSearch ? 'No jobs match your search' : 'No jobs found'}
+                        </div>
+                    ) : (
+                        <div className="divide-y divide-brand-ebony/5 dark:divide-white/5">
+                            {filteredJobs.map(job => (
+                                <div key={job.id} className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-start justify-between gap-4 hover:bg-brand-ebony/[0.02] dark:hover:bg-white/[0.02] transition group">
+                                    <div className="min-w-0 flex-1">
+                                        <div className="flex items-center gap-2 mb-1 flex-wrap">
+                                            <p className="font-bold text-sm text-brand-ebony dark:text-white">{job.title}</p>
+                                            <span className="px-2 py-0.5 bg-amber-500/10 text-amber-700 dark:text-amber-400 text-[9px] font-black uppercase tracking-wider rounded-full border border-amber-500/20">
+                                                {job.type}
+                                            </span>
+                                            <span className="px-2 py-0.5 bg-brand-ebony/5 dark:bg-white/5 text-brand-ebony/50 dark:text-white/40 text-[9px] font-bold uppercase tracking-wider rounded-full">
+                                                {getInstituteName(job.instituteId)}
+                                            </span>
+                                        </div>
+                                        <p className="text-xs text-brand-ebony/60 dark:text-white/40">{job.company}{job.location ? ` · ${job.location}` : ''}</p>
+                                        <p className="text-[10px] text-brand-ebony/40 dark:text-white/30 mt-1 uppercase tracking-wider">
+                                            Posted by {job.postedByName}
+                                        </p>
+                                        <p className="text-[10px] font-mono text-brand-ebony/20 dark:text-white/20 mt-1.5 truncate">ID: {job.id}</p>
+                                    </div>
+                                    <button
+                                        onClick={() => handleDeleteJob(job.id)}
+                                        className="flex items-center gap-1.5 px-3 py-2 bg-red-500/10 text-red-500 hover:bg-red-500/20 rounded-xl text-xs font-bold uppercase tracking-wider transition-all flex-shrink-0 border border-red-500/20 sm:opacity-0 sm:group-hover:opacity-100"
                                     >
                                         <Trash2 className="w-3.5 h-3.5" /> Delete
                                     </button>
@@ -410,14 +550,14 @@ export default function AdminDashboard() {
                 <div className="card-premium overflow-hidden">
                     <div className="p-4 sm:p-6 border-b border-brand-ebony/10 dark:border-white/10">
                         <h2 className="text-lg font-serif font-bold text-brand-ebony dark:text-white">Suspended Accounts</h2>
-                        <p className="text-xs text-brand-ebony/50 dark:text-white/40 mt-0.5">{suspendedUsers.length} suspended {suspendedUsers.length === 1 ? 'account' : 'accounts'}</p>
+                        <p className="text-xs text-brand-ebony/50 dark:text-white/40 mt-0.5">{suspendedUsers.length} globally suspended {suspendedUsers.length === 1 ? 'account' : 'accounts'}</p>
                     </div>
 
                     {loadingUsers ? (
                         <div className="p-12 text-center"><Loader2 className="w-8 h-8 animate-spin mx-auto text-brand-burgundy/30" /></div>
                     ) : suspendedUsers.length === 0 ? (
                         <div className="p-12 sm:p-20 text-center">
-                            <div className="w-16 h-16 bg-emerald-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <div className="w-16 h-16 bg-emerald-500/10 rounded-full flex items-center justify-center mx-auto mb-4 border border-emerald-500/20">
                                 <UserCheck className="w-8 h-8 text-emerald-500" />
                             </div>
                             <p className="text-brand-ebony/40 dark:text-white/30 text-sm font-bold uppercase tracking-widest">No suspended accounts</p>
@@ -439,7 +579,7 @@ export default function AdminDashboard() {
                                                 UID: {u.uid}
                                             </code>
                                             <p className="text-[10px] text-brand-ebony/40 dark:text-white/30 mt-1">
-                                                {u.instituteName || getInstituteName(u.instituteId)} • Class of {u.batch}
+                                                <span className="font-bold">{u.instituteName || getInstituteName(u.instituteId)}</span> • Class of {u.batch}
                                             </p>
                                         </div>
                                     </div>

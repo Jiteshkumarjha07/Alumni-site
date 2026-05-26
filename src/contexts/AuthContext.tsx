@@ -7,7 +7,8 @@ import {
     signInWithEmailAndPassword,
     createUserWithEmailAndPassword,
     signOut as firebaseSignOut,
-    sendPasswordResetEmail
+    sendPasswordResetEmail,
+    sendEmailVerification
 } from 'firebase/auth';
 import { doc, setDoc, onSnapshot, updateDoc, serverTimestamp, collection, query, where } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
@@ -213,6 +214,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
             await setDoc(doc(db, 'users', credential.user.uid), userDoc);
 
+            // Send email verification
+            await sendEmailVerification(credential.user);
         } catch (err: unknown) {
             console.error('Sign up error details:', {
                 error: err,

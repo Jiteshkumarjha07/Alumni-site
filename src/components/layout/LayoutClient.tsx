@@ -13,7 +13,7 @@ import { MobileHeader } from './MobileHeader';
 import { BrandHeader } from './BrandHeader';
 import { SocialRibbon } from './SocialRibbon';
 import { useUI } from '@/contexts/UIContext';
-import { ShieldOff } from 'lucide-react';
+import { ShieldOff, MailWarning } from 'lucide-react';
 
 const variants: Variants = {
     initial: (direction: number) => ({
@@ -40,7 +40,7 @@ const variants: Variants = {
 
 export function LayoutClient({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
-    const { userData, signOut } = useAuth();
+    const { user, userData, signOut } = useAuth();
     const { isFocusMode, focusType } = useUI();
     
     const [isMobile, setIsMobile] = React.useState(false);
@@ -87,6 +87,51 @@ export function LayoutClient({ children }: { children: React.ReactNode }) {
                     >
                         Sign Out
                     </button>
+                </div>
+            </div>
+        );
+    }
+
+    // ── Email Verification wall ──────────────────────────────────────────────
+    // Enforce email verification only for newly created accounts to avoid locking out existing users
+    const [isCheckingEmail, setIsCheckingEmail] = React.useState(true);
+    const [needsVerification, setNeedsVerification] = React.useState(false);
+
+    React.useEffect(() => {
+        if (user && !user.emailVerified) {
+            // Check if account was created after May 26 2026
+            const creationTime = new Date(user.metadata.creationTime || 0);
+            const enforceFrom = new Date('2026-05-26T00:00:00Z');
+            if (creationTime > enforceFrom) {
+                setNeedsVerification(true);
+            }
+        } else {
+            setNeedsVerification(false);
+        }
+        setIsCheckingEmail(false);
+    }, [user]);
+
+    if (!isCheckingEmail && needsVerification) {
+        return (
+            <div className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-gradient-to-br from-brand-cream to-brand-parchment p-8">
+                <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-brand-burgundy rounded-full mix-blend-multiply filter blur-[160px] opacity-10 animate-pulse-subtle" />
+                <div className="max-w-md w-full text-center animate-fade-up">
+                    <div className="w-20 h-20 bg-amber-500/10 border-2 border-amber-500/20 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-xl">
+                        <MailWarning className="w-10 h-10 text-amber-500" />
+                    </div>
+                    <h1 className="text-3xl font-serif font-extrabold text-brand-ebony mb-3">Verify Your Email</h1>
+                    <p className="text-brand-ebony/60 text-sm font-medium leading-relaxed mb-8">
+                        We sent a verification link to your email address.<br />
+                        Please verify your email to access Alumnest.
+                    </p>
+                    <div className="flex gap-4 justify-center">
+                        <button
+                            onClick={() => signOut()}
+                            className="px-8 py-3.5 bg-brand-ebony text-white rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-brand-burgundy transition-all active:scale-95"
+                        >
+                            Sign Out
+                        </button>
+                    </div>
                 </div>
             </div>
         );
