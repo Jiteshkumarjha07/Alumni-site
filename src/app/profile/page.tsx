@@ -689,15 +689,7 @@ export default function ProfilePage() {
 
             {/* ── Advanced Actions (Mobile Replacement for Sidebar) ── */}
             <div className="mt-12 space-y-3 mx-1 sm:mx-0">
-                {userData?.isAdmin && (
-                    <Link
-                        href="/admin/approvals"
-                        className="w-full flex items-center justify-center gap-2 py-4 bg-brand-burgundy/10 hover:bg-brand-burgundy/20 rounded-2xl transition-all text-brand-burgundy active:scale-95 text-[11px] font-black uppercase tracking-[0.2em]"
-                    >
-                        <ShieldCheck className="w-4 h-4" />
-                        System Control
-                    </Link>
-                )}
+
                 <button
                     onClick={() => setShowLogoutConfirm(true)}
                     className="w-full py-4 flex items-center justify-center gap-2 text-red-500/70 hover:text-red-500 hover:bg-red-500/10 rounded-2xl transition-all text-[11px] font-black uppercase tracking-[0.2em] active:scale-95 border border-red-500/10"
