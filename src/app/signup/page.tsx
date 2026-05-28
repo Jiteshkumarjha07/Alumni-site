@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { collection, getDocs, getDoc, doc, query, where } from 'firebase/firestore';
+import { collection, getDocs, getDoc, doc, query, where, limit } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
@@ -126,7 +126,7 @@ export default function SignUpPage() {
                     approvalData = directDoc.data();
                 } else {
                     // Fallback: query for phone field (phone was added alongside an email-keyed doc)
-                    const phoneQuery = query(collection(db, 'approvals'), where('phone', '==', phoneClean));
+                    const phoneQuery = query(collection(db, 'approvals'), where('phone', '==', phoneClean), limit(1));
                     const phoneSnap = (await Promise.race([getDocs(phoneQuery), timeoutPromise])) as any;
 
                     if (!phoneSnap.empty) {

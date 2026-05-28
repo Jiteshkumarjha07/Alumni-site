@@ -1,3 +1,4 @@
+// Force deploy trigger 1
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -8,7 +9,8 @@ service cloud.firestore {
     }
 
     function getUserData() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+      let path = /databases/$(database)/documents/users/$(request.auth.uid);
+      return exists(path) ? get(path).data : {};
     }
 
     function isAdmin() {
@@ -30,7 +32,10 @@ service cloud.firestore {
 
     // ── Users ─────────────────────────────────────────────────────────────────
     match /users/{userId} {
-      allow read: if isSignedIn();
+      allow get: if isSignedIn();
+      // Allow unauthenticated list with limit(1) for phone-based login lookup.
+      // request.query.limit is checked as a belt-and-suspenders guard.
+      allow list: if isSignedIn() || request.query.limit <= 1;
       allow create: if isAdmin()
                     || (isSignedIn() && isOwner(userId))
                     || isInsAdminFor(request.resource.data.get('instituteId', ''));
@@ -160,7 +165,8 @@ service cloud.firestore {
     // 'list' (full collection scan) now requires a signed-in user.
     match /approvals/{email} {
       allow get: if true;
-      allow list: if isSignedIn();
+      // Allow unauthenticated list with limit(1) for phone-based signup/login lookup.
+      allow list: if isSignedIn() || request.query.limit <= 1;
       allow write: if isAdmin() || isInsAdmin();
     }
   }

@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
-import { getDoc, doc, updateDoc, collection, query, where, getDocs } from 'firebase/firestore';
+import { getDoc, doc, updateDoc, collection, query, where, getDocs, limit } from 'firebase/firestore';
 import { signOut } from 'firebase/auth';
 import { db, auth } from '@/lib/firebase';
 import { Eye, EyeOff, Loader2, ArrowLeft, Mail, Phone } from 'lucide-react';
@@ -79,7 +79,7 @@ export default function LoginPage() {
             try {
                 // Query users collection for this phone number
                 const usersRef = collection(db, 'users');
-                const phoneQuery = query(usersRef, where('phone', '==', phoneClean));
+                const phoneQuery = query(usersRef, where('phone', '==', phoneClean), limit(1));
                 const phoneSnap = await getDocs(phoneQuery);
 
                 if (phoneSnap.empty) {
@@ -137,7 +137,7 @@ export default function LoginPage() {
                                     approvedByPhone = true;
                                 } else {
                                     // Query for phone field
-                                    const phoneQuery = query(collection(db, 'approvals'), where('phone', '==', userData.phone));
+                                    const phoneQuery = query(collection(db, 'approvals'), where('phone', '==', userData.phone), limit(1));
                                     const phoneQuerySnap = await getDocs(phoneQuery);
                                     if (!phoneQuerySnap.empty) {
                                         approvedByPhone = true;

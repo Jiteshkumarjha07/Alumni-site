@@ -72,6 +72,20 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             };
 
             if (firebaseUser) {
+                // Validate the auth token before making any Firestore calls.
+                // onAuthStateChanged can fire with a cached user whose token is
+                // expired/revoked. Force a refresh to ensure Firestore will accept it.
+                try {
+                    await firebaseUser.getIdToken(true);
+                } catch (tokenErr) {
+                    console.error('Token refresh FAILED — stale session, signing out:', tokenErr);
+                    setUser(null);
+                    setUserData(null);
+                    setLoading(false);
+                    await firebaseSignOut(auth).catch(() => {});
+                    return;
+                }
+
                 setUser(firebaseUser);
                 updatePresence(true);
 
@@ -104,22 +118,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                     if (docSnapshot.exists()) {
                         const data = docSnapshot.data() as User;
 
-                        // ── Suspension check ─────────────────────────────
-                        // If an admin suspends this account by setting isSuspended:true,
-                        // this listener fires immediately and we force-sign them out.
-                        // Bug #1 fix: clear user state BEFORE calling signOut to prevent
-                        // a brief window where user is set but userData is null.
                         if (data.isSuspended) {
                             setUser(null);
                             setUserData(null);
                             setLoading(false);
-                            firebaseSignOut(auth); // async — called last so state is cleared first
+                            firebaseSignOut(auth);
                             return;
                         }
 
                         setUserData({ ...data });
 
-                        // Passive sync for case-insensitive search
                         if (data.name && !data.nameLowercase) {
                             updateDoc(doc(db, 'users', firebaseUser.uid), {
                                 nameLowercase: data.name.toLowerCase()
@@ -145,6 +153,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                 if (unsubscribeUser) {
                     unsubscribeUser();
                     unsubscribeUser = null;
+                }
+                if (unsubscribeSuspensions) {
+                    unsubscribeSuspensions();
+                    unsubscribeSuspensions = null;
                 }
             }
         });
