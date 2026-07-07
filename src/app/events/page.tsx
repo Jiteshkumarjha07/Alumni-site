@@ -43,7 +43,28 @@ export default function EventsPage() {
                 id: doc.id,
                 ...doc.data()
             })) as Event[];
-            setEvents(fetchedEvents);
+
+            // Parse 'YYYY-MM-DD' as a LOCAL date (avoid UTC off-by-one); null if invalid.
+            const parse = (s?: string) => {
+                const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s || '');
+                const d = m ? new Date(+m[1], +m[2] - 1, +m[3]) : new Date(s || '');
+                return isNaN(d.getTime()) ? null : d;
+            };
+            const startOfToday = new Date();
+            startOfToday.setHours(0, 0, 0, 0);
+
+            // Hide events that have already passed, and show soonest first (events with an
+            // unparseable/missing date are kept and sorted last so nothing silently disappears).
+            const upcoming = fetchedEvents
+                .filter(e => { const d = parse(e.date); return !d || d >= startOfToday; })
+                .sort((a, b) => {
+                    const da = parse(a.date), dbb = parse(b.date);
+                    if (!da && !dbb) return 0;
+                    if (!da) return 1;
+                    if (!dbb) return -1;
+                    return da.getTime() - dbb.getTime();
+                });
+            setEvents(upcoming);
             setLoading(false);
         }, (err) => {
             console.error('Error fetching events:', err);

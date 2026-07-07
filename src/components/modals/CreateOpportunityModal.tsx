@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { X, Briefcase, MapPin, Calendar, Clock, Sparkles, Send, Loader2, Check, ChevronDown } from 'lucide-react';
+import { useEscapeKey } from '@/hooks/useEscapeKey';
 import { Portal } from '../ui/Portal';
 import { EmojiPicker } from '../ui/EmojiPicker';
 
@@ -38,6 +39,8 @@ export const CreateOpportunityModal: React.FC<CreateOpportunityModalProps> = ({
         expiryDate: '',
         isPermanent: false,
     });
+
+    useEscapeKey(isOpen, onClose);
 
     if (!isOpen) return null;
 

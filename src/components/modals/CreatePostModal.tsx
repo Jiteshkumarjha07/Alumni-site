@@ -1,8 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { X, Image as ImageIcon, Loader2, Send, Sparkles, Video, FileText, File as FileIcon } from 'lucide-react';
 import { uploadMedia, uploadVideo, uploadFile } from '@/lib/media';
+import { useEscapeKey } from '@/hooks/useEscapeKey';
 import { Portal } from '../ui/Portal';
 import { EmojiPicker } from '../ui/EmojiPicker';
 import { EmojiRenderer } from '../ui/EmojiRenderer';
@@ -35,6 +36,20 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
     const [content, setContent] = useState('');
     const [selectedFiles, setSelectedFiles] = useState<{ file: File, type: 'image' | 'video' | 'file', preview?: string }[]>([]);
     const [loading, setLoading] = useState(false);
+
+    // Escape closes the modal.
+    useEscapeKey(isOpen, onClose);
+
+    // On close: revoke preview object URLs and clear the draft, so reopening starts fresh
+    // and blob URLs don't leak. (Runs on the isOpen transition, using the files present then.)
+    useEffect(() => {
+        if (!isOpen) {
+            selectedFiles.forEach(f => { if (f.preview) URL.revokeObjectURL(f.preview); });
+            setSelectedFiles([]);
+            setContent('');
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isOpen]);
 
     if (!isOpen) return null;
 

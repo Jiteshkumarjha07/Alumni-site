@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { collection, query, orderBy, onSnapshot, addDoc, updateDoc, deleteDoc, doc, serverTimestamp, arrayUnion, arrayRemove, where } from 'firebase/firestore';
+import { collection, query, orderBy, onSnapshot, addDoc, updateDoc, deleteDoc, doc, serverTimestamp, arrayUnion, arrayRemove, where, limit } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { Post, Comment as AppComment } from '@/types';
 import { PostCard } from '@/components/feed/PostCard';
@@ -110,7 +110,9 @@ export default function HomePage() {
   const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(false);
   const { setFocusMode } = useUI();
   const [newPostCount, setNewPostCount] = useState(0);
+  const [feedLimit, setFeedLimit] = useState(25);
   const isFirstLoad = useRef(true);
+  const prevCountRef = useRef(0);
 
   // Fetch posts from Firebase
   useEffect(() => {
@@ -122,14 +124,19 @@ export default function HomePage() {
     // Instantly clear the feed when `instituteId` changes to prevent visual bleed from previous institute
     setPosts([]);
     setLoading(true);
+    // Reset the "new posts" baseline on every (re)subscribe — so switching institute or
+    // loading more doesn't get miscounted as newly-arrived posts.
+    isFirstLoad.current = true;
+    prevCountRef.current = 0;
 
     const postsQuery = query(
       collection(db, 'posts'),
       where('instituteId', '==', userData.instituteId),
-      orderBy('createdAt', 'desc')
+      orderBy('createdAt', 'desc'),
+      limit(feedLimit)
     );
 
-    const unsubscribe = onSnapshot(postsQuery, 
+    const unsubscribe = onSnapshot(postsQuery,
       (snapshot) => {
         const fetchedPosts = snapshot.docs.map(doc => ({
           id: doc.id,
@@ -141,9 +148,10 @@ export default function HomePage() {
           isFirstLoad.current = false;
           setNewPostCount(0);
         } else {
-          // Subsequent updates — count increments
-          setNewPostCount(prev => prev + Math.max(0, fetchedPosts.length - posts.length));
+          // Count only the genuine delta vs the previous snapshot (ref, not a stale closure).
+          setNewPostCount(prev => prev + Math.max(0, fetchedPosts.length - prevCountRef.current));
         }
+        prevCountRef.current = fetchedPosts.length;
 
         setPosts(fetchedPosts);
         setLoading(false);
@@ -155,7 +163,7 @@ export default function HomePage() {
     );
 
     return () => unsubscribe();
-  }, [userData?.instituteId]); // Explicitly depend ONLY on changes in instituteId
+  }, [userData?.instituteId, feedLimit]); // Re-subscribe on institute change or "load more"
 
   const handleCreatePost = async (
     content: string, 
@@ -551,6 +559,17 @@ export default function HomePage() {
             </div>
           );
           })()}
+
+          {posts.length >= feedLimit && (
+            <div className="flex justify-center pt-2">
+              <button
+                onClick={() => setFeedLimit(l => l + 25)}
+                className="px-6 py-2.5 rounded-2xl font-bold text-[11px] tracking-widest uppercase bg-white/70 dark:bg-brand-parchment/10 text-brand-burgundy border border-brand-burgundy/20 hover:bg-brand-burgundy/5 active:scale-[0.97] transition-all shadow-sm"
+              >
+                Load more posts
+              </button>
+            </div>
+          )}
         </div>
       </div>
 

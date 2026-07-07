@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { X, ShieldAlert, AlertTriangle, Info } from 'lucide-react';
+import { useEscapeKey } from '@/hooks/useEscapeKey';
 
 interface ConfirmDialogProps {
     isOpen: boolean;
@@ -30,6 +31,8 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
     cancelText = 'Cancel',
     variant = 'danger',
 }) => {
+    useEscapeKey(isOpen, onClose);
+
     if (!isOpen) return null;
 
     const variantStyles = {

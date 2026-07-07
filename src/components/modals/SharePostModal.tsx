@@ -31,9 +31,13 @@ export function SharePostModal({ isOpen, onClose, post, currentUser }: SharePost
         setLoading(true);
         try {
             const usersRef = collection(db, 'users');
-            const q = query(usersRef, where('uid', 'in', currentUser.connections.slice(0, 10)));
-            const snapshot = await getDocs(q);
-            const fetchedConnections = snapshot.docs.map(doc => doc.data() as User);
+            // Firestore 'in' takes at most 10 values, so chunk connections into batches of 10
+            // and merge — otherwise users with >10 connections could only share to the first 10.
+            const ids = currentUser.connections;
+            const chunks: string[][] = [];
+            for (let i = 0; i < ids.length; i += 10) chunks.push(ids.slice(i, i + 10));
+            const snaps = await Promise.all(chunks.map(c => getDocs(query(usersRef, where('uid', 'in', c)))));
+            const fetchedConnections = snaps.flatMap(s => s.docs.map(d => d.data() as User));
             setConnections(fetchedConnections);
         } catch (error) {
             console.error('Error fetching connections:', error);

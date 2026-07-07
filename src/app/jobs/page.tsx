@@ -34,11 +34,14 @@ export default function JobsPage() {
             return;
         }
 
+        // Fetch a large recent window (permanent jobs have no expiresAt so a server-side
+        // expiry filter can't be used) and filter active ones client-side below. limit(100)
+        // keeps reads bounded while ensuring active jobs aren't hidden behind the newest 20.
         const jobsQuery = query(
             collection(db, 'opportunities'),
             where('instituteId', '==', userData.instituteId),
             orderBy('createdAt', 'desc'),
-            limit(20)
+            limit(100)
         );
 
         const unsubscribe = onSnapshot(jobsQuery, (snapshot) => {

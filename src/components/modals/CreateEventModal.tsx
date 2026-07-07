@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { X, Calendar, MapPin, AlignLeft, Image as ImageIcon, Sparkles, Upload, Loader2, Check } from 'lucide-react';
+import { useEscapeKey } from '@/hooks/useEscapeKey';
 import { Portal } from '../ui/Portal';
 import { EmojiPicker } from '../ui/EmojiPicker';
 
@@ -33,6 +34,8 @@ export const CreateEventModal: React.FC<CreateEventModalProps> = ({
         imageFile: null,
     });
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+
+    useEscapeKey(isOpen, onClose);
 
     if (!isOpen) return null;
 
