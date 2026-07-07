@@ -88,13 +88,13 @@ export function CreateGroupModal({ isOpen, onClose, currentUser, onGroupCreated 
 
             const groupRef = await addDoc(collection(db, 'groups'), groupData);
 
-            // Update all members' groups array
-            for (const uid of memberIds) {
-                const userRef = doc(db, 'users', uid);
-                await updateDoc(userRef, {
-                    groups: arrayUnion(groupRef.id)
-                });
-            }
+            // Best-effort mirror of the group id onto each member's `groups` array.
+            // The group's `members` array is the real source of truth (ChatList queries by it),
+            // and security rules only reliably permit the creator to write their own doc, so
+            // we must NOT fail group creation if a co-member's update is rejected.
+            await Promise.allSettled(
+                memberIds.map(uid => updateDoc(doc(db, 'users', uid), { groups: arrayUnion(groupRef.id) }))
+            );
 
             onGroupCreated(groupRef.id);
             onClose();

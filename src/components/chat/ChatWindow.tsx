@@ -170,7 +170,7 @@ export function ChatWindow({ chatId, currentUser, otherUser, isGroup = false, gr
                         participants: [currentUser.uid, otherUser.uid],
                         lastMessage: '🎙️ Voice message',
                         lastMessageAt: serverTimestamp(),
-                        [`unreadCount.${otherUser.uid}`]: 1,
+                        unreadCount: { [otherUser.uid]: increment(1) },
                         participantDetails: {
                             [currentUser.uid]: { name: currentUser.name, profilePic: currentUser.profilePic || null },
                             [otherUser.uid]: { name: otherUser.name, profilePic: otherUser.profilePic || null },
@@ -380,22 +380,22 @@ export function ChatWindow({ chatId, currentUser, otherUser, isGroup = false, gr
 
             if (!isGroup && otherUser) {
                 // Update or create chat document
+                // Create/update the chat AND bump the recipient's unread count in a single
+                // merge write. Using a nested object (not a dotted key) so merge deep-merges and
+                // increment applies to unreadCount.<uid>. This removes the previous race where a
+                // separate updateDoc could hit a not-yet-created chat doc and reject.
                 promises.push(setDoc(doc(db, 'chats', chatId), {
                     participants: [currentUser.uid, otherUser.uid],
                     lastMessage: messageText || (imageUrl ? (currentMedia?.type === 'file' ? '📄 File' : '📷 Photo') : '🎥 Video'),
                     lastMessageAt: serverTimestamp(),
                     deletedBy: [],
-                    participantDetails: { 
-                        [currentUser.uid]: {name: currentUser.name, profilePic: currentUser.profilePic || ''}, 
-                        [otherUser.uid]: {name: otherUser.name, profilePic: otherUser.profilePic || ''} 
+                    participantDetails: {
+                        [currentUser.uid]: {name: currentUser.name, profilePic: currentUser.profilePic || ''},
+                        [otherUser.uid]: {name: otherUser.name, profilePic: otherUser.profilePic || ''}
                     },
-                    instituteId: currentUser.instituteId
+                    instituteId: currentUser.instituteId,
+                    unreadCount: { [otherUser.uid]: increment(1) }
                 }, { merge: true }));
-
-                // Increment unread count
-                promises.push(updateDoc(doc(db, 'chats', chatId), {
-                    [`unreadCount.${otherUser.uid}`]: increment(1)
-                }));
 
                 // Send notification (already parallel but adding to list)
                 promises.push(addDoc(collection(db, 'notifications'), {

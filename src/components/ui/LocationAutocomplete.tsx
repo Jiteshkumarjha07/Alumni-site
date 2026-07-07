@@ -65,6 +65,14 @@ export function LocationAutocomplete({ value, onChange }: LocationAutocompletePr
                         setIsFocused(true);
                         setIsManuallyClosed(false);
                     }}
+                    onBlur={() => {
+                        // Commit free-typed text that wasn't picked from the dropdown, so the
+                        // profile save doesn't silently keep the old location. If the user clicks
+                        // a suggestion, handleSelect runs after this and overwrites with the full value.
+                        if (query.trim() && query !== value) {
+                            onChange(query.trim());
+                        }
+                    }}
                     className="w-full pl-10 pr-4 py-3 border border-brand-ebony/15 rounded-lg focus:ring-2 focus:ring-brand-burgundy/20 focus:border-brand-burgundy/30 transition text-brand-ebony bg-white/80 dark:bg-brand-parchment/15 placeholder:text-brand-ebony/30 outline-none"
                     required
                 />

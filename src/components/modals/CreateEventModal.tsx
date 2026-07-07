@@ -47,7 +47,7 @@ export const CreateEventModal: React.FC<CreateEventModalProps> = ({
     };
 
     const handleSubmit = async () => {
-        if (!formData.title || !formData.date || !formData.location || !formData.description) {
+        if (!formData.title.trim() || !formData.date || !formData.location.trim() || !formData.description.trim()) {
             alert('Please fill in all required fields');
             return;
         }
@@ -66,6 +66,7 @@ export const CreateEventModal: React.FC<CreateEventModalProps> = ({
             onClose();
         } catch (error) {
             console.error('Error creating event:', error);
+            alert('Failed to create event. Please try again.');
         } finally {
             setLoading(false);
         }

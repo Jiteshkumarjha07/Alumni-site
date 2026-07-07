@@ -64,6 +64,25 @@ export function LayoutClient({ children }: { children: React.ReactNode }) {
         return path.startsWith(tab);
     });
 
+    // ── Email verification state ─────────────────────────────────────────────
+    // Enforce email verification only for newly created accounts to avoid locking out
+    // existing users. Declared BEFORE any early return so the hook order stays constant
+    // across renders (fixes a "rendered fewer hooks" crash when a user is suspended live).
+    const [isCheckingEmail, setIsCheckingEmail] = React.useState(true);
+    const [needsVerification, setNeedsVerification] = React.useState(false);
+
+    React.useEffect(() => {
+        if (user && !user.emailVerified) {
+            // Check if account was created after May 26 2026
+            const creationTime = new Date(user.metadata.creationTime || 0);
+            const enforceFrom = new Date('2026-05-26T00:00:00Z');
+            setNeedsVerification(creationTime > enforceFrom);
+        } else {
+            setNeedsVerification(false);
+        }
+        setIsCheckingEmail(false);
+    }, [user]);
+
     // ── Suspension wall ────────────────────────────────────────────────────────
     // All hooks are declared above this point. An early return here is safe.
     // The AuthContext's real-time listener already called firebaseSignOut, but
@@ -93,24 +112,7 @@ export function LayoutClient({ children }: { children: React.ReactNode }) {
     }
 
     // ── Email Verification wall ──────────────────────────────────────────────
-    // Enforce email verification only for newly created accounts to avoid locking out existing users
-    const [isCheckingEmail, setIsCheckingEmail] = React.useState(true);
-    const [needsVerification, setNeedsVerification] = React.useState(false);
-
-    React.useEffect(() => {
-        if (user && !user.emailVerified) {
-            // Check if account was created after May 26 2026
-            const creationTime = new Date(user.metadata.creationTime || 0);
-            const enforceFrom = new Date('2026-05-26T00:00:00Z');
-            if (creationTime > enforceFrom) {
-                setNeedsVerification(true);
-            }
-        } else {
-            setNeedsVerification(false);
-        }
-        setIsCheckingEmail(false);
-    }, [user]);
-
+    // (state + effect are declared above the suspension wall so hook order is stable)
     if (!isCheckingEmail && needsVerification) {
         return (
             <div className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-gradient-to-br from-brand-cream to-brand-parchment p-8">
@@ -164,7 +166,7 @@ export function LayoutClient({ children }: { children: React.ReactNode }) {
                     )}
                     {showSidebar && <Sidebar />}
                     <main className={`min-h-screen ${showSidebar ? 'md:pl-80' : ''} ${showRibbon ? 'md:pt-28' : ''} pt-16 md:pt-0 md:pr-12 ${isMobile && !(isGlobalAdminPage || isInstituteAdminPage) && showMobileNav ? (pathname.startsWith('/messages') ? 'pb-[60px]' : 'pb-20') : 'pb-8'} relative z-0 transition-all duration-500`}>
-                <div className="mx-auto w-full overflow-x-hidden">
+                <div className="mx-auto w-full">
                     {isMobile ? (
                         <AnimatePresence initial={false} custom={direction}>
                             <motion.div

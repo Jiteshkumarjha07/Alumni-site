@@ -57,8 +57,22 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         let unsubscribeUser: (() => void) | null = null;
         let unsubscribeSuspensions: (() => void) | null = null;
         let presenceInterval: NodeJS.Timeout | undefined;
+        let currentUnload: (() => void) | null = null;
+
+        // Tear down the previous session's listeners / interval / unload handler. Called before
+        // we (re)establish a session on every auth-state change, so nothing accumulates across
+        // token refreshes or re-auths (the old code's inner cleanup return was ignored by Firebase).
+        const cleanupSession = () => {
+            if (unsubscribeUser) { unsubscribeUser(); unsubscribeUser = null; }
+            if (unsubscribeSuspensions) { unsubscribeSuspensions(); unsubscribeSuspensions = null; }
+            if (presenceInterval) { clearInterval(presenceInterval); presenceInterval = undefined; }
+            if (currentUnload) { window.removeEventListener('beforeunload', currentUnload); currentUnload = null; }
+        };
 
         const unsubscribeAuth = onAuthStateChanged(auth, async (firebaseUser) => {
+            // Always clear any prior session's resources first.
+            cleanupSession();
+
             const updatePresence = async (online: boolean) => {
                 if (!firebaseUser?.uid) return;
                 try {
@@ -97,13 +111,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                 }, 30000);
 
                 // Handle tab close
-                const handleUnload = () => {
+                currentUnload = () => {
                     updateDoc(doc(db, 'users', firebaseUser.uid), {
                         isOnline: false,
                         lastSeen: serverTimestamp()
                     });
                 };
-                window.addEventListener('beforeunload', handleUnload);
+                window.addEventListener('beforeunload', currentUnload);
 
                 // Listen to global suspensions
                 const suspQuery = query(collection(db, 'users'), where('isSuspended', '==', true));
@@ -141,31 +155,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                     console.error('Error fetching user data snapshot:', err);
                     setLoading(false);
                 });
-
-                return () => {
-                    clearInterval(presenceInterval);
-                    window.removeEventListener('beforeunload', handleUnload);
-                };
             } else {
+                // cleanupSession() already ran at the top of this callback.
                 setUser(null);
                 setUserData(null);
                 setLoading(false);
-                if (unsubscribeUser) {
-                    unsubscribeUser();
-                    unsubscribeUser = null;
-                }
-                if (unsubscribeSuspensions) {
-                    unsubscribeSuspensions();
-                    unsubscribeSuspensions = null;
-                }
             }
         });
 
         return () => {
             unsubscribeAuth();
-            if (unsubscribeUser) unsubscribeUser();
-            if (unsubscribeSuspensions) unsubscribeSuspensions();
-            if (presenceInterval) clearInterval(presenceInterval);
+            cleanupSession();
         };
     }, []);
 

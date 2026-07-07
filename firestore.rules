@@ -36,20 +36,34 @@ service cloud.firestore {
       // Allow unauthenticated list with limit(1) for phone-based login lookup.
       // request.query.limit is checked as a belt-and-suspenders guard.
       allow list: if isSignedIn() || request.query.limit <= 1;
+      // FIX PRIV-ESC: owners (and institute admins) may create their own profile but must NOT
+      // self-provision elevated roles. Only a super admin can mint an admin account.
       allow create: if isAdmin()
-                    || (isSignedIn() && isOwner(userId))
-                    || isInsAdminFor(request.resource.data.get('instituteId', ''));
+                    || (isSignedIn() && isOwner(userId)
+                        && request.resource.data.get('isAdmin', false) == false
+                        && request.resource.data.get('isinsadmin', false) == false
+                        && request.resource.data.get('isSuspended', false) == false)
+                    || (isInsAdminFor(request.resource.data.get('instituteId', ''))
+                        && request.resource.data.get('isAdmin', false) == false);
       allow delete: if isAdmin()
                     || isInsAdminFor(resource.data.get('instituteId', ''))
                     || (isSignedIn() && isOwner(userId));
 
-      // FIX VULN-05: Replaced broad isInsAdmin() with scoped isInsAdminFor().
-      // Institute admins can only update users within their own institute.
+      // FIX PRIV-ESC: field-scoped updates.
+      //  • super admin: full control.
+      //  • institute admin: may moderate their own institute's users but NOT grant admin roles.
+      //  • owner: may edit own profile but NOT elevate privileges or lift their own suspension.
+      //  • any signed-in user: may only touch connection/request arrays on another user (the connect
+      //    flow) — never fcmTokens/liveLocation (owner-only; blocks push-token hijack & location spoof).
       allow update: if isAdmin()
-                    || isInsAdminFor(resource.data.get('instituteId', ''))
-                    || (isSignedIn() && isOwner(userId))
+                    || (isInsAdminFor(resource.data.get('instituteId', ''))
+                        && !request.resource.data.diff(resource.data).affectedKeys()
+                             .hasAny(['isAdmin', 'isinsadmin']))
+                    || (isSignedIn() && isOwner(userId)
+                        && !request.resource.data.diff(resource.data).affectedKeys()
+                             .hasAny(['isAdmin', 'isinsadmin', 'isSuspended']))
                     || (isSignedIn() && request.resource.data.diff(resource.data)
-                        .affectedKeys().hasOnly(['connections', 'pendingRequests', 'fcmTokens', 'liveLocation']));
+                        .affectedKeys().hasOnly(['connections', 'pendingRequests', 'sentRequests']));
     }
 
     // ── Posts ─────────────────────────────────────────────────────────────────
@@ -154,8 +168,14 @@ service cloud.firestore {
     // ── Lobby Posts (Cross-Institute) ─────────────────────────────────────────
     match /lobbyPosts/{postId} {
       allow read, create: if isSignedIn();
-      allow update: if isSignedIn();
-      allow delete: if isSignedIn() && resource.data.authorUid == request.auth.uid;
+      // FIX: only the author or an admin may edit post structure (title/content/isPinned);
+      // everyone else may only react/comment/vote — not rewrite someone else's post.
+      allow update: if isAdmin() || isInsAdmin()
+                    || (isSignedIn() && resource.data.authorUid == request.auth.uid)
+                    || (isSignedIn() && request.resource.data.diff(resource.data)
+                        .affectedKeys().hasOnly(['likes', 'comments', 'poll']));
+      allow delete: if isAdmin() || isInsAdmin()
+                    || (isSignedIn() && resource.data.authorUid == request.auth.uid);
     }
 
     // ── Email Approvals ───────────────────────────────────────────────────────

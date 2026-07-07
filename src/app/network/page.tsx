@@ -171,8 +171,9 @@ export default function NetworkPage() {
         return 'none';
     };
 
-    // Get unique batches for filter
-    const batches = Array.from(new Set(allUsers.map(u => u.batch))).sort();
+    // Get unique batches for filter (numeric sort so "Batch of 999" doesn't sort after "2010")
+    const batches = Array.from(new Set(allUsers.map(u => u.batch)))
+        .sort((a, b) => (Number(a) || 0) - (Number(b) || 0));
 
     if (authLoading || loading) {
         return (

@@ -391,16 +391,16 @@ export default function InstituteAdminPage() {
 
             {/* Dynamic Expanding Navigation Ribbon */}
             <div className="flex justify-center mb-10 sticky top-4 z-50 px-2">
-                <div className="flex gap-4 p-2 bg-white/60 dark:bg-brand-ebony/40 backdrop-blur-xl rounded-full shadow-2xl border border-white dark:border-white/5 ring-1 ring-brand-ebony/5 transition-all hover:ring-brand-burgundy/20 max-w-full overflow-x-auto scrollbar-hide">
+                <div className="flex gap-2 p-1.5 bg-white/60 dark:bg-brand-ebony/40 backdrop-blur-xl rounded-full shadow-xl border border-white dark:border-white/5 ring-1 ring-brand-ebony/5 transition-all hover:ring-brand-burgundy/20 max-w-full overflow-x-auto scrollbar-hide">
                     {tabs.map(tab => {
                         const isActive = activeTab === tab.id;
                         return (
                             <button
                                 key={tab.id}
                                 onClick={() => setActiveTab(tab.id)}
-                                className={`flex items-center px-8 py-3 rounded-full text-[10px] font-black uppercase tracking-[0.15em] transition-all duration-700 relative group/tab flex-shrink-0 ${
+                                className={`flex items-center px-6 py-2 rounded-full text-[9px] font-bold uppercase tracking-[0.2em] transition-all duration-700 relative group/tab flex-shrink-0 ${
                                     isActive 
-                                        ? 'bg-brand-burgundy text-white shadow-lg shadow-brand-burgundy/30' 
+                                        ? 'bg-brand-burgundy text-white shadow-md shadow-brand-burgundy/20' 
                                         : 'text-brand-ebony/40 dark:text-white/40 hover:text-brand-ebony/80 hover:bg-brand-ebony/5 dark:hover:bg-white/5'
                                 }`}
                             >
@@ -409,8 +409,8 @@ export default function InstituteAdminPage() {
                                 </div>
                                 <span className={`transition-all duration-700 overflow-hidden whitespace-nowrap font-sans ${
                                     isActive 
-                                        ? 'max-w-[200px] ml-4 opacity-100' 
-                                        : 'max-w-0 opacity-0 group-hover/tab:max-w-[200px] group-hover/tab:ml-4 group-hover/tab:opacity-100'
+                                        ? 'max-w-[200px] ml-3 opacity-100' 
+                                        : 'max-w-0 opacity-0 group-hover/tab:max-w-[200px] group-hover/tab:ml-3 group-hover/tab:opacity-100'
                                 }`}>
                                     {tab.label}
                                 </span>
@@ -424,7 +424,7 @@ export default function InstituteAdminPage() {
                                     </span>
                                 )}
                                 {isActive && (
-                                    <div className="absolute bottom-1.5 left-1/2 -translate-x-1/2 w-1 h-1 bg-white rounded-full animate-pulse" />
+                                    <div className="absolute bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 bg-white rounded-full animate-pulse" />
                                 )}
                             </button>
                         );

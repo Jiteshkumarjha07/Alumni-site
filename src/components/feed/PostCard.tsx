@@ -118,8 +118,8 @@ export const PostCard: React.FC<PostCardProps> = ({
                         <div className="relative shrink-0">
                             <div className="absolute -inset-0.5 bg-gradient-to-br from-brand-burgundy to-indigo-500 rounded-full opacity-0 group-hover/author:opacity-60 transition-opacity duration-300 blur-[2px]" />
                             <img
-                                src={post.authorProfilePic || `https://placehold.co/48x48/4f46e5/ffffff?text=${post.authorName.substring(0, 1)}`}
-                                alt={post.authorName}
+                                src={post.authorProfilePic || `https://placehold.co/48x48/4f46e5/ffffff?text=${(post.authorName || 'A').substring(0, 1)}`}
+                                alt={post.authorName || 'User'}
                                 className="relative w-11 h-11 rounded-full object-cover ring-2 ring-white dark:ring-brand-ebony shadow-md"
                             />
                             <div className="absolute -bottom-1 -right-1 w-[18px] h-[18px] bg-gradient-to-br from-amber-400 to-brand-gold rounded-full flex items-center justify-center border-2 border-white dark:border-brand-ebony shadow-sm">

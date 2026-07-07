@@ -40,7 +40,7 @@ const createIcon = (user: User, isLive: boolean, isSelected: boolean) => {
   }[m] || m));
 
   const safeProfilePic = user.profilePic ? escapeHtml(user.profilePic) : null;
-  const safeNameInitial = escapeHtml(user.name[0].toUpperCase());
+  const safeNameInitial = escapeHtml((user.name?.[0] || '?').toUpperCase());
 
   return L.divIcon({
     className: '',

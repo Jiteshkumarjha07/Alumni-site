@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { collection, query, orderBy, onSnapshot, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, query, orderBy, limit, onSnapshot, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { Message } from '@/types';
 import { encryptMessage, decryptMessage, COMMUNITY_CHAT_SECRET } from '@/lib/encryption';
@@ -20,9 +20,11 @@ export default function CommunityChatPage() {
     useEffect(() => {
         if (!userData) return;
 
+        // Only fetch the newest 50 (we display 50) instead of the entire collection on every update.
         const messagesQuery = query(
             collection(db, 'communityChat'),
-            orderBy('createdAt', 'desc')
+            orderBy('createdAt', 'desc'),
+            limit(50)
         );
 
         const unsubscribe = onSnapshot(messagesQuery, (snapshot) => {

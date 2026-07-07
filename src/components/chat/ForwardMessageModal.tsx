@@ -83,6 +83,9 @@ export function ForwardMessageModal({ isOpen, onClose, message, currentUser, ori
                 chatId = combinedId;
                 await setDoc(doc(db, 'chats', chatId), {
                     participants: [currentUser.uid, targetUser.uid],
+                    // Without instituteId the chat is invisible to both the inbox and unread-count
+                    // queries (they filter where instituteId == ...), so the forwarded message is lost.
+                    instituteId: currentUser.instituteId,
                     lastMessage: decryptedOriginalText || (decryptedImageUrl ? '📷 Photo' : (decryptedVideoUrl ? '🎥 Video' : (decryptedFileUrl ? '📄 File' : (message.poll ? '📊 Poll' : '')))),
                     lastMessageAt: serverTimestamp(),
                     participantDetails: {

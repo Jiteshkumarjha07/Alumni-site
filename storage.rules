@@ -70,6 +70,26 @@ service firebase.storage {
                    && request.resource.size < 200 * 1024 * 1024;
     }
 
+    // ── Group Chat Media: mirrors the chats block ────────────────────────────
+    // FIX: group video/file/voice uploads target groups/{id}/... and were hitting
+    // the deny-all backstop, silently dropping the message.
+    match /groups/{allPaths=**} {
+      allow read: if isSignedIn();
+      allow write: if isSignedIn()
+                   && isAllowedContentType()
+                   && request.resource.size < 200 * 1024 * 1024;
+    }
+
+    // ── Post Media: images / video / documents attached to feed & lobby posts ─
+    // FIX: post uploads target posts/videos/* and posts/files/* (two-segment paths)
+    // which were rejected by the single-segment videos/ and files/ rules.
+    match /posts/{allPaths=**} {
+      allow read: if isSignedIn();
+      allow write: if isSignedIn()
+                   && isAllowedContentType()
+                   && request.resource.size < 200 * 1024 * 1024;
+    }
+
     // ── Deny everything not explicitly matched ────────────────────────────────
     // This is the security backstop — no uploads to unknown paths.
     match /{allPaths=**} {

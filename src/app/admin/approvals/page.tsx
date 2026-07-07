@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { collection, onSnapshot, deleteDoc, doc, serverTimestamp, setDoc, query, where, getDocs, updateDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
+import { collection, onSnapshot, deleteDoc, doc, serverTimestamp, setDoc, query, where, getDocs, updateDoc, arrayUnion, arrayRemove, writeBatch } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { ShieldCheck, Plus, Loader2, Trash2, Mail, Building2, Sparkles, ChevronLeft, Phone } from 'lucide-react';
 import Link from 'next/link';
@@ -29,6 +29,8 @@ export default function AdminApprovalsPage() {
 
     const [email, setEmail] = useState('');
     const [phone, setPhone] = useState('');
+    const [activeTab, setActiveTab] = useState<'single' | 'bulk'>('single');
+    const [bulkInput, setBulkInput] = useState('');
     const [selectedInstitutes, setSelectedInstitutes] = useState<string[]>([]);
     const [institutes, setInstitutes] = useState<Institute[]>([]);
     const [approvals, setApprovals] = useState<Approval[]>([]);
@@ -36,6 +38,52 @@ export default function AdminApprovalsPage() {
     const [fetchLoading, setFetchLoading] = useState(true);
     const [success, setSuccess] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
+
+    // Helper to parse and validate bulk input
+    const parseBulkInput = (text: string) => {
+        const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+        const validEntries: { email?: string; phone?: string; docId: string }[] = [];
+        const invalidLines: string[] = [];
+
+        lines.forEach(line => {
+            const tokens = line.split(/[,;\s\t]+/).map(t => t.trim()).filter(Boolean);
+            let lineEmail: string | undefined;
+            let linePhone: string | undefined;
+            let hasInvalidToken = false;
+
+            tokens.forEach(token => {
+                if (token.includes('@')) {
+                    const cleanedEmail = token.toLowerCase();
+                    if (isAuthenticEmailDomain(cleanedEmail)) {
+                        lineEmail = cleanedEmail;
+                    } else {
+                        hasInvalidToken = true;
+                    }
+                } else {
+                    const cleanedPhone = normalizePhone(token);
+                    if (isValidPhoneNumber(cleanedPhone)) {
+                        linePhone = cleanedPhone;
+                    } else {
+                        hasInvalidToken = true;
+                    }
+                }
+            });
+
+            if ((lineEmail || linePhone) && !hasInvalidToken) {
+                validEntries.push({
+                    email: lineEmail,
+                    phone: linePhone,
+                    docId: lineEmail || linePhone || ''
+                });
+            } else {
+                invalidLines.push(line);
+            }
+        });
+
+        return { validEntries, invalidLines };
+    };
+
+    const { validEntries, invalidLines } = parseBulkInput(bulkInput);
 
     useEffect(() => {
         if (userData?.isinsadmin && !userData.isAdmin && userData.instituteId) {
@@ -115,86 +163,190 @@ export default function AdminApprovalsPage() {
             return;
         }
 
-        const emailClean = email.trim().toLowerCase();
-        const phoneClean = phone.trim() ? normalizePhone(phone.trim()) : '';
-
-        // At least one identifier is required
-        if (!emailClean && !phoneClean) {
-            setError("Please enter at least an email address or a mobile number.");
-            return;
-        }
-
-        // Validate email if provided
-        if (emailClean && !isAuthenticEmailDomain(emailClean)) {
-            setError("Invalid email domain. Please use an authentic provider.");
-            return;
-        }
-
-        // Validate phone if provided
-        if (phoneClean && !isValidPhoneNumber(phoneClean)) {
-            setError("Invalid mobile number. Please use international format (e.g. +919876543210).");
-            return;
-        }
-
         setLoading(true);
         setError(null);
         setSuccess(null);
 
         try {
-            // Use email as document ID if provided, otherwise use phone
-            const docId = emailClean || phoneClean;
+            if (activeTab === 'single') {
+                const emailClean = email.trim().toLowerCase();
+                const phoneClean = phone.trim() ? normalizePhone(phone.trim()) : '';
 
-            const approvalData: any = {
-                instituteIds: arrayUnion(...selectedInstitutes),
-                updatedAt: serverTimestamp(),
-            };
-            if (emailClean) approvalData.email = emailClean;
-            if (phoneClean) approvalData.phone = phoneClean;
+                // At least one identifier is required
+                if (!emailClean && !phoneClean) {
+                    setError("Please enter at least an email address or a mobile number.");
+                    setLoading(false);
+                    return;
+                }
 
-            // 1. Write the approval entry using merge to preserve other institutes
-            await setDoc(doc(db, 'approvals', docId), approvalData, { merge: true });
+                // Validate email if provided
+                if (emailClean && !isAuthenticEmailDomain(emailClean)) {
+                    setError("Invalid email domain. Please use an authentic provider.");
+                    setLoading(false);
+                    return;
+                }
 
-            // 2. Update existing user doc if it exists (add institute IDs and restore if suspended)
-            // Search by email or phone
-            const usersRef = collection(db, 'users');
-            const queries: Promise<any>[] = [];
-            if (emailClean) {
-                queries.push(getDocs(query(usersRef, where('email', '==', emailClean))));
-            }
-            if (phoneClean) {
-                queries.push(getDocs(query(usersRef, where('phone', '==', phoneClean))));
-            }
+                // Validate phone if provided
+                if (phoneClean && !isValidPhoneNumber(phoneClean)) {
+                    setError("Invalid mobile number. Please use international format (e.g. +919876543210).");
+                    setLoading(false);
+                    return;
+                }
 
-            const snapshots = await Promise.all(queries);
-            const allUserDocs = new Map<string, any>();
-            snapshots.forEach(snap => {
-                snap.docs.forEach((userDoc: any) => {
-                    allUserDocs.set(userDoc.id, userDoc);
-                });
-            });
+                const docId = emailClean || phoneClean;
 
-            let restoredCount = 0;
-            const updatePromises = Array.from(allUserDocs.values()).map(userDoc => {
-                const data = userDoc.data();
-                const updates: any = {
-                    instituteIds: arrayUnion(...selectedInstitutes)
+                const approvalData: any = {
+                    instituteIds: arrayUnion(...selectedInstitutes),
+                    updatedAt: serverTimestamp(),
                 };
-                if (phoneClean && !data.phone) {
-                    updates.phone = phoneClean;
-                }
-                if (data.isSuspended) {
-                    updates.isSuspended = false;
-                    restoredCount++;
-                }
-                return updateDoc(doc(db, 'users', userDoc.id), updates);
-            });
-            await Promise.all(updatePromises);
+                if (emailClean) approvalData.email = emailClean;
+                if (phoneClean) approvalData.phone = phoneClean;
 
-            const identifier = emailClean || phoneClean;
-            setSuccess(`Access granted to ${identifier}${restoredCount > 0 ? ' — account restored.' : '.'}`);
-            setEmail('');
-            setPhone('');
-            setSelectedInstitutes([]);
+                // 1. Write the approval entry using merge to preserve other institutes
+                await setDoc(doc(db, 'approvals', docId), approvalData, { merge: true });
+
+                // 2. Update existing user doc if it exists (add institute IDs and restore if suspended)
+                const usersRef = collection(db, 'users');
+                const queries: Promise<any>[] = [];
+                if (emailClean) {
+                    queries.push(getDocs(query(usersRef, where('email', '==', emailClean))));
+                }
+                if (phoneClean) {
+                    queries.push(getDocs(query(usersRef, where('phone', '==', phoneClean))));
+                }
+
+                const snapshots = await Promise.all(queries);
+                const allUserDocs = new Map<string, any>();
+                snapshots.forEach(snap => {
+                    snap.docs.forEach((userDoc: any) => {
+                        allUserDocs.set(userDoc.id, userDoc);
+                    });
+                });
+
+                let restoredCount = 0;
+                const updatePromises = Array.from(allUserDocs.values()).map(userDoc => {
+                    const data = userDoc.data();
+                    const updates: any = {
+                        instituteIds: arrayUnion(...selectedInstitutes)
+                    };
+                    if (phoneClean && !data.phone) {
+                        updates.phone = phoneClean;
+                    }
+                    if (data.isSuspended) {
+                        updates.isSuspended = false;
+                        restoredCount++;
+                    }
+                    return updateDoc(doc(db, 'users', userDoc.id), updates);
+                });
+                await Promise.all(updatePromises);
+
+                const identifier = emailClean || phoneClean;
+                setSuccess(`Access granted to ${identifier}${restoredCount > 0 ? ' — account restored.' : '.'}`);
+                setEmail('');
+                setPhone('');
+                setSelectedInstitutes([]);
+            } else {
+                // BULK MODE
+                const { validEntries } = parseBulkInput(bulkInput);
+
+                if (validEntries.length === 0) {
+                    setError("No valid entries found to whitelist.");
+                    setLoading(false);
+                    return;
+                }
+
+                // Split into batches of 400 for safety
+                const BATCH_LIMIT = 400;
+                let processedCount = 0;
+                let restoredCount = 0;
+
+                // 1. Process approvals in batches
+                for (let i = 0; i < validEntries.length; i += BATCH_LIMIT) {
+                    const chunk = validEntries.slice(i, i + BATCH_LIMIT);
+                    const batch = writeBatch(db);
+
+                    chunk.forEach(entry => {
+                        const approvalData: any = {
+                            instituteIds: arrayUnion(...selectedInstitutes),
+                            updatedAt: serverTimestamp(),
+                        };
+                        if (entry.email) approvalData.email = entry.email;
+                        if (entry.phone) approvalData.phone = entry.phone;
+
+                        batch.set(doc(db, 'approvals', entry.docId), approvalData, { merge: true });
+                        processedCount++;
+                    });
+
+                    await batch.commit();
+                }
+
+                // 2. Query and restore matching user documents in chunks of 30
+                const usersRef = collection(db, 'users');
+                const CHUNK_SIZE = 30;
+
+                // Gather list of valid emails and valid phones for querying
+                const emailsToQuery = validEntries.map(e => e.email).filter(Boolean) as string[];
+                const phonesToQuery = validEntries.map(e => e.phone).filter(Boolean) as string[];
+
+                // Query for emails in chunks
+                const emailChunks: string[][] = [];
+                for (let i = 0; i < emailsToQuery.length; i += CHUNK_SIZE) {
+                    emailChunks.push(emailsToQuery.slice(i, i + CHUNK_SIZE));
+                }
+
+                // Query for phones in chunks
+                const phoneChunks: string[][] = [];
+                for (let i = 0; i < phonesToQuery.length; i += CHUNK_SIZE) {
+                    phoneChunks.push(phonesToQuery.slice(i, i + CHUNK_SIZE));
+                }
+
+                const userSnapshotsPromises: Promise<any>[] = [];
+
+                emailChunks.forEach(chunk => {
+                    userSnapshotsPromises.push(getDocs(query(usersRef, where('email', 'in', chunk))));
+                });
+
+                phoneChunks.forEach(chunk => {
+                    userSnapshotsPromises.push(getDocs(query(usersRef, where('phone', 'in', chunk))));
+                });
+
+                const snapshots = await Promise.all(userSnapshotsPromises);
+                const allUserDocs = new Map<string, any>();
+                snapshots.forEach(snap => {
+                    snap.docs.forEach((userDoc: any) => {
+                        allUserDocs.set(userDoc.id, userDoc);
+                    });
+                });
+
+                // Update users in batches
+                const userDocsArray = Array.from(allUserDocs.values());
+                for (let i = 0; i < userDocsArray.length; i += BATCH_LIMIT) {
+                    const chunk = userDocsArray.slice(i, i + BATCH_LIMIT);
+                    const batch = writeBatch(db);
+
+                    chunk.forEach(userDoc => {
+                        const data = userDoc.data();
+                        const updates: any = {
+                            instituteIds: arrayUnion(...selectedInstitutes)
+                        };
+                        const matchingEntry = validEntries.find(e => e.email === data.email || e.phone === data.phone);
+                        if (matchingEntry?.phone && !data.phone) {
+                            updates.phone = matchingEntry.phone;
+                        }
+                        if (data.isSuspended) {
+                            updates.isSuspended = false;
+                            restoredCount++;
+                        }
+                        batch.update(doc(db, 'users', userDoc.id), updates);
+                    });
+
+                    await batch.commit();
+                }
+
+                setSuccess(`Successfully whitelisted ${processedCount} account(s)${restoredCount > 0 ? ` — ${restoredCount} account(s) restored.` : '.'}`);
+                setBulkInput('');
+                setSelectedInstitutes([]);
+            }
         } catch (err: any) {
             setError(err.message || 'An unexpected error occurred.');
         } finally {
@@ -270,13 +422,39 @@ export default function AdminApprovalsPage() {
 
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
                 {/* Form Card */}
-                <div className="lg:col-span-4">
+                <div className="lg:col-span-4 lg:sticky lg:top-8 z-20 max-h-[calc(100vh-4rem)] overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
                     <div className="card-premium p-8 relative overflow-hidden group">
                         <div className="absolute top-0 right-0 w-32 h-32 bg-brand-burgundy/5 rounded-full -translate-y-1/2 translate-x-1/2 blur-2xl z-0 pointer-events-none"></div>
                         
-                        <h2 className="text-xl font-serif font-extrabold text-brand-ebony mb-6 relative z-10 flex items-center gap-2">
+                        <h2 className="text-xl font-serif font-extrabold text-brand-ebony mb-4 relative z-10 flex items-center gap-2">
                              Whitelist Member
                         </h2>
+
+                        {/* Tabs Switch */}
+                        <div className="flex bg-brand-ebony/5 dark:bg-white/5 p-1 rounded-xl mb-6 relative z-10">
+                            <button
+                                type="button"
+                                onClick={() => { setActiveTab('single'); setError(null); setSuccess(null); }}
+                                className={`flex-1 py-2 text-xs font-bold uppercase tracking-wider rounded-lg transition-all ${
+                                    activeTab === 'single'
+                                        ? 'bg-white dark:bg-brand-parchment/10 text-brand-burgundy shadow-sm'
+                                        : 'text-brand-ebony/40 dark:text-white/40 hover:text-brand-ebony dark:hover:text-white'
+                                }`}
+                            >
+                                Single Entry
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => { setActiveTab('bulk'); setError(null); setSuccess(null); }}
+                                className={`flex-1 py-2 text-xs font-bold uppercase tracking-wider rounded-lg transition-all ${
+                                    activeTab === 'bulk'
+                                        ? 'bg-white dark:bg-brand-parchment/10 text-brand-burgundy shadow-sm'
+                                        : 'text-brand-ebony/40 dark:text-white/40 hover:text-brand-ebony dark:hover:text-white'
+                                }`}
+                            >
+                                Bulk Upload
+                            </button>
+                        </div>
                         
                         {error && (
                             <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-red-600 text-[11px] font-bold uppercase tracking-wider animate-in fade-in relative z-10">
@@ -290,42 +468,92 @@ export default function AdminApprovalsPage() {
                         )}
 
                         <form onSubmit={handleSubmit} className="space-y-5 relative z-10">
-                            {/* Email */}
-                            <div>
-                                <label className="block text-[10px] font-bold text-brand-ebony/40 dark:text-white/40 mb-2 uppercase tracking-[0.2em]">Email Address</label>
-                                <div className="relative">
-                                    <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-brand-ebony/30 dark:text-white/30" />
-                                    <input
-                                        type="email"
-                                        placeholder="alumni@uni.edu"
-                                        value={email}
-                                        onChange={(e) => setEmail(e.target.value)}
-                                        className="w-full pl-12 pr-5 py-4 bg-brand-ebony/5 dark:bg-white/5 border border-brand-ebony/10 dark:border-white/10 rounded-2xl focus:ring-4 focus:ring-brand-burgundy/10 hover:border-brand-burgundy/30 transition-all outline-none text-brand-ebony dark:text-white font-medium"
-                                    />
-                                </div>
-                            </div>
+                            {activeTab === 'single' ? (
+                                <>
+                                    {/* Email */}
+                                    <div>
+                                        <label className="block text-[10px] font-bold text-brand-ebony/40 dark:text-white/40 mb-2 uppercase tracking-[0.2em]">Email Address</label>
+                                        <div className="relative">
+                                            <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-brand-ebony/30 dark:text-white/30" />
+                                            <input
+                                                type="email"
+                                                placeholder="alumni@uni.edu"
+                                                value={email}
+                                                onChange={(e) => setEmail(e.target.value)}
+                                                className="w-full pl-12 pr-5 py-4 bg-brand-ebony/5 dark:bg-white/5 border border-brand-ebony/10 dark:border-white/10 rounded-2xl focus:ring-4 focus:ring-brand-burgundy/10 hover:border-brand-burgundy/30 transition-all outline-none text-brand-ebony dark:text-white font-medium"
+                                            />
+                                        </div>
+                                    </div>
 
-                            {/* Phone */}
-                            <div>
-                                <label className="block text-[10px] font-bold text-brand-ebony/40 dark:text-white/40 mb-2 uppercase tracking-[0.2em]">Mobile Number</label>
-                                <div className="relative">
-                                    <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-brand-ebony/30 dark:text-white/30" />
-                                    <input
-                                        type="tel"
-                                        placeholder="+919876543210"
-                                        value={phone}
-                                        onChange={(e) => setPhone(e.target.value)}
-                                        className="w-full pl-12 pr-5 py-4 bg-brand-ebony/5 dark:bg-white/5 border border-brand-ebony/10 dark:border-white/10 rounded-2xl focus:ring-4 focus:ring-brand-burgundy/10 hover:border-brand-burgundy/30 transition-all outline-none text-brand-ebony dark:text-white font-medium"
-                                    />
-                                </div>
-                                <p className="text-[9px] text-brand-ebony/30 dark:text-white/30 mt-1.5 px-1 font-bold uppercase tracking-wider">Include country code (e.g. +91)</p>
-                            </div>
+                                    {/* Phone */}
+                                    <div>
+                                        <label className="block text-[10px] font-bold text-brand-ebony/40 dark:text-white/40 mb-2 uppercase tracking-[0.2em]">Mobile Number</label>
+                                        <div className="relative">
+                                            <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-brand-ebony/30 dark:text-white/30" />
+                                            <input
+                                                type="tel"
+                                                placeholder="+919876543210"
+                                                value={phone}
+                                                onChange={(e) => setPhone(e.target.value)}
+                                                className="w-full pl-12 pr-5 py-4 bg-brand-ebony/5 dark:bg-white/5 border border-brand-ebony/10 dark:border-white/10 rounded-2xl focus:ring-4 focus:ring-brand-burgundy/10 hover:border-brand-burgundy/30 transition-all outline-none text-brand-ebony dark:text-white font-medium"
+                                            />
+                                        </div>
+                                        <p className="text-[9px] text-brand-ebony/30 dark:text-white/30 mt-1.5 px-1 font-bold uppercase tracking-wider">Include country code (e.g. +91)</p>
+                                    </div>
 
-                            <div className="flex items-center gap-2 px-1">
-                                <div className="flex-1 h-px bg-brand-ebony/5"></div>
-                                <span className="text-[9px] font-bold text-brand-ebony/20 uppercase tracking-[0.3em]">At least one required</span>
-                                <div className="flex-1 h-px bg-brand-ebony/5"></div>
-                            </div>
+                                    <div className="flex items-center gap-2 px-1">
+                                        <div className="flex-1 h-px bg-brand-ebony/5"></div>
+                                        <span className="text-[9px] font-bold text-brand-ebony/20 uppercase tracking-[0.3em]">At least one required</span>
+                                        <div className="flex-1 h-px bg-brand-ebony/5"></div>
+                                    </div>
+                                </>
+                            ) : (
+                                <>
+                                    {/* Bulk Textarea */}
+                                    <div>
+                                        <label className="block text-[10px] font-bold text-brand-ebony/40 dark:text-white/40 mb-2 uppercase tracking-[0.2em]">Paste Emails & Mobile Numbers</label>
+                                        <textarea
+                                            placeholder="Enter multiple entries separated by commas, newlines or spaces. E.g.&#10;alumni1@uni.edu&#10;+919876543210&#10;alumni2@uni.edu, +1234567890"
+                                            value={bulkInput}
+                                            onChange={(e) => setBulkInput(e.target.value)}
+                                            rows={5}
+                                            className="w-full px-5 py-4 bg-brand-ebony/5 dark:bg-white/5 border border-brand-ebony/10 dark:border-white/10 rounded-2xl focus:ring-4 focus:ring-brand-burgundy/10 hover:border-brand-burgundy/30 transition-all outline-none text-brand-ebony dark:text-white font-medium text-xs resize-none"
+                                        />
+                                    </div>
+
+                                    {/* Live Validation Badges */}
+                                    {bulkInput.trim().length > 0 && (
+                                        <div className="p-3 bg-brand-ebony/5 dark:bg-white/5 rounded-xl space-y-1.5 animate-in fade-in">
+                                            <p className="text-[9px] font-bold text-brand-ebony/40 dark:text-white/40 uppercase tracking-wider">Live Parser Results (Newline Separated):</p>
+                                            <div className="flex flex-wrap gap-1.5">
+                                                {validEntries.filter(e => e.email && e.phone).length > 0 && (
+                                                    <span className="px-2.5 py-1 bg-emerald-500/10 text-emerald-600 font-bold text-[9px] uppercase tracking-wider rounded-lg border border-emerald-500/20">
+                                                        {validEntries.filter(e => e.email && e.phone).length} Email & Phone
+                                                    </span>
+                                                )}
+                                                {validEntries.filter(e => e.email && !e.phone).length > 0 && (
+                                                    <span className="px-2.5 py-1 bg-indigo-500/10 text-indigo-600 font-bold text-[9px] uppercase tracking-wider rounded-lg border border-indigo-500/20">
+                                                        {validEntries.filter(e => e.email && !e.phone).length} Email Only
+                                                    </span>
+                                                )}
+                                                {validEntries.filter(e => !e.email && e.phone).length > 0 && (
+                                                    <span className="px-2.5 py-1 bg-sky-500/10 text-sky-600 font-bold text-[9px] uppercase tracking-wider rounded-lg border border-sky-500/20">
+                                                        {validEntries.filter(e => !e.email && e.phone).length} Phone Only
+                                                    </span>
+                                                )}
+                                                {invalidLines.length > 0 && (
+                                                    <span className="px-2.5 py-1 bg-amber-500/10 text-amber-600 font-bold text-[9px] uppercase tracking-wider rounded-lg border border-amber-500/20">
+                                                        {invalidLines.length} Invalid Line(s) (ignored)
+                                                    </span>
+                                                )}
+                                                {validEntries.length === 0 && (
+                                                    <span className="text-[9px] font-bold text-red-500 uppercase tracking-wider">No valid entries parsed yet</span>
+                                                )}
+                                            </div>
+                                        </div>
+                                    )}
+                                </>
+                            )}
 
                             {/* Institutes */}
                             <div>
@@ -359,7 +587,7 @@ export default function AdminApprovalsPage() {
                                 disabled={loading}
                                 className="w-full py-4 bg-gradient-indigo text-white rounded-2xl font-bold hover:shadow-[0_8px_20px_rgba(99,102,241,0.3)] transition-all flex items-center justify-center gap-3 uppercase tracking-[0.2em] text-[11px] shimmer overflow-hidden relative"
                             >
-                                {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <><Plus className="w-5 h-5" /> Grant Access</>}
+                                {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : activeTab === 'single' ? <><Plus className="w-5 h-5" /> Grant Access</> : <><Plus className="w-5 h-5" /> Grant Bulk Access</>}
                             </button>
                         </form>
                     </div>

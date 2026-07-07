@@ -5,7 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { updatePassword, deleteUser } from 'firebase/auth';
 import {
     collection, query, where, orderBy, onSnapshot, updateDoc,
-    doc, getDocs, getDoc, deleteDoc, writeBatch, arrayRemove
+    doc, getDocs, getDoc, deleteDoc, writeBatch, arrayUnion, arrayRemove
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { Post, Comment as AppComment, User, Group } from '@/types';
@@ -266,24 +266,23 @@ export default function ProfilePage() {
     const handleLikePost = async (postId: string, isLiked: boolean) => {
         if (!userData) return;
         const post = posts.find(p => p.id === postId); if (!post) return;
-        const likes = post.likes || [];
-        await updateDoc(doc(db, 'posts', postId), { likes: isLiked ? likes.filter(u => u !== userData.uid) : [...likes, userData.uid] });
+        await updateDoc(doc(db, 'posts', postId), { likes: isLiked ? arrayRemove(userData.uid) : arrayUnion(userData.uid) });
     };
 
     const handleAddComment = async (text: string, replyToId?: string, replyToAuthor?: string) => {
         if (!userData || !commentingPost) return;
         const post = posts.find(p => p.id === commentingPost.id); if (!post) return;
-        const nc = { 
-            id: Math.random().toString(36).substring(2, 9), 
-            authorUid: userData.uid, 
-            authorName: userData.name, 
-            text, 
-            createdAt: new Date(), 
+        const nc = {
+            id: crypto.randomUUID(),
+            authorUid: userData.uid,
+            authorName: userData.name,
+            text,
+            createdAt: new Date(),
             reactions: {},
             ...(replyToId ? { replyToId } : {}),
             ...(replyToAuthor ? { replyToAuthor } : {})
         };
-        await updateDoc(doc(db, 'posts', commentingPost.id), { comments: [...(post.comments || []), nc] });
+        await updateDoc(doc(db, 'posts', commentingPost.id), { comments: arrayUnion(nc) });
     };
 
     const handleDeleteComment = async (comment: AppComment) => {

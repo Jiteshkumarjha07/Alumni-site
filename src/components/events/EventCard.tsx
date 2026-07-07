@@ -12,6 +12,15 @@ interface EventCardProps {
     onDelete?: (eventId: string) => void;
 }
 
+// Parse an event date safely. 'YYYY-MM-DD' is built as a LOCAL date (not UTC midnight)
+// to avoid an off-by-one day in negative-UTC timezones; returns null for invalid input.
+function parseEventDate(dateStr?: string): Date | null {
+    if (!dateStr) return null;
+    const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateStr);
+    const d = m ? new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3])) : new Date(dateStr);
+    return isNaN(d.getTime()) ? null : d;
+}
+
 function EventDetailsModal({
     event,
     currentUser,
@@ -32,12 +41,12 @@ function EventDetailsModal({
         }
     };
 
-    const formattedDate = new Date(event.date).toLocaleDateString('en-US', {
-        weekday: 'long',
-        month: 'long',
-        day: 'numeric',
-        year: 'numeric',
-    });
+    const formattedDate = (() => {
+        const d = parseEventDate(event.date);
+        return d
+            ? d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })
+            : 'Date TBD';
+    })();
 
     return createPortal(
         <div className="fixed inset-0 z-[200] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-brand-ebony/60 dark:bg-black/80 backdrop-blur-md">
@@ -164,9 +173,9 @@ function EventDetailsModal({
 
 export function EventCard({ event, currentUser, onDelete }: EventCardProps) {
     const [showDetails, setShowDetails] = useState(false);
-    const eventDate = new Date(event.date);
-    const month = eventDate.toLocaleString('default', { month: 'short' });
-    const day = eventDate.getDate();
+    const eventDate = parseEventDate(event.date);
+    const month = eventDate ? eventDate.toLocaleString('default', { month: 'short' }) : '—';
+    const day = eventDate ? eventDate.getDate() : '—';
 
     return (
         <>

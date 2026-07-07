@@ -34,6 +34,7 @@ export default function AdminInstitutesPage() {
     const [assignLoading, setAssignLoading] = useState(false);
     const [assignSuccess, setAssignSuccess] = useState<string | null>(null);
     const [assignError, setAssignError] = useState<string | null>(null);
+    const [assignInstituteId, setAssignInstituteId] = useState('');
 
     useEffect(() => {
         if (!userData || !userData.isAdmin) {
@@ -128,6 +129,11 @@ export default function AdminInstitutesPage() {
         const trimmedEmail = assignEmail.trim().toLowerCase();
         if (!trimmedEmail) return;
 
+        if (makeAdmin && !assignInstituteId) {
+            setAssignError("Please select an institute.");
+            return;
+        }
+
         setAssignLoading(true);
         setAssignError(null);
         setAssignSuccess(null);
@@ -142,18 +148,32 @@ export default function AdminInstitutesPage() {
             }
 
             const userDoc = userSnap.docs[0];
-            await updateDoc(doc(db, 'users', userDoc.id), {
-                isinsadmin: makeAdmin
-            });
+            const updates: any = { isinsadmin: makeAdmin };
+            
+            if (makeAdmin) {
+                updates.instituteId = assignInstituteId;
+                const inst = institutes.find(i => i.id === assignInstituteId);
+                if (inst) {
+                    updates.instituteName = inst.name;
+                }
+            }
+
+            await updateDoc(doc(db, 'users', userDoc.id), updates);
 
             setAssignSuccess(`Successfully ${makeAdmin ? 'assigned' : 'removed'} Institute Admin role for ${trimmedEmail}.`);
             setAssignEmail('');
+            setAssignInstituteId('');
         } catch (err: any) {
             setAssignError(err.message || 'Failed to update user role.');
         } finally {
             setAssignLoading(false);
         }
     };
+
+    // Render-side guard: on a static export the route is directly loadable, so don't paint the
+    // super-admin-only forms (Create Institute / Make Admin) for non-super-admins even for a frame
+    // before the redirect effect fires.
+    if (!userData?.isAdmin) return null;
 
     return (
         <div className="max-w-6xl mx-auto px-4 md:px-8 pt-8 pb-12 w-full animate-fade-up">
@@ -185,7 +205,7 @@ export default function AdminInstitutesPage() {
 
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
                 {/* Form Card */}
-                <div className="lg:col-span-4">
+                <div className="lg:col-span-4 lg:sticky lg:top-8 z-20 max-h-[calc(100vh-4rem)] overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
                     <div className="card-premium p-8 relative overflow-hidden group">
                         <div className="absolute top-0 right-0 w-32 h-32 bg-brand-burgundy/5 rounded-full -translate-y-1/2 translate-x-1/2 blur-2xl group-hover:bg-brand-burgundy/10 transition-colors"></div>
                         
@@ -252,11 +272,23 @@ export default function AdminInstitutesPage() {
                                     placeholder="user@example.com"
                                     value={assignEmail}
                                     onChange={(e) => setAssignEmail(e.target.value)}
-                                    className="w-full px-5 py-4 bg-brand-ebony/5 dark:bg-white/5 border border-brand-ebony/10 dark:border-white/10 rounded-2xl focus:ring-4 focus:ring-brand-burgundy/10 hover:border-brand-burgundy/30 transition-all outline-none text-brand-ebony dark:text-white font-medium"
+                                    className="w-full px-5 py-4 bg-brand-ebony/5 dark:bg-white/5 border border-brand-ebony/10 dark:border-white/10 rounded-2xl focus:ring-4 focus:ring-brand-burgundy/10 hover:border-brand-burgundy/30 transition-all outline-none text-brand-ebony dark:text-white font-medium mb-4"
                                     onKeyDown={(e) => {
                                         if (e.key === 'Enter') handleAssignAdmin(e, true);
                                     }}
                                 />
+                                
+                                <label className="block text-[10px] font-bold text-brand-ebony/40 dark:text-white/40 mb-2 uppercase tracking-[0.2em]">Assign to Institute</label>
+                                <select
+                                    value={assignInstituteId}
+                                    onChange={(e) => setAssignInstituteId(e.target.value)}
+                                    className="w-full px-5 py-4 bg-brand-ebony/5 dark:bg-white/5 border border-brand-ebony/10 dark:border-white/10 rounded-2xl focus:ring-4 focus:ring-brand-burgundy/10 hover:border-brand-burgundy/30 transition-all outline-none text-brand-ebony dark:text-white font-medium appearance-none mb-2"
+                                >
+                                    <option value="" disabled>Select an Institute...</option>
+                                    {institutes.map(inst => (
+                                        <option key={inst.id} value={inst.id}>{inst.name}</option>
+                                    ))}
+                                </select>
                             </div>
 
                             <div className="flex gap-2">

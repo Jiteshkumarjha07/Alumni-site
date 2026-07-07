@@ -36,6 +36,14 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
         };
 
         applyTheme(theme);
+
+        // When following the OS ('system'), react to live light/dark changes.
+        if (theme === 'system') {
+            const mq = window.matchMedia('(prefers-color-scheme: dark)');
+            const onChange = () => applyTheme('system');
+            mq.addEventListener('change', onChange);
+            return () => mq.removeEventListener('change', onChange);
+        }
     }, [theme]);
 
     const setTheme = (t: Theme) => {

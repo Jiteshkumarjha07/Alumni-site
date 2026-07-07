@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { collection, query, orderBy, onSnapshot, addDoc, updateDoc, deleteDoc, doc, serverTimestamp, arrayRemove, where } from 'firebase/firestore';
+import { collection, query, orderBy, onSnapshot, addDoc, updateDoc, deleteDoc, doc, serverTimestamp, arrayUnion, arrayRemove, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { Post, Comment as AppComment } from '@/types';
 import { PostCard } from '@/components/feed/PostCard';
@@ -212,9 +212,10 @@ export default function HomePage() {
       p.id === postId ? { ...p, likes: updatedLikes } : p
     ));
 
-    // Background network request (No Await)
+    // Background network request (No Await). Persist atomically so concurrent likes from
+    // other users don't clobber each other (the local optimistic value above is display-only).
     const postRef = doc(db, 'posts', postId);
-    updateDoc(postRef, { likes: updatedLikes }).catch(err => {
+    updateDoc(postRef, { likes: isLiked ? arrayRemove(userData.uid) : arrayUnion(userData.uid) }).catch(err => {
       console.error("Failed optimistic like:", err);
       // Let onSnapshot automatically revert local state if failed
     });
@@ -242,7 +243,7 @@ export default function HomePage() {
     if (!post) return;
 
     const newComment: AppComment = {
-      id: Math.random().toString(36).substr(2, 9),
+      id: crypto.randomUUID(),
       authorUid: userData.uid,
       authorName: userData.name,
       text,
@@ -253,16 +254,16 @@ export default function HomePage() {
     };
 
     const updatedComments = [...(post.comments || []), newComment];
-    
+
     // Optimistic UI: Update feed and modal state instantly
-    setPosts(currentPosts => currentPosts.map(p => 
+    setPosts(currentPosts => currentPosts.map(p =>
       p.id === commentingPost.id ? { ...p, comments: updatedComments } : p
     ));
     setCommentingPost(prev => prev ? { ...prev, comments: updatedComments } : prev);
 
-    // Background network request
+    // Background network request. Atomic append avoids clobbering comments added concurrently.
     const postRef = doc(db, 'posts', commentingPost.id);
-    updateDoc(postRef, { comments: updatedComments }).catch(console.error);
+    updateDoc(postRef, { comments: arrayUnion(newComment) }).catch(console.error);
 
     if (commentingPost.authorUid !== userData.uid) {
       addDoc(collection(db, 'notifications'), {

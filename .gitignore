@@ -41,3 +41,7 @@ yarn-error.log*
 # tauri keys
 .tauri-keys.key
 .tauri-keys.key.pub
+
+# android build caches (Capacitor/Gradle)
+android/**/.gradle/
+android/**/build/

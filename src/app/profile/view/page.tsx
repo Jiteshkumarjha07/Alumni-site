@@ -4,7 +4,7 @@ import { Suspense, useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import {
     collection, query, where, orderBy, onSnapshot, doc, getDocs,
-    getDoc, updateDoc, deleteDoc, arrayRemove, addDoc, serverTimestamp
+    getDoc, updateDoc, deleteDoc, arrayUnion, arrayRemove, addDoc, serverTimestamp
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { Post, Comment as AppComment, User, Group } from '@/types';
@@ -100,8 +100,7 @@ function PublicProfileClient() {
         if (!userData) return;
         const post = posts.find(p => p.id === postId);
         if (!post) return;
-        const likes = isLiked ? (post.likes || []).filter(uid => uid !== userData.uid) : [...(post.likes || []), userData.uid];
-        await updateDoc(doc(db, 'posts', postId), { likes });
+        await updateDoc(doc(db, 'posts', postId), { likes: isLiked ? arrayRemove(userData.uid) : arrayUnion(userData.uid) });
         if (!isLiked && post.authorUid !== userData.uid) {
             await addDoc(collection(db, 'notifications'), {
                 userId: post.authorUid, type: 'like', sourceUserUid: userData.uid,
@@ -116,15 +115,16 @@ function PublicProfileClient() {
         if (!userData || !commentingPost) return;
         const post = posts.find(p => p.id === commentingPost.id);
         if (!post) return;
-        const nc = { 
-            authorUid: userData.uid, 
-            authorName: userData.name, 
-            text, 
+        const nc = {
+            id: crypto.randomUUID(),   // stable id so edit/delete target THIS comment only
+            authorUid: userData.uid,
+            authorName: userData.name,
+            text,
             createdAt: new Date(),
             ...(replyToId ? { replyToId } : {}),
             ...(replyToAuthor ? { replyToAuthor } : {})
         };
-        await updateDoc(doc(db, 'posts', commentingPost.id), { comments: [...(post.comments || []), nc] });
+        await updateDoc(doc(db, 'posts', commentingPost.id), { comments: arrayUnion(nc) });
         if (post.authorUid !== userData.uid) {
             await addDoc(collection(db, 'notifications'), {
                 userId: post.authorUid, type: 'comment', sourceUserUid: userData.uid,
@@ -152,9 +152,14 @@ function PublicProfileClient() {
         if (!userData || !commentingPost) return;
         const post = posts.find(p => p.id === commentingPost.id);
         if (!post) return;
-        const updatedComments = (post.comments || []).map(c => 
-            c.id === comment.id ? { ...c, text: newText, isEdited: true } : c
-        );
+        const updatedComments = (post.comments || []).map(c => {
+            // Prefer id match; fall back to text+author so legacy id-less comments don't
+            // all match undefined===undefined and get overwritten together.
+            const isTarget = c.id && comment.id
+                ? c.id === comment.id
+                : (c.text === comment.text && c.authorUid === comment.authorUid);
+            return isTarget ? { ...c, text: newText, isEdited: true } : c;
+        });
         await updateDoc(doc(db, 'posts', commentingPost.id), { comments: updatedComments });
     };
 

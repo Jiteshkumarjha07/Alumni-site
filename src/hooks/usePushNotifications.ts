@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { getToken, onMessage } from 'firebase/messaging';
 import { messaging, db } from '@/lib/firebase';
-import { doc, updateDoc, arrayUnion } from 'firebase/firestore';
+import { doc, setDoc, arrayUnion } from 'firebase/firestore';
 
 export const usePushNotifications = (userId: string | undefined) => {
     const [token, setToken] = useState<string | null>(null);
@@ -13,7 +13,11 @@ export const usePushNotifications = (userId: string | undefined) => {
 
         const setupNotifications = async () => {
             try {
-                // 1. Request Permission
+                // 1. Request Permission (guard for browsers without the Notification API)
+                if (typeof Notification === 'undefined') {
+                    console.warn('Notifications not supported in this browser');
+                    return;
+                }
                 const permission = await Notification.requestPermission();
                 if (permission !== 'granted') {
                     console.warn('Notification permission not granted:', permission);
@@ -46,10 +50,12 @@ export const usePushNotifications = (userId: string | undefined) => {
                 if (currentToken) {
                     console.log('FCM Token generated successfully');
                     setToken(currentToken);
-                    // Save token to user document
-                    await updateDoc(doc(db, 'users', userId), {
+                    // Save token to user document. Use setDoc(merge) instead of updateDoc so the
+                    // write doesn't throw (and silently lose the token) if the profile doc isn't
+                    // created yet when the token resolves.
+                    await setDoc(doc(db, 'users', userId), {
                         fcmTokens: arrayUnion(currentToken)
-                    });
+                    }, { merge: true });
                 }
             } catch (error) {
                 console.error('FCM Registration Error:', error);

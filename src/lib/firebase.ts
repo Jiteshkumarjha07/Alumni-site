@@ -3,30 +3,19 @@ import { getAuth } from 'firebase/auth';
 import { initializeFirestore } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 import { getMessaging, isSupported as isMessagingSupported } from 'firebase/messaging';
-import { initializeAppCheck, ReCaptchaV3Provider } from 'firebase/app-check';
 import { firebaseConfig } from './firebase-config';
 
 // Initialize Firebase
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
 
-// Initialize App Check (required if enforced in Firebase Console)
-if (typeof window !== 'undefined') {
-    // Enable debug mode for localhost to print the debug token in the console
-    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-        (window as any).FIREBASE_APPCHECK_DEBUG_TOKEN = true;
-    }
-    
-    try {
-        initializeAppCheck(app, {
-            // If you have a real ReCaptcha V3 site key, replace '6Ldummy...' with it.
-            // For local development with DEBUG_TOKEN = true, a dummy key is sufficient.
-            provider: new ReCaptchaV3Provider(process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY || '6Ldummykeyforsitekeyhere'),
-            isTokenAutoRefreshEnabled: true
-        });
-    } catch (e) {
-        console.error('App Check initialization failed:', e);
-    }
-}
+// NOTE: Firebase App Check was intentionally removed. It had been initialized with a
+// placeholder reCAPTCHA key (the real key env var name never matched), so it produced
+// invalid App Check tokens — the recurring "firebase-app-check-token-is-invalid" /
+// "missing or insufficient permissions" login breakage in the git history.
+// App Check enforcement must remain OFF in the Firebase Console while this is absent.
+// To re-enable later: initializeAppCheck with a REAL reCAPTCHA site key
+// (ReCaptchaEnterpriseProvider if using an Enterprise key) sourced from an env var that
+// is actually set at build time, then enable enforcement per-service in the console.
 
 // Initialize Firebase services
 export const auth = getAuth(app);

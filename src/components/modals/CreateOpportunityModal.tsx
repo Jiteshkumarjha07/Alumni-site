@@ -42,7 +42,7 @@ export const CreateOpportunityModal: React.FC<CreateOpportunityModalProps> = ({
     if (!isOpen) return null;
 
     const handleSubmit = async () => {
-        if (!formData.title || !formData.company || !formData.description) {
+        if (!formData.title.trim() || !formData.company.trim() || !formData.description.trim()) {
             alert('Please fill in all required fields');
             return;
         }
@@ -63,6 +63,7 @@ export const CreateOpportunityModal: React.FC<CreateOpportunityModalProps> = ({
             onClose();
         } catch (error) {
             console.error('Error creating opportunity:', error);
+            alert('Failed to post opportunity. Please try again.');
         } finally {
             setLoading(false);
         }
