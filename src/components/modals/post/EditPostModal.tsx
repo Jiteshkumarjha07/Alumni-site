@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
-import { EmojiPicker } from '../ui/EmojiPicker';
-import { EmojiRenderer } from '../ui/EmojiRenderer';
+import { EmojiPicker } from '@/components/ui/EmojiPicker';
+import { EmojiRenderer } from '@/components/ui/EmojiRenderer';
 
 interface EditPostModalProps {
     isOpen: boolean;

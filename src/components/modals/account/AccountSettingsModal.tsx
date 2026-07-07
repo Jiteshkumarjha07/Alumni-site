@@ -15,7 +15,7 @@ import {
     AlertTriangle, CheckCircle2, LogOut, ShieldCheck, Sparkles,
     User as UserIcon, ChevronRight, ChevronDown, Palette
 } from 'lucide-react';
-import { Portal } from '../ui/Portal';
+import { Portal } from '@/components/ui/Portal';
 
 interface AccountSettingsModalProps {
     isOpen: boolean;

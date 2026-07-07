@@ -6,8 +6,8 @@ import { collection, query, orderBy, onSnapshot, addDoc, serverTimestamp, where,
 import { db } from '@/lib/firebase';
 import { Event } from '@/types';
 import { EventCard } from '@/components/events/EventCard';
-import { CreateEventModal, EventFormData } from '@/components/modals/CreateEventModal';
-import { ConfirmDialog } from '@/components/modals/ConfirmDialog';
+import { CreateEventModal, EventFormData } from '@/components/modals/listings/CreateEventModal';
+import { ConfirmDialog } from '@/components/modals/common/ConfirmDialog';
 import { Calendar as CalendarIcon, Plus, Loader2, Sparkles } from 'lucide-react';
 import { uploadMedia } from '@/lib/media';
 import { useRouter } from 'next/navigation';

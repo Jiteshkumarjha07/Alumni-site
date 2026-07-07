@@ -6,11 +6,11 @@ import { collection, query, orderBy, onSnapshot, addDoc, updateDoc, deleteDoc, d
 import { db } from '@/lib/firebase';
 import { Post, Comment as AppComment } from '@/types';
 import { PostCard } from '@/components/feed/PostCard';
-import { CreatePostModal } from '@/components/modals/CreatePostModal';
-import { EditPostModal } from '@/components/modals/EditPostModal';
-import { CommentModal } from '@/components/modals/CommentModal';
-import { ConfirmDialog } from '@/components/modals/ConfirmDialog';
-import { SharePostModal } from '@/components/modals/SharePostModal';
+import { CreatePostModal } from '@/components/modals/post/CreatePostModal';
+import { EditPostModal } from '@/components/modals/post/EditPostModal';
+import { CommentModal } from '@/components/modals/post/CommentModal';
+import { ConfirmDialog } from '@/components/modals/common/ConfirmDialog';
+import { SharePostModal } from '@/components/modals/post/SharePostModal';
 import { SignedOutView } from '@/components/auth/SignedOutView';
 import { PenSquare, Camera, Image as ImageIcon, Paperclip, Users, Menu, Sparkles } from 'lucide-react';
 import { RightSidebar } from '@/components/layout/RightSidebar';

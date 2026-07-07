@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { X, Sparkles, Store, Clock } from 'lucide-react';
-import { Portal } from '../ui/Portal';
+import { Portal } from '@/components/ui/Portal';
 
 interface ComingSoonModalProps {
     isOpen: boolean;

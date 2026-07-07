@@ -7,7 +7,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useMessaging } from '@/contexts/MessagingContext';
 import { usePathname } from 'next/navigation';
 import { InstituteSwitcher } from './InstituteSwitcher';
-import { ComingSoonModal } from '../modals/ComingSoonModal';
+import { ComingSoonModal } from '../modals/common/ComingSoonModal';
 
 export function Sidebar() {
     const { userData, signOut } = useAuth();

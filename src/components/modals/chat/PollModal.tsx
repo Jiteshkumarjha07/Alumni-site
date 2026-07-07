@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { X, Plus, Trash2, BarChart2, Sparkles, Check } from 'lucide-react';
-import { EmojiPicker } from '../ui/EmojiPicker';
+import { EmojiPicker } from '@/components/ui/EmojiPicker';
 
 interface PollModalProps {
     isOpen: boolean;

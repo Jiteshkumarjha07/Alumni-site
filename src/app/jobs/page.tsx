@@ -6,8 +6,8 @@ import { collection, query, orderBy, onSnapshot, addDoc, deleteDoc, doc, serverT
 import { db } from '@/lib/firebase';
 import { Job } from '@/types';
 import { JobCard } from '@/components/jobs/JobCard';
-import { CreateOpportunityModal, OpportunityFormData } from '@/components/modals/CreateOpportunityModal';
-import { ConfirmDialog } from '@/components/modals/ConfirmDialog';
+import { CreateOpportunityModal, OpportunityFormData } from '@/components/modals/listings/CreateOpportunityModal';
+import { ConfirmDialog } from '@/components/modals/common/ConfirmDialog';
 import { Briefcase, Plus, Sparkles } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useMemo } from 'react';

@@ -4,9 +4,9 @@ import { useState, useEffect } from 'react';
 import { X, Image as ImageIcon, Loader2, Send, Sparkles, Video, FileText, File as FileIcon } from 'lucide-react';
 import { uploadMedia, uploadVideo, uploadFile } from '@/lib/media';
 import { useEscapeKey } from '@/hooks/useEscapeKey';
-import { Portal } from '../ui/Portal';
-import { EmojiPicker } from '../ui/EmojiPicker';
-import { EmojiRenderer } from '../ui/EmojiRenderer';
+import { Portal } from '@/components/ui/Portal';
+import { EmojiPicker } from '@/components/ui/EmojiPicker';
+import { EmojiRenderer } from '@/components/ui/EmojiRenderer';
 
 interface CreatePostModalProps {
     isOpen: boolean;

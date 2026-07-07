@@ -10,11 +10,11 @@ import {
 import { db } from '@/lib/firebase';
 import { Post, Comment as AppComment, User, Group } from '@/types';
 import { PostCard } from '@/components/feed/PostCard';
-import { CommentModal } from '@/components/modals/CommentModal';
-import { EditProfileModal, ProfileFormData } from '@/components/modals/EditProfileModal';
-import { ConfirmDialog } from '@/components/modals/ConfirmDialog';
-import { SharePostModal } from '@/components/modals/SharePostModal';
-import { ChangePasswordModal } from '@/components/modals/ChangePasswordModal';
+import { CommentModal } from '@/components/modals/post/CommentModal';
+import { EditProfileModal, ProfileFormData } from '@/components/modals/account/EditProfileModal';
+import { ConfirmDialog } from '@/components/modals/common/ConfirmDialog';
+import { SharePostModal } from '@/components/modals/post/SharePostModal';
+import { ChangePasswordModal } from '@/components/modals/account/ChangePasswordModal';
 import { SignedOutView } from '@/components/auth/SignedOutView';
 import { uploadMedia } from '@/lib/media';
 import {
@@ -25,7 +25,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { AccountSettingsModal } from '@/components/modals/AccountSettingsModal';
+import { AccountSettingsModal } from '@/components/modals/account/AccountSettingsModal';
 import { Portal } from '@/components/ui/Portal';
 
 // ── Cover palette presets ────────────────────────────────────────────────────

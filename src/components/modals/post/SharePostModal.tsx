@@ -7,7 +7,7 @@ import { collection, query, where, getDocs, addDoc, serverTimestamp, doc, setDoc
 import { db } from '@/lib/firebase';
 import Image from 'next/image';
 import { Portal } from '@/components/ui/Portal';
-import { EmojiRenderer } from '../ui/EmojiRenderer';
+import { EmojiRenderer } from '@/components/ui/EmojiRenderer';
 
 interface SharePostModalProps {
     isOpen: boolean;

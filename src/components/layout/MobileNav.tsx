@@ -7,7 +7,7 @@ import { Home, Users, User, MessageSquare, Briefcase, Calendar, Store, Globe2 } 
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { useMessaging } from '@/contexts/MessagingContext';
-import { ComingSoonModal } from '../modals/ComingSoonModal';
+import { ComingSoonModal } from '../modals/common/ComingSoonModal';
 
 export function MobileNav() {
     const { userData } = useAuth();

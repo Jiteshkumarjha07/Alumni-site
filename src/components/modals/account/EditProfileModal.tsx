@@ -2,9 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import { X, Upload, Camera, Sparkles, MapPin, Briefcase, User as UserIcon, Check } from 'lucide-react';
-import { Portal } from '../ui/Portal';
-import { EmojiPicker } from '../ui/EmojiPicker';
-import { LocationAutocomplete } from '../ui/LocationAutocomplete';
+import { Portal } from '@/components/ui/Portal';
+import { EmojiPicker } from '@/components/ui/EmojiPicker';
+import { LocationAutocomplete } from '@/components/ui/LocationAutocomplete';
 
 interface EditProfileModalProps {
     isOpen: boolean;

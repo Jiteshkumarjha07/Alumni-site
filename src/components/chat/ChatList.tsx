@@ -6,7 +6,7 @@ import { collection, query, getDocs, where, doc, updateDoc, arrayUnion, onSnapsh
 import { db } from '@/lib/firebase';
 import { Search, Loader2, Trash2, MessageSquare, Plus, Users, MessageCircle, Sparkles, LogOut, MoreVertical, VolumeX, ShieldAlert } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
-import { CreateGroupModal } from '../modals/CreateGroupModal';
+import { CreateGroupModal } from '../modals/chat/CreateGroupModal';
 import { useMessaging } from '@/contexts/MessagingContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { EmojiRenderer } from '../ui/EmojiRenderer';

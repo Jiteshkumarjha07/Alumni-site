@@ -9,8 +9,8 @@ import {
 import { db } from '@/lib/firebase';
 import { Post, Comment as AppComment, User, Group } from '@/types';
 import { PostCard } from '@/components/feed/PostCard';
-import { CommentModal } from '@/components/modals/CommentModal';
-import { SharePostModal } from '@/components/modals/SharePostModal';
+import { CommentModal } from '@/components/modals/post/CommentModal';
+import { SharePostModal } from '@/components/modals/post/SharePostModal';
 import { MapPin, Briefcase, MessageCircle, Users, Trash2, UserX, UserCheck, Loader2, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';

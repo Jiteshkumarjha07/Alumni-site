@@ -6,7 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Moon, Sun, Monitor, Bell, User, Info, ArrowLeft, Settings2, Lock, Shield, Trash2, LogOut, Bookmark } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { AccountSettingsModal } from '@/components/modals/AccountSettingsModal';
+import { AccountSettingsModal } from '@/components/modals/account/AccountSettingsModal';
 import { auth, db } from '@/lib/firebase';
 
 export default function SettingsPage() {

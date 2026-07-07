@@ -2,11 +2,11 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { X, Send, Trash2, Loader2, Reply, Smile, Sparkles, Hash, MessageCircle, Pencil } from 'lucide-react';
-import { EmojiPicker } from '../ui/EmojiPicker';
+import { EmojiPicker } from '@/components/ui/EmojiPicker';
 import { Comment as AppComment } from '@/types';
 import { formatDistanceToNow } from 'date-fns';
-import { Portal } from '../ui/Portal';
-import { EmojiRenderer } from '../ui/EmojiRenderer';
+import { Portal } from '@/components/ui/Portal';
+import { EmojiRenderer } from '@/components/ui/EmojiRenderer';
 
 // ── Helpers (module-level so they're stable references) ─────────────────────
 

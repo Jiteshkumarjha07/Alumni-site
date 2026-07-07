@@ -8,8 +8,8 @@ import { Post, Comment as AppComment } from '@/types';
 import { PostCard } from '@/components/feed/PostCard';
 import { ArrowLeft, Loader2 } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { SharePostModal } from '@/components/modals/SharePostModal';
-import { CommentModal } from '@/components/modals/CommentModal';
+import { SharePostModal } from '@/components/modals/post/SharePostModal';
+import { CommentModal } from '@/components/modals/post/CommentModal';
 
 function PostViewClient() {
     const { userData, loading: authLoading } = useAuth();

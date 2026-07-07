@@ -3,8 +3,8 @@
 import { useState } from 'react';
 import { X, Calendar, MapPin, AlignLeft, Image as ImageIcon, Sparkles, Upload, Loader2, Check } from 'lucide-react';
 import { useEscapeKey } from '@/hooks/useEscapeKey';
-import { Portal } from '../ui/Portal';
-import { EmojiPicker } from '../ui/EmojiPicker';
+import { Portal } from '@/components/ui/Portal';
+import { EmojiPicker } from '@/components/ui/EmojiPicker';
 
 interface CreateEventModalProps {
     isOpen: boolean;
